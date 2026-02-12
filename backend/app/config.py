@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     agent_max_iterations: int = 50
     agent_model: str = "claude-opus-4-6"
 
+    # Context window — 1M beta (requires Anthropic tier 4)
+    # ADR: opt-in via env var. Without tier 4, falls back to 200K automatically.
+    anthropic_context_1m: bool = True
+
     # API
     cors_origins: list[str] = ["http://localhost:5173"]
 

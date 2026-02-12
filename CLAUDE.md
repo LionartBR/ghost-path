@@ -458,7 +458,7 @@ class UserInput(BaseModel):
 7. Otherwise → append assistant + tool_results to messages, continue loop
 
 Key details:
-- Uses `anthropic.AsyncAnthropic().messages.create()` (not streaming API)
+- Uses `anthropic.AsyncAnthropic().beta.messages.create()` with `betas=["context-1m-2025-08-07"]` for 1M context window (falls back to `messages.create()` if disabled)
 - SSE delivery to frontend is separate from Anthropic API streaming
 - `ToolHandlers` is instantiated fresh each loop iteration
 - Assistant content serialized via `block.model_dump()` for message history
@@ -508,7 +508,15 @@ Lives in `services/system_prompt.py`. Key aspects:
 ```env
 ANTHROPIC_API_KEY=sk-ant-...
 DATABASE_URL=postgresql+asyncpg://ghostpath:ghostpath@db:5432/ghostpath
+ANTHROPIC_CONTEXT_1M=true
 ```
+
+### 1M Context Window (Beta)
+- **Requires**: Anthropic account at **tier 4** (or custom rate limits)
+- **Beta header**: `context-1m-2025-08-07` — sent automatically by `ResilientAnthropicClient` when `ANTHROPIC_CONTEXT_1M=true` (default)
+- **Pricing**: prompts > 200K tokens get premium rates (2x input at $10/M, 1.5x output at $37.50/M)
+- **Disable**: set `ANTHROPIC_CONTEXT_1M=false` to fall back to 200K context window
+- **Implementation**: `ResilientAnthropicClient` routes to `client.beta.messages.create(betas=[...])` when enabled, `client.messages.create()` when disabled
 
 Docker Compose services: `backend` (FastAPI/Uvicorn), `frontend` (Vite dev or nginx), `db` (PostgreSQL 18).
 

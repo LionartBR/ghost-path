@@ -32,6 +32,11 @@ logger = logging.getLogger(__name__)
 class ResilientAnthropicClient:
     """Wraps Anthropic client with retry logic, timeouts, and error mapping."""
 
+    # ADR: 1M context window is beta — requires header "context-1m-2025-08-07".
+    # Without this, Anthropic defaults to 200K. Tier 4 account required.
+    # Premium pricing applies for prompts > 200K tokens (2x input, 1.5x output).
+    CONTEXT_1M_BETA = "context-1m-2025-08-07"
+
     def __init__(
         self,
         api_key: str,
@@ -39,6 +44,7 @@ class ResilientAnthropicClient:
         base_delay_ms: int = 1000,
         max_delay_ms: int = 60_000,
         timeout_seconds: int = 300,
+        enable_1m_context: bool = True,
     ):
         self.client = anthropic.AsyncAnthropic(
             api_key=api_key,
@@ -47,6 +53,7 @@ class ResilientAnthropicClient:
         self.max_retries = max_retries
         self.base_delay_ms = base_delay_ms
         self.max_delay_ms = max_delay_ms
+        self.betas = [self.CONTEXT_1M_BETA] if enable_1m_context else []
 
     async def create_message(
         self,
@@ -61,7 +68,7 @@ class ResilientAnthropicClient:
         """Create message with automatic retry on transient failures."""
         for attempt in range(self.max_retries + 1):
             try:
-                response = await self.client.messages.create(
+                response = await self._call_api(
                     model=model,
                     max_tokens=max_tokens,
                     system=system,
@@ -124,6 +131,14 @@ class ResilientAnthropicClient:
                 raise AnthropicAPIError(
                     str(e), "unknown", context=context,
                 )
+
+    async def _call_api(self, **kwargs):
+        """Route to beta or standard endpoint based on config."""
+        if self.betas:
+            return await self.client.beta.messages.create(
+                **kwargs, betas=self.betas,
+            )
+        return await self.client.messages.create(**kwargs)
 
     def _backoff(self, attempt: int) -> int:
         """Exponential backoff with ±25% jitter."""

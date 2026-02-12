@@ -48,6 +48,7 @@ async def stream_session(
         api_key=settings.anthropic_api_key,
         max_retries=settings.anthropic_max_retries,
         timeout_seconds=settings.anthropic_timeout_seconds,
+        enable_1m_context=settings.anthropic_context_1m,
     )
     runner = AgentRunner(db, client)
 
@@ -82,6 +83,7 @@ async def send_user_input(
         api_key=settings.anthropic_api_key,
         max_retries=settings.anthropic_max_retries,
         timeout_seconds=settings.anthropic_timeout_seconds,
+        enable_1m_context=settings.anthropic_context_1m,
     )
     runner = AgentRunner(db, client)
 
