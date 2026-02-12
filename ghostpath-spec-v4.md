@@ -41,7 +41,9 @@
 │  │  • import_foreign_domain                            │     │
 │  │  • obviousness_test                                 │     │
 │  │  • invert_problem                                   │     │
-│  │  • research_premises    ← web search for evidence   │     │
+│  ├─────────────────────────────────────────────────────┤     │
+│  │ BUILT-IN TOOLS (Anthropic server-side)             │     │
+│  │  • web_search            ← real-time web research   │     │
 │  ├─────────────────────────────────────────────────────┤     │
 │  │ INTERACTION TOOLS                                   │     │
 │  │  • ask_user               ← question/options style  │     │
@@ -627,81 +629,6 @@ def setup_logging(level: str = "INFO", fmt: str = "json"):
     logging.root.setLevel(getattr(logging, level.upper(), logging.INFO))
 ```
 
-### Web Search Client
-
-```python
-# app/infrastructure/web_search.py
-"""Web search client — provides external research capability for premise generation.
-
-Invariants:
-    - Returns structured results with title, url, snippet, domain
-    - Gracefully degrades: returns empty results if API key missing or service unavailable
-    - Results are truncated to max_results to control token consumption
-
-Design Decisions:
-    - Brave Search API chosen for cost (free tier: 2000 queries/month) and no Google dependency
-    - Protocol-based boundary: ToolHandlers depends on WebSearchProtocol, not BraveSearchClient
-    - ADR: graceful degradation over hard failure — missing API key logs warning, returns empty
-"""
-
-import logging
-from typing import Protocol
-
-import httpx
-
-from app.config import get_settings
-
-logger = logging.getLogger(__name__)
-
-
-class WebSearchProtocol(Protocol):
-    """Boundary protocol — core depends on this, not on the concrete client."""
-    async def search(self, query: str, *, max_results: int = 5) -> list[dict]: ...
-
-
-class BraveSearchClient:
-    """Brave Search API client with graceful degradation."""
-
-    BASE_URL = "https://api.search.brave.com/res/v1/web/search"
-
-    def __init__(self, api_key: str | None = None):
-        settings = get_settings()
-        self.api_key = api_key or settings.brave_search_api_key
-        self.default_max_results = settings.brave_search_max_results
-
-    async def search(self, query: str, *, max_results: int = 5) -> list[dict]:
-        if not self.api_key:
-            logger.warning("BRAVE_SEARCH_API_KEY not set — research_premises returns empty results")
-            return []
-
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                resp = await client.get(
-                    self.BASE_URL,
-                    headers={
-                        "Accept": "application/json",
-                        "Accept-Encoding": "gzip",
-                        "X-Subscription-Token": self.api_key,
-                    },
-                    params={"q": query, "count": min(max_results, 10)},
-                )
-                resp.raise_for_status()
-                data = resp.json()
-        except httpx.HTTPError as e:
-            logger.error(f"Brave Search API error: {e}", extra={"query": query})
-            return []
-
-        results = []
-        for item in data.get("web", {}).get("results", [])[:max_results]:
-            results.append({
-                "title": item.get("title", ""),
-                "url": item.get("url", ""),
-                "snippet": item.get("description", "")[:300],
-                "domain": item.get("meta_url", {}).get("hostname", ""),
-            })
-        return results
-```
-
 ---
 
 ## 0.4 Configuration
@@ -733,10 +660,6 @@ class Settings(BaseSettings):
     # Agent
     agent_max_iterations: int = 50
     agent_model: str = "claude-opus-4-6"
-
-    # Web Search (for research_premises tool)
-    brave_search_api_key: str | None = None
-    brave_search_max_results: int = 5
 
     # API
     cors_origins: list[str] = ["http://localhost:5173"]
@@ -838,10 +761,9 @@ class SessionState:
 # app/services/tool_handlers.py
 
 class ToolHandlers:
-    def __init__(self, db: AsyncSession, session_state: SessionState, web_search: WebSearchProtocol):
+    def __init__(self, db: AsyncSession, session_state: SessionState):
         self.db = db
         self.state = session_state
-        self.web_search = web_search
 
     # ─────────────────────────────────────
     # ANALYSIS TOOLS (mark gates)
@@ -1122,45 +1044,6 @@ class ToolHandlers:
             "status": "ok",
             "inversion_type": input_data["inversion_type"],
             "message": "Problem inverted. Use the insights to generate non-obvious premises.",
-        }
-
-    async def research_premises(self, session, input_data) -> dict:
-        """Search the web for evidence related to the problem or premises.
-
-        ADR: research_premises is an Innovation Tool, not a gate.
-        Rationale: web research enhances premise quality but is not mandatory —
-        the agent decides when grounding in external data adds value.
-        Making it a gate would add latency to every session, even when
-        the problem domain is well-covered by the model's training data.
-        """
-        query = input_data["query"]
-        research_goal = input_data["research_goal"]
-        max_results = input_data.get("max_results", 5)
-
-        # Shell: call web search service (impure)
-        results = await self.web_search.search(query, max_results=max_results)
-
-        # Summarize results for context (keeps token budget manageable)
-        summarized = [
-            {
-                "title": r["title"],
-                "url": r["url"],
-                "snippet": r["snippet"][:300],
-                "source_domain": r.get("domain", ""),
-            }
-            for r in results[:max_results]
-        ]
-
-        return {
-            "status": "ok",
-            "research_goal": research_goal,
-            "query": query,
-            "results_count": len(summarized),
-            "results": summarized,
-            "message": (
-                f"Found {len(summarized)} result(s) for '{query}'. "
-                f"Use these to ground your premises in real-world evidence."
-            ),
         }
 
     # ─────────────────────────────────────
@@ -1713,54 +1596,6 @@ TOOLS_INNOVATION = [
             "required": ["original_problem", "inversion_type", "inverted_framing", "insights"]
         }
     },
-    {
-        "name": "research_premises",
-        "description": (
-            "Searches the web for real-world evidence related to the problem or premises. "
-            "Use to: validate that a premise is truly novel (not already implemented), "
-            "discover existing solutions in the problem domain, find analogies from other "
-            "domains with real case studies, or ground premises in current data/research. "
-            "Especially valuable for fast-moving domains (tech, market, regulation) where "
-            "the model's training data may be outdated. "
-            "NOT a mandatory gate — use when external evidence adds value."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "query": {
-                    "type": "string",
-                    "description": "Search query — be specific and targeted"
-                },
-                "research_goal": {
-                    "type": "string",
-                    "enum": [
-                        "validate_novelty",
-                        "find_existing_solutions",
-                        "discover_analogies",
-                        "ground_in_data"
-                    ],
-                    "description": (
-                        "validate_novelty: check if premise already exists. "
-                        "find_existing_solutions: map what's been tried. "
-                        "discover_analogies: find real cross-domain cases. "
-                        "ground_in_data: find current stats/research."
-                    )
-                },
-                "context": {
-                    "type": "string",
-                    "description": "Why this research is needed now (for observability)"
-                },
-                "max_results": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 10,
-                    "default": 5,
-                    "description": "Max results to return (default 5, max 10)"
-                }
-            },
-            "required": ["query", "research_goal", "context"]
-        }
-    },
 ]
 ```
 
@@ -1965,12 +1800,23 @@ from app.services.tool_definitions import (
     TOOLS_MEMORY,
 )
 
+# ADR: web_search is an Anthropic built-in tool (server-side, not custom).
+# Uses a different schema format (type instead of name+input_schema).
+# Anthropic handles execution — no ToolHandlers method needed.
+# Pricing: $10/1000 searches, billed to the same ANTHROPIC_API_KEY.
+WEB_SEARCH_TOOL = {
+    "type": "web_search_20250305",
+    "name": "web_search",
+    "max_uses": 5,  # per agent turn — controls cost and context usage
+}
+
 ALL_TOOLS = (
     TOOLS_ANALYSIS
     + TOOLS_GENERATION
     + TOOLS_INNOVATION
     + TOOLS_INTERACTION
     + TOOLS_MEMORY
+    + [WEB_SEARCH_TOOL]
 )
 ```
 
@@ -1993,7 +1839,6 @@ from app.services.session_state import SessionState
 from app.services.tools_registry import ALL_TOOLS
 from app.services.system_prompt import AGENT_SYSTEM_PROMPT
 from app.infrastructure.anthropic_client import ResilientAnthropicClient
-from app.infrastructure.web_search import WebSearchProtocol
 from app.core.errors import GhostPathError, AgentLoopExceededError, ErrorContext, ErrorSeverity
 
 logger = logging.getLogger(__name__)
@@ -2010,11 +1855,10 @@ class AgentRunner:
 
     MAX_ITERATIONS = 50
 
-    def __init__(self, db: AsyncSession, anthropic_client: ResilientAnthropicClient, web_search: WebSearchProtocol):
+    def __init__(self, db: AsyncSession, anthropic_client: ResilientAnthropicClient):
         self.client = anthropic_client
         self.model = "claude-opus-4-6"
         self.db = db
-        self.web_search = web_search
 
     async def run(self, session, user_message: str, session_state: SessionState):
         """
@@ -2060,6 +1904,11 @@ class AgentRunner:
                 try:
                     tokens = response.usage.input_tokens + response.usage.output_tokens
                     session.total_tokens_used += tokens
+                    # Track web search requests for cost observability
+                    web_searches = getattr(response.usage, "server_tool_use", {})
+                    if web_searches:
+                        logger.info(f"Web searches this turn: {web_searches.get('web_search_requests', 0)}",
+                                    extra={"session_id": str(session.id)})
                     await self.db.commit()
                 except Exception as e:
                     logger.error(f"Failed to update token usage: {e}")
@@ -2081,6 +1930,28 @@ class AgentRunner:
                             "type": "tool_call",
                             "data": {"tool": block.name, "input_preview": str(block.input)[:300]},
                         }
+                    elif block.type == "server_tool_use":
+                        # web_search — executed server-side by Anthropic, no client handling needed
+                        yield {
+                            "type": "tool_call",
+                            "data": {"tool": block.name, "input_preview": str(block.input)[:300]},
+                        }
+                    elif block.type == "web_search_tool_result":
+                        # Search results — already resolved, just forward to frontend
+                        result_urls = [
+                            r.get("url", "") for r in getattr(block, "content", [])
+                            if hasattr(r, "get") and r.get("type") == "web_search_result"
+                        ]
+                        yield {
+                            "type": "tool_result",
+                            "data": f"Web search returned {len(result_urls)} result(s)",
+                        }
+
+                # Handle pause_turn stop reason (long-running web search)
+                if response.stop_reason == "pause_turn":
+                    serialized_content = [block.model_dump() for block in assistant_content]
+                    messages.append({"role": "assistant", "content": serialized_content})
+                    continue  # let Claude continue its turn
 
                 if not has_tool_use:
                     yield {"type": "done", "data": {"error": False, "awaiting_input": False}}
@@ -2090,7 +1961,7 @@ class AgentRunner:
                 serialized_content = [block.model_dump() for block in assistant_content]
                 messages.append({"role": "assistant", "content": serialized_content})
                 tool_results = []
-                handlers = ToolHandlers(self.db, session_state, self.web_search)
+                handlers = ToolHandlers(self.db, session_state)
 
                 for block in assistant_content:
                     if block.type != "tool_use":
@@ -2739,7 +2610,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.database import get_db
 from app.infrastructure.anthropic_client import ResilientAnthropicClient
-from app.infrastructure.web_search import BraveSearchClient
 from app.models.session import Session as SessionModel
 from app.models.premise import Premise
 from app.schemas.session import SessionCreate, SessionResponse, UserInput
@@ -2878,8 +2748,7 @@ async def stream_session(session_id: UUID, db: AsyncSession = Depends(get_db)):
         max_retries=settings.anthropic_max_retries,
         timeout_seconds=settings.anthropic_timeout_seconds,
     )
-    web_search = BraveSearchClient()
-    runner = AgentRunner(db, client, web_search)
+    runner = AgentRunner(db, client)
 
     async def event_generator():
         message = (
@@ -2916,8 +2785,7 @@ async def send_user_input(
         max_retries=settings.anthropic_max_retries,
         timeout_seconds=settings.anthropic_timeout_seconds,
     )
-    web_search = BraveSearchClient()
-    runner = AgentRunner(db, client, web_search)
+    runner = AgentRunner(db, client)
 
     # Format message based on input type
     match body.type:
@@ -3187,22 +3055,22 @@ an ERROR message and must correct before proceeding.
 
 5. ROUNDS 2+: MUST call get_negative_context before generating premises.
 
-## Web Research (research_premises)
+## Web Research (web_search — Anthropic built-in)
 
-You have access to research_premises, which searches the web for real-world evidence.
+You have access to web_search, a built-in tool that searches the web in real time.
 This is NOT a mandatory gate — use it strategically when external data adds value:
 
 - BEFORE generating premises in fast-moving domains (tech, market, regulation):
-  call with research_goal="find_existing_solutions" to avoid reinventing the wheel.
+  search for existing solutions to avoid reinventing the wheel.
 - AFTER generating a premise that scores borderline on obviousness_test (0.4–0.6):
-  call with research_goal="validate_novelty" to check if it already exists.
-- WHEN using import_foreign_domain: call with research_goal="discover_analogies"
-  to find real case studies instead of relying solely on your training data.
+  search to validate that the premise doesn't already exist in the real world.
+- WHEN using import_foreign_domain: search for real case studies from other domains
+  instead of relying solely on your training data.
 - WHEN the problem involves current data (market size, adoption rates, regulations):
-  call with research_goal="ground_in_data" to anchor premises in reality.
+  search for up-to-date stats and research to anchor premises in reality.
 
-Be strategic with research — each call adds latency and consumes context tokens.
-Prefer targeted, specific queries over broad ones.
+Be strategic with research — each search costs $0.01 and consumes context tokens.
+Prefer targeted, specific queries over broad ones. Use max_uses to limit searches.
 
 ## User Interaction Rules
 
@@ -3299,8 +3167,7 @@ ghost-path/
 │   │   ├── infrastructure/
 │   │   │   ├── anthropic_client.py          # Resilient Anthropic wrapper (retry/backoff)
 │   │   │   ├── database.py                  # DB session manager (pool/rollback)
-│   │   │   ├── observability.py             # Structured JSON logging
-│   │   │   └── web_search.py               # Web search client (Brave Search API)
+│   │   │   └── observability.py             # Structured JSON logging
 │   │   ├── db/
 │   │   │   ├── base.py
 │   │   │   └── session.py
