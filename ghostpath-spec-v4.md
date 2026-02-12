@@ -741,7 +741,7 @@ def get_settings() -> Settings:
 
 ExMA mandates radical separation between pure domain logic (core) and impure IO (shell). The core contains **zero** async, **zero** DB access, **zero** external API calls. Every function in core is deterministic: same input → same output, testable without mocks.
 
-The shell (routes, tool_handlers, agent_runner) reads impure state, calls core pure functions, then writes impure results — the **Impureim Sandwich**.
+The shell (routes, handle_* handlers, agent_runner) reads impure state, calls core pure functions, then writes impure results — the **Impureim Sandwich**.
 
 ### Domain Types (Types as Documentation)
 
@@ -814,10 +814,10 @@ class ToolCategory(str, Enum):
     MEMORY = "memory"
 ```
 
-### Boundary Protocols (Contracts at Boundaries)
+### Repository Protocols (Contracts at Boundaries)
 
 ```python
-# app/core/protocols.py
+# app/core/repository_protocols.py
 
 """Boundary Protocols — contracts between core and shell.
 
@@ -862,35 +862,26 @@ class RoundRepository(Protocol):
     async def create(self, session_id: SessionId, round_number: int) -> RoundId: ...
 ```
 
-### Enforcement Rules (Pure Domain Logic)
+### Enforcement: Gate Prerequisites (Pure)
 
 ```python
-# app/core/enforcement.py
+# app/core/enforce_gates.py
 
-"""Gate & Buffer Enforcement — pure validation for all 6 inviolable rules.
+"""Gate Prerequisite Enforcement — validates all conditions before premise generation.
 
 Invariants:
     - All functions are PURE: no IO, no async, no DB, no side effects
-    - Return error dicts on violation, None on success
-    - Called by shell (tool_handlers) in impureim sandwich: read → validate (pure) → write
-    - Each function tests exactly one rule — composable via validate_generation_prerequisites
+    - Return error dict on violation, None on success
+    - validate_generation_prerequisites chains all checks — first error wins
 
 Design Decisions:
     - Pure functions over method dispatch: testable without mocks (ADR: ExMA Functional Core)
     - Return dicts (not exceptions): agent_runner consumes tool results as JSON dicts,
       keeping error path identical to success path (ADR: uniform tool response shape)
-    - OBVIOUSNESS_THRESHOLD as module constant: single source of truth for the 0.6 cutoff
 """
 
 from app.core.session_state import SessionState
 from app.core.domain_types import PremiseType
-
-
-OBVIOUSNESS_THRESHOLD: float = 0.6
-MAX_BUFFER_SIZE: int = 3
-
-
-# ─── Individual Rule Checks ─────────────────────────────────────
 
 
 def check_gates(state: SessionState) -> dict | None:
@@ -905,20 +896,6 @@ def check_gates(state: SessionState) -> dict | None:
                 f"Call these tools first."
             ),
             "missing_gates": state.missing_gates,
-        }
-    return None
-
-
-def check_buffer_capacity(state: SessionState) -> dict | None:
-    """Rule 2: Round buffer accepts exactly 3 premises, no more."""
-    if state.premises_in_buffer >= MAX_BUFFER_SIZE:
-        return {
-            "status": "error",
-            "error_code": "ROUND_BUFFER_FULL",
-            "message": (
-                "ERROR: Round buffer is full (3/3). "
-                "Call present_round or discard a premise."
-            ),
         }
     return None
 
@@ -951,7 +928,15 @@ def check_negative_context(state: SessionState) -> dict | None:
     return None
 
 
-# ─── Composed Validation ─────────────────────────────────────────
+def check_buffer_capacity(state: SessionState) -> dict | None:
+    """Rule 2: Round buffer accepts exactly 3 premises, no more."""
+    if state.premises_in_buffer >= 3:
+        return {
+            "status": "error",
+            "error_code": "ROUND_BUFFER_FULL",
+            "message": "ERROR: Round buffer is full (3/3). Call present_round or discard a premise.",
+        }
+    return None
 
 
 def validate_generation_prerequisites(state: SessionState, premise_type: str) -> dict | None:
@@ -962,19 +947,36 @@ def validate_generation_prerequisites(state: SessionState, premise_type: str) ->
         or check_negative_context(state)
         or check_buffer_capacity(state)
     )
+```
+
+### Enforcement: Round & Obviousness (Pure)
+
+```python
+# app/core/enforce_round.py
+
+"""Round Presentation & Obviousness Enforcement — validates buffer state before user delivery.
+
+Invariants:
+    - evaluate_obviousness is PURE: returns action descriptor, does NOT mutate state
+    - Shell applies the mutation (remove from buffer or mark tested)
+    - OBVIOUSNESS_THRESHOLD (0.6) is single source of truth for the cutoff
+
+Design Decisions:
+    - Separated from enforce_gates: different lifecycle — gates checked at generation time,
+      round/obviousness checked at presentation time (ADR: responsibility separation)
+"""
+
+from app.core.session_state import SessionState
 
 
-# ─── Obviousness Evaluation ─────────────────────────────────────
+OBVIOUSNESS_THRESHOLD: float = 0.6
+MAX_BUFFER_SIZE: int = 3
 
 
 def evaluate_obviousness(
     state: SessionState, premise_index: int, score: float
 ) -> dict:
-    """
-    Rule 3: Evaluate obviousness test result.
-    Pure — returns action descriptor, does NOT mutate state.
-    Shell applies the action (remove from buffer or mark tested).
-    """
+    """Rule 3: Evaluate obviousness test result. Pure — no state mutation."""
     if premise_index >= state.premises_in_buffer:
         return {
             "status": "error",
@@ -997,14 +999,7 @@ def evaluate_obviousness(
             ),
         }
 
-    return {
-        "status": "ok",
-        "premise_index": premise_index,
-        "score": score,
-    }
-
-
-# ─── Round Presentation Validation ──────────────────────────────
+    return {"status": "ok", "premise_index": premise_index, "score": score}
 
 
 def validate_round_presentation(state: SessionState) -> dict | None:
@@ -1024,9 +1019,7 @@ def validate_round_presentation(state: SessionState) -> dict | None:
         return {
             "status": "error",
             "error_code": "UNTESTED_PREMISES",
-            "message": (
-                f"ERROR: {untested} premise(s) have not passed obviousness_test."
-            ),
+            "message": f"ERROR: {untested} premise(s) have not passed obviousness_test.",
         }
 
     return None
@@ -1130,87 +1123,109 @@ class SessionState:
         self.negative_context_fetched = False
 ```
 
-### Gate Enforcement in Tool Handlers (Impureim Sandwich)
+### Tool Handlers — Split by Category (ExMA: No God Objects)
 
-Tool handlers follow the ExMA **Impureim Sandwich** pattern: read (impure) → validate/process (pure, via `core/enforcement.py`) → write (impure). Pure validation logic lives in `core/enforcement.py`; handlers only orchestrate IO around it.
+The original `ToolHandlers` class had 17 methods across 5 categories — violating the ExMA "max ~7 methods per class" rule. Split into 5 handler modules + 1 explicit dispatch. Each handler follows the **Impureim Sandwich**: read (impure) → validate (pure, via `core/enforce_*.py`) → write (impure).
 
 ```python
-# app/services/tool_handlers.py
+# app/services/tool_dispatch.py
 
-"""Tool Handlers — impure shell that orchestrates pure core logic with IO.
+"""Tool Dispatch — explicit routing from tool_name to handler function.
 
 Invariants:
-    - Every generation tool calls validate_generation_prerequisites (pure) before buffer mutation
-    - Every handler follows impureim sandwich: read → pure validate → write
-    - Handlers NEVER contain inline business rule checks — always delegate to core/enforcement
+    - Every tool→handler mapping is visible — no getattr magic, no auto-discovery
+    - Unknown tools return UNKNOWN_TOOL error (never raises)
+    - Handlers instantiated per-dispatch with shared DB + state context
 
 Design Decisions:
-    - ToolHandlers is a class (not free functions): groups DB session + state as shared context (ADR: hackathon DI)
-    - Max ~7 public methods per category — if ToolHandlers grows, split by ToolCategory (ADR: ExMA god object limit)
-    - Pure validation imported from core/enforcement.py — testable without DB mocks
+    - Explicit dict over getattr: every mapping visible in one place (ADR: ExMA no convention-over-config)
+    - Split handlers by ToolCategory: max ~4 methods per class (ADR: ExMA no god objects)
 """
 
-from datetime import datetime, timezone
-
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.domain_types import AnalysisGate
 from app.core.session_state import SessionState
-from app.core.enforcement import (
-    validate_generation_prerequisites,
-    evaluate_obviousness,
-    validate_round_presentation,
-    OBVIOUSNESS_THRESHOLD,
-)
-from app.models.round import Round
-from app.models.premise import Premise
+from app.services.handle_analysis import AnalysisHandlers
+from app.services.handle_generation import GenerationHandlers
+from app.services.handle_innovation import InnovationHandlers
+from app.services.handle_interaction import InteractionHandlers
+from app.services.handle_memory import MemoryHandlers
 
 
-class ToolHandlers:
-    def __init__(self, db: AsyncSession, session_state: SessionState):
-        self.db = db
-        self.state = session_state
+class ToolDispatch:
+    """Routes tool_name → handler. Explicit registration, no auto-discovery."""
 
-    # ─────────────────────────────────────
-    # ANALYSIS TOOLS (mark gates)
-    # ─────────────────────────────────────
+    def __init__(self, db: AsyncSession, state: SessionState):
+        analysis = AnalysisHandlers(db, state)
+        generation = GenerationHandlers(db, state)
+        innovation = InnovationHandlers(db, state)
+        interaction = InteractionHandlers(db, state)
+        memory = MemoryHandlers(db, state)
 
-    async def decompose_problem(self, session, input_data) -> dict:
-        # impure: write DB
-        session.problem_decomposition = input_data
-        await self.db.commit()
-        # pure: update state
-        self.state.completed_gates.add(AnalysisGate.DECOMPOSE)
-        return self._gate_response("Decomposition completed.")
-
-    async def map_conventional_approaches(self, session, input_data) -> dict:
-        self.state.completed_gates.add(AnalysisGate.CONVENTIONAL)
-        return self._gate_response("Conventional approaches mapped.")
-
-    async def extract_hidden_axioms(self, session, input_data) -> dict:
-        self.state.completed_gates.add(AnalysisGate.AXIOMS)
-        if "axioms" in input_data:
-            self.state.extracted_axioms.extend(
-                a["axiom"] for a in input_data["axioms"]
-            )
-        return self._gate_response("Axioms extracted.")
-
-    def _gate_response(self, action: str) -> dict:
-        """Pure helper: format gate completion response."""
-        return {
-            "status": "ok",
-            "gates_completed": [g.value for g in self.state.completed_gates],
-            "gates_remaining": self.state.missing_gates,
-            "message": (
-                f"{action} "
-                f"Remaining gates: {self.state.missing_gates or 'None — ready to generate premises.'}"
-            ),
+        # ADR: every mapping explicit — adding a tool requires editing this dict
+        self._handlers = {
+            # Analysis (gates)
+            "decompose_problem": analysis.decompose_problem,
+            "map_conventional_approaches": analysis.map_conventional_approaches,
+            "extract_hidden_axioms": analysis.extract_hidden_axioms,
+            # Generation (gate-checked, impureim sandwich)
+            "generate_premise": generation.generate_premise,
+            "mutate_premise": generation.mutate_premise,
+            "cross_pollinate": generation.cross_pollinate,
+            # Innovation
+            "challenge_axiom": innovation.challenge_axiom,
+            "import_foreign_domain": innovation.import_foreign_domain,
+            "obviousness_test": innovation.obviousness_test,
+            "invert_problem": innovation.invert_problem,
+            # Interaction
+            "ask_user": interaction.ask_user,
+            "present_round": interaction.present_round,
+            "generate_final_spec": interaction.generate_final_spec,
+            # Memory
+            "store_premise": memory.store_premise,
+            "query_premises": memory.query_premises,
+            "get_negative_context": memory.get_negative_context,
+            "get_context_usage": memory.get_context_usage,
         }
 
-    # ─────────────────────────────────────
-    # GENERATION TOOLS (impureim sandwich)
-    # ─────────────────────────────────────
+    async def execute(self, tool_name: str, session, input_data: dict) -> dict:
+        handler = self._handlers.get(tool_name)
+        if not handler:
+            return {
+                "status": "error",
+                "error_code": "UNKNOWN_TOOL",
+                "message": f"Tool '{tool_name}' does not exist.",
+            }
+        return await handler(session, input_data)
+```
+
+### Generation Handlers (Impureim Sandwich — Representative Example)
+
+```python
+# app/services/handle_generation.py
+
+"""Generation Handlers — generate_premise, mutate_premise, cross_pollinate.
+
+Invariants:
+    - Every method calls validate_generation_prerequisites (pure) before buffer mutation
+    - Follows impureim sandwich: read state → pure validate → mutate buffer
+    - No DB writes here — premises stored on present_round
+
+Design Decisions:
+    - Validation delegated entirely to core/enforce_gates.py (ADR: Functional Core)
+    - Buffer mutation is in-memory only — DB persistence deferred to present_round (ADR: atomic round writes)
+"""
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.session_state import SessionState
+from app.core.enforce_gates import validate_generation_prerequisites
+
+
+class GenerationHandlers:
+    def __init__(self, db: AsyncSession, state: SessionState):
+        self.db = db
+        self.state = state
 
     async def generate_premise(self, session, input_data) -> dict:
         # ── PURE: validate all prerequisites ──
@@ -1225,7 +1240,6 @@ class ToolHandlers:
         self.state.current_round_buffer.append(input_data)
         remaining = self.state.premises_remaining
 
-        # ── Result (no DB write — stored on present_round) ──
         return {
             "status": "ok",
             "premise_index": premise_index,
@@ -1238,14 +1252,12 @@ class ToolHandlers:
         }
 
     async def mutate_premise(self, session, input_data) -> dict:
-        # ── PURE: validate ──
         error = validate_generation_prerequisites(
             self.state, input_data.get("premise_type", "conservative")
         )
         if error:
             return error
 
-        # ── PURE: compute ──
         premise_index = self.state.premises_in_buffer
         self.state.current_round_buffer.append(input_data)
         remaining = self.state.premises_remaining
@@ -1255,21 +1267,16 @@ class ToolHandlers:
             "premise_index": premise_index,
             "premises_in_buffer": self.state.premises_in_buffer,
             "premises_remaining": remaining,
-            "message": (
-                f"Mutation applied. Premise #{premise_index + 1} in buffer. "
-                f"{str(remaining) + ' remaining.' if remaining > 0 else 'Buffer complete!'}"
-            ),
+            "message": f"Mutation applied. Premise #{premise_index + 1} in buffer. {remaining} remaining.",
         }
 
     async def cross_pollinate(self, session, input_data) -> dict:
-        # ── PURE: validate ──
         error = validate_generation_prerequisites(
             self.state, input_data.get("premise_type", "combination")
         )
         if error:
             return error
 
-        # ── PURE: compute ──
         premise_index = self.state.premises_in_buffer
         self.state.current_round_buffer.append(input_data)
         remaining = self.state.premises_remaining
@@ -1279,268 +1286,45 @@ class ToolHandlers:
             "premise_index": premise_index,
             "premises_in_buffer": self.state.premises_in_buffer,
             "premises_remaining": remaining,
-            "message": (
-                f"Cross-pollination completed. Premise #{premise_index + 1} in buffer. "
-                f"{str(remaining) + ' remaining.' if remaining > 0 else 'Buffer complete!'}"
-            ),
-        }
-
-    # ─────────────────────────────────────
-    # INNOVATION TOOLS
-    # ─────────────────────────────────────
-
-    async def challenge_axiom(self, session, input_data) -> dict:
-        axiom = input_data.get("axiom", "")
-        # ── PURE: validate axiom exists ──
-        if self.state.extracted_axioms and axiom not in self.state.extracted_axioms:
-            return {
-                "status": "warning",
-                "message": (
-                    f"WARNING: '{axiom}' not in extracted axioms: {self.state.extracted_axioms}. "
-                    f"Proceeding, but consider using a previously mapped axiom."
-                ),
-            }
-        # ── PURE: update state ──
-        self.state.axiom_challenged = True
-        return {
-            "status": "ok",
-            "message": f"Axiom '{axiom}' challenged with strategy '{input_data.get('violation_strategy')}'.",
-        }
-
-    async def import_foreign_domain(self, session, input_data) -> dict:
-        return {
-            "status": "ok",
-            "source_domain": input_data["source_domain"],
-            "message": f"Analogy imported from {input_data['source_domain']}.",
-        }
-
-    async def obviousness_test(self, session, input_data) -> dict:
-        premise_index = input_data.get("premise_buffer_index")
-        score = input_data.get("obviousness_score", 0.0)
-
-        # ── PURE: evaluate (no state mutation) ──
-        result = evaluate_obviousness(self.state, premise_index, score)
-
-        # ── IMPURE: apply state changes based on pure result ──
-        if result["status"] == "rejected":
-            self.state.current_round_buffer.pop(premise_index)
-            self.state.obviousness_tested = {
-                (i if i < premise_index else i - 1)
-                for i in self.state.obviousness_tested
-                if i != premise_index
-            }
-            return {
-                **result,
-                "premises_in_buffer": self.state.premises_in_buffer,
-                "premises_remaining": self.state.premises_remaining,
-            }
-
-        if result["status"] == "ok":
-            self.state.obviousness_tested.add(premise_index)
-            return {
-                **result,
-                "tested_count": len(self.state.obviousness_tested),
-                "total_in_buffer": self.state.premises_in_buffer,
-                "all_tested": self.state.all_premises_tested,
-                "message": (
-                    f"Obviousness test PASSED for premise #{premise_index + 1} (score {score}). "
-                    f"{'All tested — ready for present_round.' if self.state.all_premises_tested else f'{self.state.premises_in_buffer - len(self.state.obviousness_tested)} test(s) remaining.'}"
-                ),
-            }
-
-        return result  # error case
-
-    async def invert_problem(self, session, input_data) -> dict:
-        return {
-            "status": "ok",
-            "inversion_type": input_data["inversion_type"],
-            "message": "Problem inverted. Use the insights to generate non-obvious premises.",
-        }
-
-    # ─────────────────────────────────────
-    # INTERACTION TOOLS
-    # ─────────────────────────────────────
-
-    async def ask_user(self, session, input_data) -> dict:
-        self.state.awaiting_user_input = True
-        self.state.awaiting_input_type = "ask_user"
-        return {
-            "status": "awaiting_user_response",
-            "message": "Question presented to user. Awaiting response.",
-        }
-
-    async def present_round(self, session, input_data) -> dict:
-        # ── PURE: validate buffer is ready ──
-        error = validate_round_presentation(self.state)
-        if error:
-            return error
-
-        # ── IMPURE: persist round and premises to DB ──
-        self.state.current_round_number += 1
-        new_round = Round(
-            session_id=session.id,
-            round_number=self.state.current_round_number,
-        )
-        self.db.add(new_round)
-        await self.db.flush()
-
-        premises_data = []
-        for p_data in self.state.current_round_buffer:
-            premise = Premise(
-                round_id=new_round.id,
-                session_id=session.id,
-                title=p_data["title"],
-                body=p_data["body"],
-                premise_type=p_data["premise_type"],
-                violated_axiom=p_data.get("violated_axiom"),
-                cross_domain_source=p_data.get("cross_domain_source"),
-            )
-            self.db.add(premise)
-            premises_data.append({
-                "title": p_data["title"],
-                "body": p_data["body"],
-                "premise_type": p_data["premise_type"],
-                "violated_axiom": p_data.get("violated_axiom"),
-                "cross_domain_source": p_data.get("cross_domain_source"),
-            })
-
-        await self.db.commit()
-
-        # ── PURE: reset per-round state ──
-        self.state.reset_for_next_round()
-
-        # ── State: mark awaiting user ──
-        self.state.awaiting_user_input = True
-        self.state.awaiting_input_type = "scores"
-
-        return {
-            "status": "awaiting_user_scores",
-            "round_number": self.state.current_round_number,
-            "premises": premises_data,
-            "message": (
-                f"Round {self.state.current_round_number} presented with 3 premises. "
-                f"Awaiting user scores (0.0–10.0). User can trigger 'Problem Resolved'."
-            ),
-        }
-
-    async def generate_final_spec(self, session, input_data) -> dict:
-        # ── IMPURE: update session status ──
-        session.status = "resolved"
-        session.resolved_at = datetime.now(timezone.utc)
-        await self.db.commit()
-
-        return {
-            "status": "ok",
-            "message": (
-                "Session closed. Generate the final spec content in Markdown. "
-                "The backend will save it as .md and deliver it to the user."
-            ),
-        }
-
-    # ─────────────────────────────────────
-    # MEMORY TOOLS
-    # ─────────────────────────────────────
-
-    async def store_premise(self, session, input_data) -> dict:
-        # ── IMPURE: read from DB ──
-        result = await self.db.execute(
-            select(Premise)
-            .where(Premise.session_id == session.id)
-            .where(Premise.title == input_data["title"])
-            .order_by(Premise.created_at.desc())
-            .limit(1)
-        )
-        premise = result.scalar_one_or_none()
-        # ── IMPURE: write to DB ──
-        if premise:
-            premise.score = input_data.get("score")
-            premise.user_comment = input_data.get("user_comment")
-            premise.is_winner = input_data.get("is_winner", False)
-            await self.db.commit()
-        return {"status": "stored"}
-
-    async def query_premises(self, session, input_data) -> dict:
-        # ── IMPURE: read from DB ──
-        query = select(Premise).where(Premise.session_id == session.id)
-        filter_type = input_data["filter"]
-        if filter_type == "winners":
-            query = query.where(Premise.is_winner == True)
-        elif filter_type == "top_scored":
-            query = query.where(Premise.score >= 7.0).order_by(Premise.score.desc())
-        elif filter_type == "low_scored":
-            query = query.where(Premise.score < 5.0)
-        elif filter_type == "by_type":
-            query = query.where(Premise.premise_type == input_data.get("premise_type"))
-        query = query.limit(input_data.get("limit", 10))
-        result = await self.db.execute(query)
-        premises = result.scalars().all()
-        # ── PURE: transform to response ──
-        return {
-            "premises": [
-                {
-                    "title": p.title,
-                    "body": p.body[:200],
-                    "score": float(p.score) if p.score else None,
-                    "premise_type": p.premise_type,
-                    "user_comment": p.user_comment,
-                }
-                for p in premises
-            ]
-        }
-
-    async def get_negative_context(self, session, input_data) -> dict:
-        # ── State: unlock generation for rounds 2+ ──
-        self.state.negative_context_fetched = True
-        # ── IMPURE: read from DB ──
-        result = await self.db.execute(
-            select(Premise)
-            .where(Premise.session_id == session.id)
-            .where(Premise.score < 5.0)
-            .where(Premise.score.isnot(None))
-            .order_by(Premise.score.asc())
-        )
-        premises = result.scalars().all()
-        if not premises:
-            return {"negative_premises": [], "message": "No negative context yet."}
-        # ── PURE: transform to response ──
-        return {
-            "negative_premises": [
-                {
-                    "title": p.title,
-                    "score": float(p.score),
-                    "user_comment": p.user_comment,
-                }
-                for p in premises
-            ],
-            "message": (
-                "Avoid repeating the conceptual mistakes of these premises, "
-                "but do not avoid the same conceptual space."
-            ),
-        }
-
-    async def get_context_usage(self, session, input_data) -> dict:
-        # ── IMPURE: read token count ──
-        max_tokens = 1_000_000
-        used = session.total_tokens_used
-        num_rounds = max(len(session.rounds), 1)
-        # ── PURE: compute metrics ──
-        avg = used / num_rounds
-        return {
-            "tokens_used": used,
-            "tokens_limit": max_tokens,
-            "tokens_remaining": max_tokens - used,
-            "usage_percentage": round((used / max_tokens) * 100, 2),
-            "estimated_rounds_left": int((max_tokens - used) / avg) if avg > 0 else 999,
+            "message": f"Cross-pollination completed. Premise #{premise_index + 1} in buffer. {remaining} remaining.",
         }
 ```
+
+### Other Handler Modules (Structure Reference)
+
+The remaining handlers follow the same pattern — each is a focused class with 3-4 methods:
+
+| File | Class | Methods | Key Dependencies |
+|---|---|---|---|
+| `handle_analysis.py` | `AnalysisHandlers` | `decompose_problem`, `map_conventional_approaches`, `extract_hidden_axioms` | `core/domain_types.AnalysisGate` |
+| `handle_generation.py` | `GenerationHandlers` | `generate_premise`, `mutate_premise`, `cross_pollinate` | `core/enforce_gates.validate_generation_prerequisites` |
+| `handle_innovation.py` | `InnovationHandlers` | `challenge_axiom`, `import_foreign_domain`, `obviousness_test`, `invert_problem` | `core/enforce_round.evaluate_obviousness` |
+| `handle_interaction.py` | `InteractionHandlers` | `ask_user`, `present_round`, `generate_final_spec` | `core/enforce_round.validate_round_presentation`, `models/Round`, `models/Premise` |
+| `handle_memory.py` | `MemoryHandlers` | `store_premise`, `query_premises`, `get_negative_context`, `get_context_usage` | `models/Premise` (DB queries) |
 
 ---
 
 ## 2. Complete Tool Definitions (Anthropic Tool Use Format)
 
+Each tool category lives in its own file under `services/` — explicit, intent-revealing names (ExMA: no god files).
+
 ### Analysis Tools
 
 ```python
+# app/services/define_analysis_tools.py
+
+"""Analysis Tool Schemas — Anthropic Tool Use format for mandatory gate tools.
+
+Invariants:
+    - All 3 tools are mandatory gates: generate_premise/mutate_premise/cross_pollinate
+      return ERROR if any gate hasn't been called
+    - Schema matches Anthropic Tool Use specification exactly
+
+Design Decisions:
+    - One file per category: keeps each under 100 lines (ExMA: 200-400 limit)
+    - List export (not dict): Anthropic API expects a flat list of tool objects
+"""
+
 TOOLS_ANALYSIS = [
     {
         "name": "decompose_problem",
@@ -1644,6 +1428,20 @@ TOOLS_ANALYSIS = [
 ### Generation Tools
 
 ```python
+# app/services/define_generation_tools.py
+
+"""Generation Tool Schemas — Anthropic Tool Use format for premise creation tools.
+
+Invariants:
+    - All 3 tools are gate-checked: ERROR if analysis gates not satisfied
+    - Buffer limit enforced: ERROR if buffer already has 3 premises
+    - Radical type requires prior challenge_axiom call
+
+Design Decisions:
+    - premise_type enum defined in schema (not just domain_types): Anthropic validates
+      the enum server-side before tool_use reaches our handlers
+"""
+
 TOOLS_GENERATION = [
     {
         "name": "generate_premise",
@@ -1776,6 +1574,20 @@ TOOLS_GENERATION = [
 ### Innovation Tools
 
 ```python
+# app/services/define_innovation_tools.py
+
+"""Innovation Tool Schemas — Anthropic Tool Use format for originality enforcement tools.
+
+Invariants:
+    - challenge_axiom unlocks radical premise type (enforced in handle_generation)
+    - obviousness_test score > 0.6 triggers auto-removal from buffer
+    - invert_problem has no prerequisites but feeds into generation strategy
+
+Design Decisions:
+    - obviousness_score range (0.0–1.0) enforced in schema: catches invalid scores
+      before reaching core/enforce_round.evaluate_obviousness
+"""
+
 TOOLS_INNOVATION = [
     {
         "name": "challenge_axiom",
@@ -1883,6 +1695,20 @@ TOOLS_INNOVATION = [
 ### Interaction Tools
 
 ```python
+# app/services/define_interaction_tools.py
+
+"""Interaction Tool Schemas — Anthropic Tool Use format for user-facing tools.
+
+Invariants:
+    - All 3 tools pause the agent loop (awaiting_user_input = True)
+    - present_round requires buffer == 3 AND all premises tested
+    - generate_final_spec requires prior "Problem Resolved" from user
+
+Design Decisions:
+    - spec_content as single string field: the agent generates complete Markdown in one call,
+      no incremental assembly — simpler persistence and download (ADR: hackathon)
+"""
+
 TOOLS_INTERACTION = [
     {
         "name": "ask_user",
@@ -2009,6 +1835,20 @@ TOOLS_INTERACTION = [
 ### Memory Tools
 
 ```python
+# app/services/define_memory_tools.py
+
+"""Memory Tool Schemas — Anthropic Tool Use format for persistence and context tools.
+
+Invariants:
+    - get_negative_context must be called before generation in rounds 2+
+    - get_context_usage reflects actual token counts from session.total_tokens_used
+    - store_premise writes to DB — only tool in this category with side effects
+
+Design Decisions:
+    - query_premises filter as enum in schema: prevents arbitrary queries,
+      Anthropic validates before reaching handler (ADR: security boundary)
+"""
+
 TOOLS_MEMORY = [
     {
         "name": "store_premise",
@@ -2085,17 +1925,15 @@ Design Decisions:
     - max_uses=5 on web_search: controls cost ($10/1000) and context token usage per turn
 """
 
-from app.services.tool_definitions import (
-    TOOLS_ANALYSIS,
-    TOOLS_GENERATION,
-    TOOLS_INNOVATION,
-    TOOLS_INTERACTION,
-    TOOLS_MEMORY,
-)
+from app.services.define_analysis_tools import TOOLS_ANALYSIS
+from app.services.define_generation_tools import TOOLS_GENERATION
+from app.services.define_innovation_tools import TOOLS_INNOVATION
+from app.services.define_interaction_tools import TOOLS_INTERACTION
+from app.services.define_memory_tools import TOOLS_MEMORY
 
 # ADR: web_search is an Anthropic built-in tool (server-side, not custom).
 # Uses a different schema format (type instead of name+input_schema).
-# Anthropic handles execution — no ToolHandlers method needed.
+# Anthropic handles execution — no handler method needed.
 # Pricing: $10/1000 searches, billed to the same ANTHROPIC_API_KEY.
 WEB_SEARCH_TOOL = {
     "type": "web_search_20250305",
@@ -2131,7 +1969,7 @@ Invariants:
 Design Decisions:
     - Anthropic messages.create (not streaming API): SSE delivery to frontend is separate
       from Anthropic API streaming — we control the SSE shape (ADR: hackathon simplicity)
-    - ToolHandlers instantiated per-iteration: fresh handler with current DB session
+    - ToolDispatch instantiated per-iteration: fresh dispatch with current DB session
     - pause_turn handling: web_search may cause Anthropic to return pause_turn,
       we continue the loop transparently (ADR: web_search integration)
 """
@@ -2143,7 +1981,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.services.tool_handlers import ToolHandlers
+from app.services.tool_dispatch import ToolDispatch
 from app.core.session_state import SessionState
 from app.services.tools_registry import ALL_TOOLS
 from app.services.system_prompt import AGENT_SYSTEM_PROMPT
@@ -2263,14 +2101,14 @@ class AgentRunner:
                 serialized_content = [block.model_dump() for block in assistant_content]
                 messages.append({"role": "assistant", "content": serialized_content})
                 tool_results = []
-                handlers = ToolHandlers(self.db, session_state)
+                dispatch = ToolDispatch(self.db, session_state)
 
                 for block in assistant_content:
                     if block.type != "tool_use":
                         continue
 
                     result = await self._execute_tool_safe(
-                        handlers, session, block.name, block.input
+                        dispatch, session, block.name, block.input
                     )
 
                     # Forward errors to frontend
@@ -2344,24 +2182,16 @@ class AgentRunner:
             }
             yield {"type": "done", "data": {"error": True, "awaiting_input": False}}
 
-    async def _execute_tool_safe(self, handlers, session, tool_name, tool_input) -> dict:
+    async def _execute_tool_safe(self, dispatch: ToolDispatch, session, tool_name, tool_input) -> dict:
         """
         Execute tool with error boundary — never raises, always returns dict.
 
-        - Unknown tool → UNKNOWN_TOOL error
+        - Unknown tool → UNKNOWN_TOOL error (handled by ToolDispatch)
         - GhostPathError → converted to response dict
         - Any exception → logged + TOOL_EXECUTION_ERROR
         """
         try:
-            handler = getattr(handlers, tool_name, None)
-            if handler is None:
-                logger.warning(f"Unknown tool called: {tool_name}")
-                return {
-                    "status": "error",
-                    "error_code": "UNKNOWN_TOOL",
-                    "message": f"Tool '{tool_name}' does not exist.",
-                }
-            return await handler(session, tool_input)
+            return await dispatch.execute(tool_name, session, tool_input)
 
         except GhostPathError as e:
             logger.warning(f"Tool error: {e.message}",
@@ -2922,42 +2752,33 @@ async def readiness_check():
 ### Session Routes (Complete API)
 
 ```python
-# app/api/routes/sessions.py
+# app/api/routes/session_lifecycle.py
 
-"""Session Routes — CRUD, SSE streaming, user input, and spec download.
+"""Session Lifecycle — CRUD operations and in-memory state management.
 
 Invariants:
-    - Every SSE stream instantiates AgentRunner with fresh DB session and Anthropic client
     - SessionState is per-session, in-memory (module-level dict)
     - User input is validated by Pydantic before reaching the route handler
-    - Spec files saved to /tmp/ghostpath/specs/{session_id}.md
+    - _session_states dict is the single source for in-memory state (shared with agent_stream)
 
 Design Decisions:
     - _session_states as module-level dict: deliberate exception to no-global-state rule
       (ADR: hackathon — single-process uvicorn, no multi-worker, state lost on restart)
-    - StreamingResponse for SSE: event_generator yields formatted SSE lines
-    - ResilientAnthropicClient instantiated per-request: settings may change between requests
+    - _get_session_or_404 exported for reuse by session_agent_stream (DRY over duplication)
 """
 
-import json
-import os
 import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import StreamingResponse, FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.database import get_db
-from app.infrastructure.anthropic_client import ResilientAnthropicClient
 from app.models.session import Session as SessionModel
-from app.models.premise import Premise
-from app.schemas.session import SessionCreate, SessionResponse, UserInput
-from app.services.agent_runner import AgentRunner
+from app.schemas.session import SessionCreate, SessionResponse
 from app.core.session_state import SessionState
 from app.core.errors import ResourceNotFoundError
-from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])
@@ -2968,7 +2789,19 @@ router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])
 _session_states: dict[UUID, SessionState] = {}
 
 
-# ─── CRUD ────────────────────────────────────────────────────────
+async def get_session_or_404(session_id: UUID, db: AsyncSession) -> SessionModel:
+    """Get session or raise 404 with standardized error. Exported for agent_stream."""
+    result = await db.execute(
+        select(SessionModel).where(SessionModel.id == session_id)
+    )
+    session = result.scalar_one_or_none()
+    if not session:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=ResourceNotFoundError("Session", str(session_id)).to_response(),
+        )
+    return session
+
 
 @router.post("", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
 async def create_session(body: SessionCreate, db: AsyncSession = Depends(get_db)):
@@ -3026,7 +2859,7 @@ async def list_sessions(
 @router.get("/{session_id}")
 async def get_session(session_id: UUID, db: AsyncSession = Depends(get_db)):
     """Get session details. Returns 404 if not found."""
-    session = await _get_session_or_404(session_id, db)
+    session = await get_session_or_404(session_id, db)
     return {
         "id": str(session.id),
         "problem": session.problem,
@@ -3047,7 +2880,7 @@ async def delete_session(session_id: UUID, db: AsyncSession = Depends(get_db)):
         404: Not found
         409: Cannot delete active session
     """
-    session = await _get_session_or_404(session_id, db)
+    session = await get_session_or_404(session_id, db)
     if session.status == "active":
         raise HTTPException(status.HTTP_409_CONFLICT, detail="Cannot delete active session")
     await db.delete(session)
@@ -3065,16 +2898,53 @@ async def cancel_session(session_id: UUID, db: AsyncSession = Depends(get_db)):
         400: Session not active
         404: Not found
     """
-    session = await _get_session_or_404(session_id, db)
+    session = await get_session_or_404(session_id, db)
     if session.status != "active":
         raise HTTPException(status.HTTP_400_BAD_REQUEST,
                             detail=f"Cannot cancel session with status '{session.status}'")
     session.status = "cancelled"
     await db.commit()
     return {"message": "Session cancelled"}
+```
 
+```python
+# app/api/routes/session_agent_stream.py
 
-# ─── SSE STREAMS ─────────────────────────────────────────────────
+"""Session Agent Stream — SSE streaming, user input processing, and spec download.
+
+Invariants:
+    - Every SSE stream instantiates AgentRunner with fresh DB session and Anthropic client
+    - Spec files saved to /tmp/ghostpath/specs/{session_id}.md
+    - User input types: "scores" | "ask_user_response" | "resolved"
+
+Design Decisions:
+    - Imports _session_states and get_session_or_404 from session_lifecycle (shared state, DRY)
+    - StreamingResponse for SSE: event_generator yields formatted SSE lines
+    - ResilientAnthropicClient instantiated per-request: settings may change between requests
+"""
+
+import json
+import os
+import logging
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse, FileResponse
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.infrastructure.database import get_db
+from app.infrastructure.anthropic_client import ResilientAnthropicClient
+from app.models.premise import Premise
+from app.schemas.session import UserInput
+from app.services.agent_runner import AgentRunner
+from app.core.session_state import SessionState
+from app.config import get_settings
+from app.api.routes.session_lifecycle import _session_states, get_session_or_404
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])
+
 
 @router.get("/{session_id}/stream")
 async def stream_session(session_id: UUID, db: AsyncSession = Depends(get_db)):
@@ -3083,7 +2953,7 @@ async def stream_session(session_id: UUID, db: AsyncSession = Depends(get_db)):
 
     Returns 404 if session not found, otherwise streams SSE events.
     """
-    session = await _get_session_or_404(session_id, db)
+    session = await get_session_or_404(session_id, db)
     session_state = _session_states.setdefault(session_id, SessionState())
     settings = get_settings()
     client = ResilientAnthropicClient(
@@ -3120,7 +2990,7 @@ async def send_user_input(
     - scores requires exactly 3 items with score in 0.0–10.0
     - resolved requires winner info with index 0–2
     """
-    session = await _get_session_or_404(session_id, db)
+    session = await get_session_or_404(session_id, db)
     session_state = _session_states.setdefault(session_id, SessionState())
     settings = get_settings()
     client = ResilientAnthropicClient(
@@ -3133,7 +3003,7 @@ async def send_user_input(
     # Format message based on input type
     match body.type:
         case "scores":
-            message = _format_scores_message(body.scores)
+            message = format_scores_message(body.scores)
             for s in body.scores:
                 await _update_premise_score(db, session_id, s)
 
@@ -3169,8 +3039,6 @@ async def send_user_input(
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
-# ─── SPEC DOWNLOAD ───────────────────────────────────────────────
-
 @router.get("/{session_id}/spec")
 async def download_spec(session_id: UUID):
     """Download the final spec as a .md file. Returns 404 if not generated yet."""
@@ -3184,23 +3052,7 @@ async def download_spec(session_id: UUID):
     )
 
 
-# ─── HELPERS ─────────────────────────────────────────────────────
-
-async def _get_session_or_404(session_id: UUID, db: AsyncSession) -> SessionModel:
-    """Get session or raise 404 with standardized error."""
-    result = await db.execute(
-        select(SessionModel).where(SessionModel.id == session_id)
-    )
-    session = result.scalar_one_or_none()
-    if not session:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail=ResourceNotFoundError("Session", str(session_id)).to_response(),
-        )
-    return session
-
-
-def _format_scores_message(scores: list) -> str:
+def format_scores_message(scores: list) -> str:
     lines = []
     for s in scores:
         line = f"- \"{s.premise_title}\": {s.score}/10"
@@ -3284,7 +3136,7 @@ from app.core.errors import GhostPathError, ErrorSeverity
 from app.infrastructure.database import init_db
 from app.infrastructure.observability import setup_logging
 from app.config import get_settings
-from app.api.routes import health, sessions
+from app.api.routes import health, session_lifecycle, session_agent_stream
 
 logger = logging.getLogger(__name__)
 
@@ -3313,9 +3165,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routes
+# Routes — explicit registration (ExMA: no convention-over-config)
 app.include_router(health.router)
-app.include_router(sessions.router)
+app.include_router(session_lifecycle.router)
+app.include_router(session_agent_stream.router)
 
 
 # ─── GLOBAL ERROR HANDLERS ──────────────────────────────────────
@@ -3536,56 +3389,68 @@ ghost-path/
 │   ├── alembic/
 │   │   └── versions/
 │   ├── app/
-│   │   ├── main.py                          # FastAPI app + global error handlers
-│   │   ├── config.py                        # pydantic-settings configuration
+│   │   ├── main.py                              # FastAPI app + global error handlers
+│   │   ├── config.py                            # pydantic-settings configuration
 │   │   │
-│   │   │  ┌─────────────────────────────────────────────────┐
-│   │   │  │ CORE (pure) — no IO, no async, no DB           │
-│   │   │  │ Dependency arrows point INWARD only             │
-│   │   │  └─────────────────────────────────────────────────┘
+│   │   │  ┌──────────────────────────────────────────────────────┐
+│   │   │  │ CORE (pure) — no IO, no async, no DB                │
+│   │   │  │ Dependency arrows point INWARD only                  │
+│   │   │  └──────────────────────────────────────────────────────┘
 │   │   ├── core/
-│   │   │   ├── domain_types.py              # Rich types: SessionId, PremiseScore, enums (ExMA: Types as Docs)
-│   │   │   ├── protocols.py                 # Boundary contracts: PremiseRepository, SessionRepository (ExMA: Protocols)
-│   │   │   ├── enforcement.py              # Pure validation: 6 inviolable rules (ExMA: Functional Core)
-│   │   │   ├── session_state.py            # Per-session enforcement state (pure dataclass, no IO)
-│   │   │   └── errors.py                    # Error hierarchy (GhostPathError + subtypes)
+│   │   │   ├── domain_types.py                  # Rich types: SessionId, PremiseScore, enums
+│   │   │   ├── repository_protocols.py          # Boundary contracts: PremiseRepository, SessionRepository
+│   │   │   ├── enforce_gates.py                 # Pure gate checks: check_gates, validate_generation_prerequisites
+│   │   │   ├── enforce_round.py                 # Pure round checks: evaluate_obviousness, validate_round_presentation
+│   │   │   ├── session_state.py                 # Per-session enforcement state (pure dataclass, no IO)
+│   │   │   └── errors.py                        # Error hierarchy (GhostPathError + subtypes)
 │   │   │
-│   │   │  ┌─────────────────────────────────────────────────┐
-│   │   │  │ SHELL (impure) — IO, async, DB, external APIs   │
-│   │   │  │ Imports from core, never the reverse            │
-│   │   │  └─────────────────────────────────────────────────┘
+│   │   │  ┌──────────────────────────────────────────────────────┐
+│   │   │  │ SHELL (impure) — IO, async, DB, external APIs        │
+│   │   │  │ Imports from core, never the reverse                 │
+│   │   │  └──────────────────────────────────────────────────────┘
 │   │   ├── infrastructure/
-│   │   │   ├── anthropic_client.py          # Resilient Anthropic wrapper (retry/backoff)
-│   │   │   ├── database.py                  # DB session manager (pool/rollback)
-│   │   │   └── observability.py             # Structured JSON logging
+│   │   │   ├── anthropic_client.py              # Resilient Anthropic wrapper (retry/backoff)
+│   │   │   ├── database.py                      # DB session manager (pool/rollback)
+│   │   │   └── observability.py                 # Structured JSON logging
 │   │   ├── db/
-│   │   │   ├── base.py                      # SQLAlchemy declarative Base
-│   │   │   └── session.py                   # Async session factory
+│   │   │   ├── base.py                          # SQLAlchemy declarative Base
+│   │   │   └── session.py                       # Async session factory
 │   │   ├── models/
-│   │   │   ├── session.py                   # Session ORM
-│   │   │   ├── round.py                     # Round ORM
-│   │   │   ├── premise.py                   # Premise ORM
-│   │   │   └── tool_call.py                 # ToolCall ORM (logging)
+│   │   │   ├── session.py                       # Session ORM
+│   │   │   ├── round.py                         # Round ORM
+│   │   │   ├── premise.py                       # Premise ORM
+│   │   │   └── tool_call.py                     # ToolCall ORM (logging)
 │   │   ├── schemas/
-│   │   │   ├── session.py                   # Validated Pydantic models (Field constraints)
+│   │   │   ├── session.py                       # Validated Pydantic models (Field constraints)
 │   │   │   └── agent.py
-│   │   ├── api/
-│   │   │   └── routes/
-│   │   │       ├── health.py                # Health/readiness probes
-│   │   │       └── sessions.py              # Session CRUD + SSE streams
+│   │   ├── api/routes/
+│   │   │   ├── health.py                        # Health/readiness probes
+│   │   │   ├── session_lifecycle.py             # Session CRUD (create, list, get, delete, cancel)
+│   │   │   └── session_agent_stream.py          # SSE streaming, user-input, spec download
 │   │   └── services/
-│   │       ├── agent_runner.py              # Resilient runner (MAX_ITERATIONS, error isolation)
-│   │       ├── tool_handlers.py             # Impureim sandwich: read → core.enforcement → write
-│   │       ├── tool_definitions.py          # 17 tool JSON schemas (Anthropic format)
-│   │       ├── tools_registry.py            # ALL_TOOLS = analysis + generation + innovation + interaction + memory
-│   │       └── system_prompt.py             # AGENT_SYSTEM_PROMPT constant
+│   │       ├── agent_runner.py                  # Resilient runner (MAX_ITERATIONS, error isolation)
+│   │       ├── tool_dispatch.py                 # Explicit tool routing dict (no getattr, no magic)
+│   │       ├── handle_analysis.py               # AnalysisHandlers: gate tools (3 methods)
+│   │       ├── handle_generation.py             # GenerationHandlers: premise creation (3 methods)
+│   │       ├── handle_innovation.py             # InnovationHandlers: originality tools (4 methods)
+│   │       ├── handle_interaction.py            # InteractionHandlers: user-facing tools (3 methods)
+│   │       ├── handle_memory.py                 # MemoryHandlers: persistence tools (4 methods)
+│   │       ├── define_analysis_tools.py         # Gate tool schemas (Anthropic format)
+│   │       ├── define_generation_tools.py       # Generation tool schemas
+│   │       ├── define_innovation_tools.py       # Innovation tool schemas
+│   │       ├── define_interaction_tools.py      # Interaction tool schemas
+│   │       ├── define_memory_tools.py           # Memory tool schemas
+│   │       ├── tools_registry.py                # ALL_TOOLS = flat list for Anthropic API
+│   │       └── system_prompt.py                 # AGENT_SYSTEM_PROMPT constant
 │   └── tests/
-│       ├── core/                            # Pure core tests — no mocks, no fixtures
+│       ├── core/                                # Pure core tests — no mocks, no fixtures
 │       │   ├── test_session_state.py
-│       │   ├── test_enforcement.py          # Tests for all 6 enforcement rules
+│       │   ├── test_enforce_gates.py            # Tests for gate enforcement rules
+│       │   ├── test_enforce_round.py            # Tests for round enforcement rules
 │       │   └── test_domain_types.py
-│       └── services/                        # Shell tests — async fixtures, test DB
-│           ├── test_tool_handlers.py
+│       └── services/                            # Shell tests — async fixtures, test DB
+│           ├── test_tool_dispatch.py            # Tests for explicit tool routing
+│           ├── test_handle_generation.py        # Tests for generation handlers
 │           └── test_agent_runner.py
 └── frontend/
     ├── Dockerfile
@@ -3623,15 +3488,17 @@ ghost-path/
 
 ### ExMA Compliance Map
 
-| ExMA Pilar | Where Enforced | Key Files |
+| ExMA Pillar | Where Enforced | Key Files |
 |---|---|---|
-| Functional Core, Imperative Shell | `core/` = pure, `services/` = impure shell | `core/enforcement.py`, `services/tool_handlers.py` |
-| Impureim Sandwich | Every handler: read → pure validate → write | `services/tool_handlers.py` |
+| Functional Core, Imperative Shell | `core/` = pure, `services/` = impure shell | `core/enforce_gates.py`, `core/enforce_round.py`, `services/handle_*.py` |
+| Impureim Sandwich | Every handler: read → pure validate → write | `services/handle_generation.py` (representative) |
 | Types as Documentation | Rich types replace bare primitives | `core/domain_types.py` |
-| Protocols at Boundaries | Core never imports shell; Protocol contracts | `core/protocols.py` |
+| Protocols at Boundaries | Core never imports shell; Protocol contracts | `core/repository_protocols.py` |
 | Module Headers | Every file: invariants + design decisions | All `.py` files |
 | ADR Inline | Trade-offs documented near code | `core/session_state.py` (in-memory ADR) |
 | Tests as Specification | Behavior-named tests, pure core tested without mocks | `tests/core/`, `tests/services/` |
-| No God Objects | ToolHandlers split by category if >7 methods | `services/tool_handlers.py` |
-| No Deep Inheritance | Protocol + composition, no BaseHandler | `core/protocols.py` |
-| No Convention-over-Config | Explicit route registration, no auto-discovery | `main.py` |
+| No God Objects | Handlers split by category (3-4 methods each) | `services/handle_*.py` + `tool_dispatch.py` |
+| No Deep Inheritance | Protocol + composition, no BaseHandler | `core/repository_protocols.py` |
+| No Convention-over-Config | Explicit route registration, explicit tool dispatch dict | `main.py`, `services/tool_dispatch.py` |
+| Intent-Revealing Names | Every file name screams its purpose | `enforce_gates.py`, `handle_generation.py`, `define_analysis_tools.py` |
+| Hard Limits | 200-400 lines/file, <50 lines/function, <10 fan-out | All files (verified per split) |
