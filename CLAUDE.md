@@ -191,6 +191,7 @@ These terms have precise meaning across all code, tests, API, and UI. Use them c
 | **Score** | User's 0.0–10.0 rating of a premise | "rating", "grade", "evaluation" |
 | **Winner** | The premise the user selects when triggering "Problem Resolved" | "chosen", "selected", "best" |
 | **Spec** | The final .md document generated from the winning premise | "report", "document", "output" |
+| **Research** | Web search for real-world evidence to ground or validate premises | "lookup", "google", "browse" |
 
 ### Aggregate: Session
 
@@ -227,6 +228,7 @@ These are not persisted — they're the logical events that drive the agent loop
 - `PremiseRejectedAsObvious(index: int, score: float)` — obviousness_test > 0.6
 - `RoundPresented(round_number: int)` — present_round succeeded, resets triggered
 - `SessionResolved(winner_title: str)` — user triggered Problem Resolved
+- `ResearchCompleted(query: str, results_count: int)` — web research returned results
 
 These map directly to SSE events emitted to the frontend.
 
@@ -255,7 +257,7 @@ backend/app/
 └── services/
     ├── agent_runner.py        # Agentic loop (while True until no tool_use)
     ├── tool_handlers.py       # ToolHandlers class — gate enforcement, buffer, DB writes
-    ├── tool_definitions.py    # 17 tool JSON schemas (Anthropic format)
+    ├── tool_definitions.py    # 18 tool JSON schemas (Anthropic format)
     ├── tools_registry.py      # ALL_TOOLS = analysis + generation + innovation + interaction + memory
     ├── session_state.py       # SessionState dataclass (in-memory per session)
     └── system_prompt.py       # AGENT_SYSTEM_PROMPT constant
@@ -284,7 +286,7 @@ frontend/src/
     └── ReportPage.tsx
 ```
 
-## The 17 Tools (5 Categories)
+## The 18 Tools (5 Categories)
 
 ### Analysis Tools (mandatory gates)
 | Tool | Purpose |
@@ -307,6 +309,7 @@ frontend/src/
 | `import_foreign_domain` | Find analogy from semantically distant domain |
 | `obviousness_test` | Test premise in buffer. **Score > 0.6 = auto-removed, must regenerate** |
 | `invert_problem` | Munger's inversion technique |
+| `research_premises` | Search the web for real-world evidence. **Not a gate — agent decides when to use** |
 
 ### Interaction Tools
 | Tool | Purpose |
@@ -436,6 +439,7 @@ Lives in `services/system_prompt.py`. Key aspects:
 ```env
 ANTHROPIC_API_KEY=sk-ant-...
 DATABASE_URL=postgresql+asyncpg://ghostpath:ghostpath@db:5432/ghostpath
+BRAVE_SEARCH_API_KEY=BSA...   # Optional — research_premises degrades gracefully without it
 ```
 
 Docker Compose services: `backend` (FastAPI/Uvicorn), `frontend` (Vite dev or nginx), `db` (PostgreSQL 18).
