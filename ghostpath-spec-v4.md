@@ -109,6 +109,19 @@ Tool and system errors within the SSE stream follow this format:
 ```python
 # app/core/errors.py
 
+"""Error Hierarchy — typed, categorized exceptions for all GhostPath failure modes.
+
+Invariants:
+    - Every error has a code (str), category (ErrorCategory), severity (ErrorSeverity)
+    - Domain errors (400-level) are recoverable; infrastructure errors (500-level) are critical
+    - to_response() produces REST envelope; to_sse_event() produces SSE envelope
+    - No internal details leaked in user-facing messages
+
+Design Decisions:
+    - Single hierarchy with GhostPathError base: FastAPI global handler catches all (ADR: uniform error shape)
+    - ErrorContext as dataclass: rich observability without coupling to logging framework
+"""
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -359,6 +372,19 @@ The Anthropic client is wrapped with exponential backoff, jitter, rate limit det
 ```python
 # app/infrastructure/anthropic_client.py
 
+"""Resilient Anthropic Client — wraps AsyncAnthropic with retry, backoff, and error mapping.
+
+Invariants:
+    - Rate limits (429): exponential backoff with jitter, respects Retry-After header
+    - Transient errors (5xx, connection): max 3 retries with exponential backoff
+    - Client errors (4xx except 429): immediate failure, no retry
+    - All failures mapped to AnthropicAPIError (core/errors.py)
+
+Design Decisions:
+    - Wrapper over raw client: isolates retry logic from agent_runner (ADR: single responsibility)
+    - ±25% jitter on backoff: prevents thundering herd on shared rate limits
+"""
+
 import asyncio
 import random
 import logging
@@ -494,6 +520,18 @@ All database operations use a session manager with automatic rollback, connectio
 ```python
 # app/infrastructure/database.py
 
+"""Database Session Manager — async connection pool with automatic rollback and health checks.
+
+Invariants:
+    - Every session auto-rolls-back on exception (no partial commits leak)
+    - Connection pool uses pool_pre_ping for stale connection detection
+    - All SQLAlchemy exceptions mapped to DatabaseError (core/errors.py)
+
+Design Decisions:
+    - Singleton db_manager initialized on startup: FastAPI lifespan manages lifecycle (ADR: no global import side effects)
+    - expire_on_commit=False: prevents lazy-load issues in async context
+"""
+
 import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -590,6 +628,18 @@ All modules use structured JSON logging with context fields.
 ```python
 # app/infrastructure/observability.py
 
+"""Structured Logging — JSON formatter and setup for production observability.
+
+Invariants:
+    - All logs include timestamp, level, logger name, and message
+    - Extra fields (session_id, tool_name, error_code) surfaced when present
+    - JSON format in production, human-readable in development
+
+Design Decisions:
+    - JSONFormatter over third-party libs: zero dependencies, full control (ADR: hackathon simplicity)
+    - setup_logging called once on startup via lifespan
+"""
+
 import logging
 import json
 from datetime import datetime, timezone
@@ -635,6 +685,17 @@ def setup_logging(level: str = "INFO", fmt: str = "json"):
 
 ```python
 # app/config.py
+
+"""Application Configuration — environment-driven settings via pydantic-settings.
+
+Invariants:
+    - All secrets come from environment variables (never hardcoded)
+    - get_settings() is cached (lru_cache) — single instance per process
+
+Design Decisions:
+    - pydantic-settings over raw os.environ: validation, type coercion, .env file support (ADR: developer UX)
+    - Defaults provided for all non-secret settings: works out-of-the-box with docker-compose
+"""
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
@@ -2012,6 +2073,18 @@ TOOLS_MEMORY = [
 ```python
 # app/services/tools_registry.py
 
+"""Tools Registry — explicit assembly of all 17 custom tools + 1 built-in.
+
+Invariants:
+    - ALL_TOOLS is the single source of truth passed to Anthropic messages.create()
+    - web_search uses Anthropic built-in format (type instead of name+input_schema)
+    - No auto-discovery — every tool is registered explicitly (ExMA: no convention-over-config)
+
+Design Decisions:
+    - Flat list over registry pattern: Anthropic API expects a list, no need for lookup (ADR: simplicity)
+    - max_uses=5 on web_search: controls cost ($10/1000) and context token usage per turn
+"""
+
 from app.services.tool_definitions import (
     TOOLS_ANALYSIS,
     TOOLS_GENERATION,
@@ -2047,6 +2120,22 @@ ALL_TOOLS = (
 ```python
 # app/services/agent_runner.py
 
+"""Agent Runner — async agentic loop that orchestrates Claude tool calls and SSE delivery.
+
+Invariants:
+    - Max 50 iterations per run (AgentLoopExceededError if exceeded)
+    - Tool errors never crash the loop — _execute_tool_safe catches all exceptions
+    - Interaction tools (present_round, ask_user, generate_final_spec) pause the loop
+    - Message history saved to DB on pause for session resumption
+
+Design Decisions:
+    - Anthropic messages.create (not streaming API): SSE delivery to frontend is separate
+      from Anthropic API streaming — we control the SSE shape (ADR: hackathon simplicity)
+    - ToolHandlers instantiated per-iteration: fresh handler with current DB session
+    - pause_turn handling: web_search may cause Anthropic to return pause_turn,
+      we continue the loop transparently (ADR: web_search integration)
+"""
+
 import asyncio
 import json
 import logging
@@ -2065,13 +2154,6 @@ logger = logging.getLogger(__name__)
 
 
 class AgentRunner:
-    """
-    Agent runner with:
-    - MAX_ITERATIONS guard against infinite loops
-    - Tool error isolation (_execute_tool_safe)
-    - SSE stream error boundary (asyncio.CancelledError, generic Exception)
-    - Non-fatal fallbacks for token usage and message history commits
-    """
 
     MAX_ITERATIONS = 50
 
@@ -2709,6 +2791,19 @@ Frontend                        Backend                           Agent
 ```python
 # app/schemas/session.py
 
+"""Session Schemas — Pydantic models with field-level validation for API boundaries.
+
+Invariants:
+    - SessionCreate.problem: 10–10000 chars, stripped, non-empty
+    - PremiseScore.score: 0.0–10.0, rounded to 1 decimal
+    - UserInput cross-validates: scores requires 3 items, resolved requires winner
+    - WinnerInfo.index: 0–2 (exactly 3 premises per round)
+
+Design Decisions:
+    - Literal type for UserInput.type over str enum: Pydantic handles validation natively
+    - field_validator for side-effect-free transforms (strip, round) — keeps models pure
+"""
+
 from pydantic import BaseModel, Field, field_validator, model_validator
 from uuid import UUID
 from typing import Literal
@@ -2779,6 +2874,17 @@ class UserInput(BaseModel):
 ```python
 # app/api/routes/health.py
 
+"""Health & Readiness Probes — liveness and readiness endpoints for container orchestration.
+
+Invariants:
+    - GET /health/ always returns 200 if process is up (liveness)
+    - GET /health/ready returns 503 if database is unreachable (readiness)
+
+Design Decisions:
+    - Separate liveness/readiness: Kubernetes best practice — liveness restarts,
+      readiness removes from load balancer (ADR: production readiness)
+"""
+
 import logging
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
@@ -2818,6 +2924,21 @@ async def readiness_check():
 ```python
 # app/api/routes/sessions.py
 
+"""Session Routes — CRUD, SSE streaming, user input, and spec download.
+
+Invariants:
+    - Every SSE stream instantiates AgentRunner with fresh DB session and Anthropic client
+    - SessionState is per-session, in-memory (module-level dict)
+    - User input is validated by Pydantic before reaching the route handler
+    - Spec files saved to /tmp/ghostpath/specs/{session_id}.md
+
+Design Decisions:
+    - _session_states as module-level dict: deliberate exception to no-global-state rule
+      (ADR: hackathon — single-process uvicorn, no multi-worker, state lost on restart)
+    - StreamingResponse for SSE: event_generator yields formatted SSE lines
+    - ResilientAnthropicClient instantiated per-request: settings may change between requests
+"""
+
 import json
 import os
 import logging
@@ -2841,7 +2962,9 @@ from app.config import get_settings
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])
 
-# In-memory session states (production → Redis/DB)
+# ADR: SessionState is in-memory (not DB/Redis)
+# Context: hackathon — single-process uvicorn, no multi-worker
+# Trade-off: state lost on restart, acceptable for demo
 _session_states: dict[UUID, SessionState] = {}
 
 
@@ -3134,6 +3257,20 @@ async def _update_premise_score(db: AsyncSession, session_id: UUID, score_data) 
 
 ```python
 # app/main.py
+
+"""GhostPath API — FastAPI application entry point.
+
+Invariants:
+    - Routes registered explicitly (no auto-discovery — ExMA anti-pattern)
+    - Global error handlers map GhostPathError → structured JSON responses
+    - CORS configured from settings (not hardcoded)
+    - Database initialized on startup via lifespan context manager
+
+Design Decisions:
+    - Lifespan over @app.on_event: FastAPI recommended pattern, cleaner cleanup (ADR: FastAPI 0.128)
+    - Three error handler layers: GhostPathError (domain), RequestValidationError (Pydantic),
+      Exception (catch-all) — never leaks internal details
+"""
 
 import logging
 from contextlib import asynccontextmanager
