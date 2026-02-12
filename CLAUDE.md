@@ -106,7 +106,7 @@ Tests are written **before or alongside** implementation, never after. No code i
 
 **Pure core functions** — test directly, no mocks needed:
 ```python
-# tests/test_session_state.py
+# tests/core/test_session_state.py
 def test_rejects_premise_generation_before_all_gates_pass():
     state = SessionState()
     state.completed_gates.add(AnalysisGate.DECOMPOSE)
@@ -120,17 +120,41 @@ def test_buffer_holds_exactly_3_premises_per_round():
         state.current_round_buffer.append({"title": f"P{i}"})
     assert state.premises_remaining == 0
 
-def test_obviousness_score_above_threshold_rejects_premise():
-    # score > 0.6 must trigger removal from buffer
-    ...
-
 def test_round_reset_clears_buffer_and_flags():
     state = SessionState()
     state.axiom_challenged = True
     state.negative_context_fetched = True
     state.current_round_buffer.append({"title": "P1"})
-    # after present_round, everything resets
-    ...
+    state.reset_for_next_round()
+    assert state.current_round_buffer == []
+    assert state.axiom_challenged is False
+    assert state.negative_context_fetched is False
+
+# tests/core/test_enforcement.py — pure validation, no mocks
+def test_check_gates_returns_error_when_gates_incomplete():
+    state = SessionState()
+    state.completed_gates.add(AnalysisGate.DECOMPOSE)
+    error = check_gates(state)
+    assert error is not None
+    assert error["error_code"] == "GATES_NOT_SATISFIED"
+
+def test_validate_generation_prerequisites_chains_all_checks():
+    state = SessionState()  # no gates
+    error = validate_generation_prerequisites(state, "initial")
+    assert error["error_code"] == "GATES_NOT_SATISFIED"
+
+def test_evaluate_obviousness_rejects_above_threshold():
+    state = SessionState()
+    state.current_round_buffer.append({"title": "P1"})
+    result = evaluate_obviousness(state, 0, 0.7)
+    assert result["status"] == "rejected"
+    assert result["error_code"] == "TOO_OBVIOUS"
+
+def test_evaluate_obviousness_passes_below_threshold():
+    state = SessionState()
+    state.current_round_buffer.append({"title": "P1"})
+    result = evaluate_obviousness(state, 0, 0.4)
+    assert result["status"] == "ok"
 ```
 
 **Shell functions** (handlers, routes, agent runner) — use async fixtures with test DB:
@@ -171,7 +195,9 @@ test("pauses stream on ask_user event and waits for response", () => { ... });
 - Error paths: what happens when the agent violates a rule
 
 ### Test file location
-Backend: `backend/tests/` mirroring `app/` structure (`tests/services/test_tool_handlers.py`, `tests/services/test_session_state.py`)
+Backend: `backend/tests/` mirroring `app/` structure:
+- `tests/core/test_session_state.py`, `tests/core/test_enforcement.py`, `tests/core/test_domain_types.py` — pure, no mocks
+- `tests/services/test_tool_handlers.py`, `tests/services/test_agent_runner.py` — async fixtures with test DB
 Frontend: colocated `__tests__/` folders next to the modules they test
 
 ## DDD — Domain-Driven Design
@@ -230,21 +256,38 @@ These are not persisted — they're the logical events that drive the agent loop
 - `SessionResolved(winner_title: str)` — user triggered Problem Resolved
 These map directly to SSE events emitted to the frontend.
 
-## Architecture: Layered (ADR)
+## Architecture: Layered with Pure Core (ADR)
 
 The spec uses layered structure, not vertical slices. This is a deliberate hackathon trade-off: the spec's code examples, imports, and directory structure all assume layers. Follow the spec.
+
+The **core layer** is pure (no IO, no async, no DB) — it contains domain types, enforcement rules, protocols, and session state. The **shell layer** (services, routes, infrastructure) orchestrates IO around pure core functions following the Impureim Sandwich.
 
 ```
 backend/app/
 ├── main.py
 ├── config.py
+│
+│   ┌─── CORE (pure: no IO, no async, no DB) ──────────────────┐
+├── core/
+│   ├── domain_types.py       # SessionId, PremiseScore, AnalysisGate, PremiseType enums
+│   ├── protocols.py          # PremiseRepository, SessionRepository (Protocol boundaries)
+│   ├── enforcement.py        # Pure validation: 6 inviolable rules (check_gates, etc.)
+│   ├── session_state.py      # SessionState dataclass (in-memory enforcement engine)
+│   └── errors.py             # GhostPathError hierarchy
+│   └─────────────────────────────────────────────────────────────┘
+│
+│   ┌─── SHELL (impure: IO, async, DB, external APIs) ─────────┐
+├── infrastructure/
+│   ├── anthropic_client.py   # Resilient Anthropic wrapper (retry/backoff)
+│   ├── database.py           # DB session manager (pool/rollback)
+│   └── observability.py      # Structured JSON logging
 ├── db/
-│   ├── base.py              # SQLAlchemy Base
+│   ├── base.py               # SQLAlchemy Base
 │   └── session.py            # async session factory
 ├── models/
-│   ├── session.py            # Session ORM (message_history JSON, total_tokens_used, status)
-│   ├── round.py              # Round ORM (session_id, round_number)
-│   ├── premise.py            # Premise ORM (title, body, premise_type, score, user_comment, is_winner, violated_axiom, cross_domain_source)
+│   ├── session.py            # Session ORM
+│   ├── round.py              # Round ORM
+│   ├── premise.py            # Premise ORM
 │   └── tool_call.py          # ToolCall ORM (logging)
 ├── schemas/
 │   ├── session.py            # SessionCreate, SessionResponse, UserInput, PremiseScore, WinnerInfo
@@ -254,11 +297,11 @@ backend/app/
 │   └── context.py
 └── services/
     ├── agent_runner.py        # Agentic loop (while True until no tool_use)
-    ├── tool_handlers.py       # ToolHandlers class — gate enforcement, buffer, DB writes
+    ├── tool_handlers.py       # Impureim sandwich: read → core.enforcement → write
     ├── tool_definitions.py    # 17 tool JSON schemas (Anthropic format)
     ├── tools_registry.py      # ALL_TOOLS = analysis + generation + innovation + interaction + memory
-    ├── session_state.py       # SessionState dataclass (in-memory per session)
     └── system_prompt.py       # AGENT_SYSTEM_PROMPT constant
+│   └─────────────────────────────────────────────────────────────┘
 
 frontend/src/
 ├── api/client.ts
@@ -330,7 +373,7 @@ frontend/src/
 
 ## Enforcement Rules (Non-Obvious)
 
-These are enforced server-side in `tool_handlers.py`. The agent receives ERROR responses when violated:
+Pure validation logic lives in `core/enforcement.py`. Tool handlers in `services/tool_handlers.py` call these pure functions in the impureim sandwich pattern. The agent receives ERROR responses when violated:
 
 1. **Gate check**: `generate_premise`, `mutate_premise`, `cross_pollinate` → ERROR `GATES_NOT_SATISFIED` if any of the 3 analysis tools hasn't been called
 2. **Buffer limit**: generation tools → ERROR `ROUND_BUFFER_FULL` if buffer already has 3

@@ -676,6 +676,303 @@ def get_settings() -> Settings:
 
 ---
 
+## 0.5 Pure Core Layer (ExMA: Functional Core, Imperative Shell)
+
+ExMA mandates radical separation between pure domain logic (core) and impure IO (shell). The core contains **zero** async, **zero** DB access, **zero** external API calls. Every function in core is deterministic: same input → same output, testable without mocks.
+
+The shell (routes, tool_handlers, agent_runner) reads impure state, calls core pure functions, then writes impure results — the **Impureim Sandwich**.
+
+### Domain Types (Types as Documentation)
+
+```python
+# app/core/domain_types.py
+
+"""Domain Types — rich types that replace bare primitives across the codebase.
+
+Invariants:
+    - SessionId, RoundId, PremiseId wrap UUIDs — never use bare UUID in domain logic
+    - PremiseScore is bounded 0.0–10.0
+    - ObviousnessScore is bounded 0.0–1.0
+    - All valid states encoded as Enums — no raw string matching
+
+Design Decisions:
+    - NewType over dataclass wrappers: zero runtime cost, full type-checker support (ADR: hackathon speed)
+    - str Enums: serialize to JSON without custom encoders (ADR: Anthropic tool_result is JSON)
+"""
+
+from enum import Enum
+from typing import NewType
+from uuid import UUID
+
+
+# ─── Identity Types ──────────────────────────────────────────────
+
+SessionId = NewType("SessionId", UUID)
+RoundId = NewType("RoundId", UUID)
+PremiseId = NewType("PremiseId", UUID)
+
+
+# ─── Value Types ─────────────────────────────────────────────────
+
+PremiseScore = NewType("PremiseScore", float)           # 0.0–10.0
+ObviousnessScore = NewType("ObviousnessScore", float)   # 0.0–1.0
+MutationStrength = NewType("MutationStrength", float)   # 0.1–1.0
+
+
+# ─── Enums ───────────────────────────────────────────────────────
+
+class SessionStatus(str, Enum):
+    """Session lifecycle states — maps to DB `status` column."""
+    CREATED = "created"
+    ACTIVE = "active"
+    RESOLVED = "resolved"
+    CANCELLED = "cancelled"
+
+
+class AnalysisGate(str, Enum):
+    """The 3 mandatory analysis gates. All must complete before generation."""
+    DECOMPOSE = "decompose_problem"
+    CONVENTIONAL = "map_conventional_approaches"
+    AXIOMS = "extract_hidden_axioms"
+
+
+class PremiseType(str, Enum):
+    """Premise classification — radical requires challenge_axiom prerequisite."""
+    INITIAL = "initial"
+    CONSERVATIVE = "conservative"
+    RADICAL = "radical"
+    COMBINATION = "combination"
+
+
+class ToolCategory(str, Enum):
+    """Tool groupings for registry and observability."""
+    ANALYSIS = "analysis"
+    GENERATION = "generation"
+    INNOVATION = "innovation"
+    INTERACTION = "interaction"
+    MEMORY = "memory"
+```
+
+### Boundary Protocols (Contracts at Boundaries)
+
+```python
+# app/core/protocols.py
+
+"""Boundary Protocols — contracts between core and shell.
+
+Invariants:
+    - Core NEVER imports from shell — dependency arrows point inward only
+    - All IO operations accessed through Protocol types
+    - Implementations provided by shell via dependency injection
+
+Design Decisions:
+    - Protocol over ABC: structural subtyping, no inheritance hierarchy (ADR: ExMA anti-pattern)
+    - Async in Protocol: boundary methods are async because implementations do IO,
+      but core pure functions that USE these protocols are never async themselves —
+      the shell orchestrates the async calls around the pure logic
+"""
+
+from typing import Protocol
+from uuid import UUID
+
+from app.core.domain_types import SessionId, RoundId, PremiseId, PremiseScore
+
+
+class PremiseRepository(Protocol):
+    """Contract for premise persistence — implemented by shell."""
+    async def save(self, premise_data: dict, round_id: RoundId, session_id: SessionId) -> PremiseId: ...
+    async def get_by_session(self, session_id: SessionId) -> list[dict]: ...
+    async def get_negative_context(self, session_id: SessionId) -> list[dict]: ...
+    async def update_score(
+        self, session_id: SessionId, title: str, score: PremiseScore, comment: str | None
+    ) -> None: ...
+
+
+class SessionRepository(Protocol):
+    """Contract for session persistence — implemented by shell."""
+    async def get(self, session_id: SessionId) -> dict | None: ...
+    async def save_message_history(self, session_id: SessionId, messages: list) -> None: ...
+    async def update_token_usage(self, session_id: SessionId, tokens: int) -> None: ...
+    async def mark_resolved(self, session_id: SessionId) -> None: ...
+
+
+class RoundRepository(Protocol):
+    """Contract for round persistence — implemented by shell."""
+    async def create(self, session_id: SessionId, round_number: int) -> RoundId: ...
+```
+
+### Enforcement Rules (Pure Domain Logic)
+
+```python
+# app/core/enforcement.py
+
+"""Gate & Buffer Enforcement — pure validation for all 6 inviolable rules.
+
+Invariants:
+    - All functions are PURE: no IO, no async, no DB, no side effects
+    - Return error dicts on violation, None on success
+    - Called by shell (tool_handlers) in impureim sandwich: read → validate (pure) → write
+    - Each function tests exactly one rule — composable via validate_generation_prerequisites
+
+Design Decisions:
+    - Pure functions over method dispatch: testable without mocks (ADR: ExMA Functional Core)
+    - Return dicts (not exceptions): agent_runner consumes tool results as JSON dicts,
+      keeping error path identical to success path (ADR: uniform tool response shape)
+    - OBVIOUSNESS_THRESHOLD as module constant: single source of truth for the 0.6 cutoff
+"""
+
+from app.core.session_state import SessionState
+from app.core.domain_types import PremiseType
+
+
+OBVIOUSNESS_THRESHOLD: float = 0.6
+MAX_BUFFER_SIZE: int = 3
+
+
+# ─── Individual Rule Checks ─────────────────────────────────────
+
+
+def check_gates(state: SessionState) -> dict | None:
+    """Rule 1: All 3 analysis gates must complete before generation."""
+    if not state.all_gates_satisfied:
+        return {
+            "status": "error",
+            "error_code": "GATES_NOT_SATISFIED",
+            "message": (
+                f"ERROR: Cannot generate premises. "
+                f"Missing mandatory tools: {state.missing_gates}. "
+                f"Call these tools first."
+            ),
+            "missing_gates": state.missing_gates,
+        }
+    return None
+
+
+def check_buffer_capacity(state: SessionState) -> dict | None:
+    """Rule 2: Round buffer accepts exactly 3 premises, no more."""
+    if state.premises_in_buffer >= MAX_BUFFER_SIZE:
+        return {
+            "status": "error",
+            "error_code": "ROUND_BUFFER_FULL",
+            "message": (
+                "ERROR: Round buffer is full (3/3). "
+                "Call present_round or discard a premise."
+            ),
+        }
+    return None
+
+
+def check_radical_prerequisite(state: SessionState, premise_type: str) -> dict | None:
+    """Rule 4: Radical premises require challenge_axiom first."""
+    if premise_type == PremiseType.RADICAL and not state.axiom_challenged:
+        return {
+            "status": "error",
+            "error_code": "AXIOM_NOT_CHALLENGED",
+            "message": (
+                "ERROR: Radical premises require calling challenge_axiom first. "
+                "Challenge an axiom from extract_hidden_axioms."
+            ),
+        }
+    return None
+
+
+def check_negative_context(state: SessionState) -> dict | None:
+    """Rule 5: Rounds 2+ require get_negative_context before generation."""
+    if state.current_round_number >= 1 and not state.negative_context_fetched:
+        return {
+            "status": "error",
+            "error_code": "NEGATIVE_CONTEXT_MISSING",
+            "message": (
+                "ERROR: Rounds 2+ require calling get_negative_context "
+                "before generating premises."
+            ),
+        }
+    return None
+
+
+# ─── Composed Validation ─────────────────────────────────────────
+
+
+def validate_generation_prerequisites(state: SessionState, premise_type: str) -> dict | None:
+    """Chain all generation prerequisite checks. Returns first error or None."""
+    return (
+        check_gates(state)
+        or check_radical_prerequisite(state, premise_type)
+        or check_negative_context(state)
+        or check_buffer_capacity(state)
+    )
+
+
+# ─── Obviousness Evaluation ─────────────────────────────────────
+
+
+def evaluate_obviousness(
+    state: SessionState, premise_index: int, score: float
+) -> dict:
+    """
+    Rule 3: Evaluate obviousness test result.
+    Pure — returns action descriptor, does NOT mutate state.
+    Shell applies the action (remove from buffer or mark tested).
+    """
+    if premise_index >= state.premises_in_buffer:
+        return {
+            "status": "error",
+            "error_code": "INVALID_INDEX",
+            "message": (
+                f"ERROR: Invalid premise_buffer_index={premise_index}. "
+                f"Buffer has {state.premises_in_buffer} premise(s)."
+            ),
+        }
+
+    if score > OBVIOUSNESS_THRESHOLD:
+        return {
+            "status": "rejected",
+            "error_code": "TOO_OBVIOUS",
+            "premise_index": premise_index,
+            "score": score,
+            "message": (
+                f"REJECTED: Premise #{premise_index + 1} scored {score} "
+                f"(> {OBVIOUSNESS_THRESHOLD} threshold). Generate a replacement."
+            ),
+        }
+
+    return {
+        "status": "ok",
+        "premise_index": premise_index,
+        "score": score,
+    }
+
+
+# ─── Round Presentation Validation ──────────────────────────────
+
+
+def validate_round_presentation(state: SessionState) -> dict | None:
+    """Rule 6: present_round requires buffer == 3 and all tested."""
+    if state.premises_in_buffer != MAX_BUFFER_SIZE:
+        return {
+            "status": "error",
+            "error_code": "INCOMPLETE_ROUND",
+            "message": (
+                f"ERROR: Round requires exactly 3 premises. "
+                f"Current buffer: {state.premises_in_buffer}/3."
+            ),
+        }
+
+    if not state.all_premises_tested:
+        untested = state.premises_in_buffer - len(state.obviousness_tested)
+        return {
+            "status": "error",
+            "error_code": "UNTESTED_PREMISES",
+            "message": (
+                f"ERROR: {untested} premise(s) have not passed obviousness_test."
+            ),
+        }
+
+    return None
+```
+
+---
+
 ## 1. Prerequisite Enforcement (Gate System)
 
 The backend maintains a **per-session state machine** that tracks which analysis tools have already been called. Generation tools return an error if the gates have not been satisfied.
@@ -683,21 +980,31 @@ The backend maintains a **per-session state machine** that tracks which analysis
 ### Session State Machine
 
 ```python
-# app/services/session_state.py
+# app/core/session_state.py
+# ─── CORE (pure) — no IO, no async, no DB ───────────────────────
+
+"""Session State — in-memory enforcement engine for per-session invariants.
+
+Invariants:
+    - All 3 gates (decompose, map_conventional, extract_axioms) must complete before generation
+    - Gate results are immutable once completed
+    - Buffer holds max 3 premises per round
+    - Per-round flags reset on present_round (axiom_challenged, negative_context, buffer)
+
+Design Decisions:
+    - In-memory dict, not DB/Redis: single-process uvicorn, hackathon scope (ADR: speed over durability)
+    - Dataclass with computed properties: pure, deterministic, testable without mocks
+    - AnalysisGate imported from domain_types: single source of truth for gate names
+"""
 
 from dataclasses import dataclass, field
-from enum import Enum
 
-
-class AnalysisGate(str, Enum):
-    DECOMPOSE = "decompose_problem"
-    CONVENTIONAL = "map_conventional_approaches"
-    AXIOMS = "extract_hidden_axioms"
+from app.core.domain_types import AnalysisGate
 
 
 @dataclass
 class SessionState:
-    """Internal session state for rule enforcement."""
+    """Per-session enforcement state — pure dataclass, no IO."""
 
     # Completed analysis gates
     completed_gates: set[AnalysisGate] = field(default_factory=set)
@@ -753,12 +1060,51 @@ class SessionState:
     @property
     def all_premises_tested(self) -> bool:
         return len(self.obviousness_tested) == len(self.current_round_buffer)
+
+    def reset_for_next_round(self) -> None:
+        """Reset per-round flags after present_round. Pure state mutation."""
+        self.current_round_buffer.clear()
+        self.obviousness_tested.clear()
+        self.axiom_challenged = False
+        self.negative_context_fetched = False
 ```
 
-### Gate Enforcement in Tool Handlers
+### Gate Enforcement in Tool Handlers (Impureim Sandwich)
+
+Tool handlers follow the ExMA **Impureim Sandwich** pattern: read (impure) → validate/process (pure, via `core/enforcement.py`) → write (impure). Pure validation logic lives in `core/enforcement.py`; handlers only orchestrate IO around it.
 
 ```python
 # app/services/tool_handlers.py
+
+"""Tool Handlers — impure shell that orchestrates pure core logic with IO.
+
+Invariants:
+    - Every generation tool calls validate_generation_prerequisites (pure) before buffer mutation
+    - Every handler follows impureim sandwich: read → pure validate → write
+    - Handlers NEVER contain inline business rule checks — always delegate to core/enforcement
+
+Design Decisions:
+    - ToolHandlers is a class (not free functions): groups DB session + state as shared context (ADR: hackathon DI)
+    - Max ~7 public methods per category — if ToolHandlers grows, split by ToolCategory (ADR: ExMA god object limit)
+    - Pure validation imported from core/enforcement.py — testable without DB mocks
+"""
+
+from datetime import datetime, timezone
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.domain_types import AnalysisGate
+from app.core.session_state import SessionState
+from app.core.enforcement import (
+    validate_generation_prerequisites,
+    evaluate_obviousness,
+    validate_round_presentation,
+    OBVIOUSNESS_THRESHOLD,
+)
+from app.models.round import Round
+from app.models.premise import Premise
+
 
 class ToolHandlers:
     def __init__(self, db: AsyncSession, session_state: SessionState):
@@ -770,105 +1116,55 @@ class ToolHandlers:
     # ─────────────────────────────────────
 
     async def decompose_problem(self, session, input_data) -> dict:
+        # impure: write DB
         session.problem_decomposition = input_data
-        self.state.completed_gates.add(AnalysisGate.DECOMPOSE)
         await self.db.commit()
-        return {
-            "status": "ok",
-            "gates_completed": [g.value for g in self.state.completed_gates],
-            "gates_remaining": self.state.missing_gates,
-            "message": (
-                "Decomposition completed. "
-                f"Remaining gates: {self.state.missing_gates or 'None — ready to generate premises.'}"
-            ),
-        }
+        # pure: update state
+        self.state.completed_gates.add(AnalysisGate.DECOMPOSE)
+        return self._gate_response("Decomposition completed.")
 
     async def map_conventional_approaches(self, session, input_data) -> dict:
         self.state.completed_gates.add(AnalysisGate.CONVENTIONAL)
-        return {
-            "status": "ok",
-            "gates_completed": [g.value for g in self.state.completed_gates],
-            "gates_remaining": self.state.missing_gates,
-            "message": (
-                "Conventional approaches mapped. "
-                f"Remaining gates: {self.state.missing_gates or 'None — ready to generate premises.'}"
-            ),
-        }
+        return self._gate_response("Conventional approaches mapped.")
 
     async def extract_hidden_axioms(self, session, input_data) -> dict:
         self.state.completed_gates.add(AnalysisGate.AXIOMS)
-        # Store axiom STRINGS for later validation by challenge_axiom
         if "axioms" in input_data:
             self.state.extracted_axioms.extend(
                 a["axiom"] for a in input_data["axioms"]
             )
+        return self._gate_response("Axioms extracted.")
+
+    def _gate_response(self, action: str) -> dict:
+        """Pure helper: format gate completion response."""
         return {
             "status": "ok",
             "gates_completed": [g.value for g in self.state.completed_gates],
             "gates_remaining": self.state.missing_gates,
             "message": (
-                "Axioms extracted. "
+                f"{action} "
                 f"Remaining gates: {self.state.missing_gates or 'None — ready to generate premises.'}"
             ),
         }
 
     # ─────────────────────────────────────
-    # GENERATION TOOLS (check gates)
+    # GENERATION TOOLS (impureim sandwich)
     # ─────────────────────────────────────
 
     async def generate_premise(self, session, input_data) -> dict:
-        # GATE CHECK — return error if prerequisites not satisfied
-        if not self.state.all_gates_satisfied:
-            return {
-                "status": "error",
-                "error_code": "GATES_NOT_SATISFIED",
-                "message": (
-                    f"ERROR: You cannot generate premises yet. "
-                    f"Missing mandatory tools: {self.state.missing_gates}. "
-                    f"Call these tools first before generating any premise."
-                ),
-                "missing_gates": self.state.missing_gates,
-            }
+        # ── PURE: validate all prerequisites ──
+        error = validate_generation_prerequisites(
+            self.state, input_data.get("premise_type", "initial")
+        )
+        if error:
+            return error
 
-        # RADICAL CHECK — radical premises require challenge_axiom first
-        if input_data.get("premise_type") == "radical" and not self.state.axiom_challenged:
-            return {
-                "status": "error",
-                "error_code": "AXIOM_NOT_CHALLENGED",
-                "message": (
-                    "ERROR: Radical premises require calling challenge_axiom first. "
-                    "Challenge an axiom from extract_hidden_axioms before generating a radical premise."
-                ),
-            }
-
-        # NEGATIVE CONTEXT CHECK — rounds 2+ require get_negative_context
-        if self.state.current_round_number >= 1 and not self.state.negative_context_fetched:
-            return {
-                "status": "error",
-                "error_code": "NEGATIVE_CONTEXT_MISSING",
-                "message": (
-                    "ERROR: Rounds 2+ require calling get_negative_context before generating premises. "
-                    "This ensures you learn from previous low-scored premises."
-                ),
-            }
-
-        # BUFFER CHECK — do not accept more than 3 per round
-        if self.state.premises_in_buffer >= 3:
-            return {
-                "status": "error",
-                "error_code": "ROUND_BUFFER_FULL",
-                "message": (
-                    "ERROR: There are already 3 premises in the current round buffer. "
-                    "Call present_round to present to the user or "
-                    "discard a premise before generating another."
-                ),
-            }
-
-        # Add to buffer
+        # ── PURE: compute buffer state ──
         premise_index = self.state.premises_in_buffer
         self.state.current_round_buffer.append(input_data)
-
         remaining = self.state.premises_remaining
+
+        # ── Result (no DB write — stored on present_round) ──
         return {
             "status": "ok",
             "premise_index": premise_index,
@@ -876,40 +1172,19 @@ class ToolHandlers:
             "premises_remaining": remaining,
             "message": (
                 f"Premise #{premise_index + 1} generated and added to buffer. "
-                f"{str(remaining) + ' premise(s) remaining to complete the round.' if remaining > 0 else 'Buffer complete! Run obviousness_test on each premise then call present_round.'}"
+                f"{str(remaining) + ' premise(s) remaining.' if remaining > 0 else 'Buffer complete! Run obviousness_test then call present_round.'}"
             ),
         }
 
     async def mutate_premise(self, session, input_data) -> dict:
-        if not self.state.all_gates_satisfied:
-            return {
-                "status": "error",
-                "error_code": "GATES_NOT_SATISFIED",
-                "message": f"ERROR: Missing mandatory tools: {self.state.missing_gates}.",
-                "missing_gates": self.state.missing_gates,
-            }
+        # ── PURE: validate ──
+        error = validate_generation_prerequisites(
+            self.state, input_data.get("premise_type", "conservative")
+        )
+        if error:
+            return error
 
-        if input_data.get("premise_type") == "radical" and not self.state.axiom_challenged:
-            return {
-                "status": "error",
-                "error_code": "AXIOM_NOT_CHALLENGED",
-                "message": "ERROR: Radical premises require calling challenge_axiom first.",
-            }
-
-        if self.state.current_round_number >= 1 and not self.state.negative_context_fetched:
-            return {
-                "status": "error",
-                "error_code": "NEGATIVE_CONTEXT_MISSING",
-                "message": "ERROR: Rounds 2+ require calling get_negative_context first.",
-            }
-
-        if self.state.premises_in_buffer >= 3:
-            return {
-                "status": "error",
-                "error_code": "ROUND_BUFFER_FULL",
-                "message": "ERROR: Round buffer is already full (3/3).",
-            }
-
+        # ── PURE: compute ──
         premise_index = self.state.premises_in_buffer
         self.state.current_round_buffer.append(input_data)
         remaining = self.state.premises_remaining
@@ -926,28 +1201,14 @@ class ToolHandlers:
         }
 
     async def cross_pollinate(self, session, input_data) -> dict:
-        if not self.state.all_gates_satisfied:
-            return {
-                "status": "error",
-                "error_code": "GATES_NOT_SATISFIED",
-                "message": f"ERROR: Missing mandatory tools: {self.state.missing_gates}.",
-                "missing_gates": self.state.missing_gates,
-            }
+        # ── PURE: validate ──
+        error = validate_generation_prerequisites(
+            self.state, input_data.get("premise_type", "combination")
+        )
+        if error:
+            return error
 
-        if self.state.current_round_number >= 1 and not self.state.negative_context_fetched:
-            return {
-                "status": "error",
-                "error_code": "NEGATIVE_CONTEXT_MISSING",
-                "message": "ERROR: Rounds 2+ require calling get_negative_context first.",
-            }
-
-        if self.state.premises_in_buffer >= 3:
-            return {
-                "status": "error",
-                "error_code": "ROUND_BUFFER_FULL",
-                "message": "ERROR: Round buffer is already full (3/3).",
-            }
-
+        # ── PURE: compute ──
         premise_index = self.state.premises_in_buffer
         self.state.current_round_buffer.append(input_data)
         remaining = self.state.premises_remaining
@@ -968,18 +1229,17 @@ class ToolHandlers:
     # ─────────────────────────────────────
 
     async def challenge_axiom(self, session, input_data) -> dict:
-        # Validate that the axiom was previously extracted
         axiom = input_data.get("axiom", "")
+        # ── PURE: validate axiom exists ──
         if self.state.extracted_axioms and axiom not in self.state.extracted_axioms:
             return {
                 "status": "warning",
                 "message": (
-                    f"WARNING: The axiom '{axiom}' was not identified by extract_hidden_axioms. "
-                    f"Available axioms: {self.state.extracted_axioms}. "
-                    f"Proceeding anyway, but consider using a previously mapped axiom."
+                    f"WARNING: '{axiom}' not in extracted axioms: {self.state.extracted_axioms}. "
+                    f"Proceeding, but consider using a previously mapped axiom."
                 ),
             }
-        # Mark that an axiom has been challenged (unlocks radical premises)
+        # ── PURE: update state ──
         self.state.axiom_challenged = True
         return {
             "status": "ok",
@@ -997,47 +1257,37 @@ class ToolHandlers:
         premise_index = input_data.get("premise_buffer_index")
         score = input_data.get("obviousness_score", 0.0)
 
-        if premise_index is None or premise_index >= self.state.premises_in_buffer:
-            return {
-                "status": "error",
-                "error_code": "INVALID_INDEX",
-                "message": (
-                    f"ERROR: Invalid premise_buffer_index={premise_index}. "
-                    f"Buffer has {self.state.premises_in_buffer} premise(s) (indices 0–{self.state.premises_in_buffer - 1})."
-                ),
-            }
+        # ── PURE: evaluate (no state mutation) ──
+        result = evaluate_obviousness(self.state, premise_index, score)
 
-        # ENFORCE: reject premises with score > 0.6
-        if score > 0.6:
+        # ── IMPURE: apply state changes based on pure result ──
+        if result["status"] == "rejected":
             self.state.current_round_buffer.pop(premise_index)
-            # Re-index tested set after removal
             self.state.obviousness_tested = {
                 (i if i < premise_index else i - 1)
                 for i in self.state.obviousness_tested
                 if i != premise_index
             }
             return {
-                "status": "rejected",
-                "error_code": "TOO_OBVIOUS",
-                "message": (
-                    f"REJECTED: Premise #{premise_index + 1} scored {score} (> 0.6 threshold). "
-                    f"Removed from buffer. Generate a replacement."
-                ),
+                **result,
                 "premises_in_buffer": self.state.premises_in_buffer,
                 "premises_remaining": self.state.premises_remaining,
             }
 
-        self.state.obviousness_tested.add(premise_index)
-        return {
-            "status": "ok",
-            "tested_count": len(self.state.obviousness_tested),
-            "total_in_buffer": self.state.premises_in_buffer,
-            "all_tested": self.state.all_premises_tested,
-            "message": (
-                f"Obviousness test PASSED for premise #{premise_index + 1} (score {score}). "
-                f"{'All tested — ready for present_round.' if self.state.all_premises_tested else f'{self.state.premises_in_buffer - len(self.state.obviousness_tested)} test(s) remaining.'}"
-            ),
-        }
+        if result["status"] == "ok":
+            self.state.obviousness_tested.add(premise_index)
+            return {
+                **result,
+                "tested_count": len(self.state.obviousness_tested),
+                "total_in_buffer": self.state.premises_in_buffer,
+                "all_tested": self.state.all_premises_tested,
+                "message": (
+                    f"Obviousness test PASSED for premise #{premise_index + 1} (score {score}). "
+                    f"{'All tested — ready for present_round.' if self.state.all_premises_tested else f'{self.state.premises_in_buffer - len(self.state.obviousness_tested)} test(s) remaining.'}"
+                ),
+            }
+
+        return result  # error case
 
     async def invert_problem(self, session, input_data) -> dict:
         return {
@@ -1051,10 +1301,6 @@ class ToolHandlers:
     # ─────────────────────────────────────
 
     async def ask_user(self, session, input_data) -> dict:
-        """
-        Presents a question to the user with selectable options.
-        The flow PAUSES here and awaits user response.
-        """
         self.state.awaiting_user_input = True
         self.state.awaiting_input_type = "ask_user"
         return {
@@ -1063,35 +1309,12 @@ class ToolHandlers:
         }
 
     async def present_round(self, session, input_data) -> dict:
-        """
-        Presents the round of 3 premises to the user for evaluation.
-        Validates that we have exactly 3 premises in the buffer and all tested.
-        """
-        # VALIDATION: exactly 3 premises
-        if self.state.premises_in_buffer != 3:
-            return {
-                "status": "error",
-                "error_code": "INCOMPLETE_ROUND",
-                "message": (
-                    f"ERROR: The round requires exactly 3 premises. "
-                    f"Current buffer: {self.state.premises_in_buffer}/3. "
-                    f"Generate {self.state.premises_remaining} more premise(s) before presenting."
-                ),
-            }
+        # ── PURE: validate buffer is ready ──
+        error = validate_round_presentation(self.state)
+        if error:
+            return error
 
-        # VALIDATION: all passed obviousness_test
-        if not self.state.all_premises_tested:
-            untested = self.state.premises_in_buffer - len(self.state.obviousness_tested)
-            return {
-                "status": "error",
-                "error_code": "UNTESTED_PREMISES",
-                "message": (
-                    f"ERROR: {untested} premise(s) in the buffer have not passed the obviousness_test. "
-                    f"All premises MUST be tested before presenting to the user."
-                ),
-            }
-
-        # Create round in DB
+        # ── IMPURE: persist round and premises to DB ──
         self.state.current_round_number += 1
         new_round = Round(
             session_id=session.id,
@@ -1100,7 +1323,6 @@ class ToolHandlers:
         self.db.add(new_round)
         await self.db.flush()
 
-        # Store premises FROM THE BUFFER (source of truth, not input_data)
         premises_data = []
         for p_data in self.state.current_round_buffer:
             premise = Premise(
@@ -1123,34 +1345,25 @@ class ToolHandlers:
 
         await self.db.commit()
 
-        # Clear buffer and per-round flags for next round
-        self.state.current_round_buffer.clear()
-        self.state.obviousness_tested.clear()
-        self.state.axiom_challenged = False
-        self.state.negative_context_fetched = False
+        # ── PURE: reset per-round state ──
+        self.state.reset_for_next_round()
 
-        # Mark that we are awaiting user input
+        # ── State: mark awaiting user ──
         self.state.awaiting_user_input = True
         self.state.awaiting_input_type = "scores"
 
         return {
             "status": "awaiting_user_scores",
             "round_number": self.state.current_round_number,
-            # Include premises in result so agent_runner can forward to frontend
             "premises": premises_data,
             "message": (
-                f"Round {self.state.current_round_number} presented to the user with 3 premises. "
-                f"Awaiting evaluation. The user will provide scores (0.0–10.0) for each premise "
-                f"and optionally comments. They can also trigger 'Problem Resolved' to "
-                f"finish with a winning premise."
+                f"Round {self.state.current_round_number} presented with 3 premises. "
+                f"Awaiting user scores (0.0–10.0). User can trigger 'Problem Resolved'."
             ),
         }
 
     async def generate_final_spec(self, session, input_data) -> dict:
-        """
-        Generates the final .md spec from the winning premise.
-        Called after the user triggers 'Problem Resolved'.
-        """
+        # ── IMPURE: update session status ──
         session.status = "resolved"
         session.resolved_at = datetime.now(timezone.utc)
         await self.db.commit()
@@ -1164,18 +1377,20 @@ class ToolHandlers:
         }
 
     # ─────────────────────────────────────
-    # MEMORY TOOLS (same as v3)
+    # MEMORY TOOLS
     # ─────────────────────────────────────
 
     async def store_premise(self, session, input_data) -> dict:
-        premise = await self.db.execute(
+        # ── IMPURE: read from DB ──
+        result = await self.db.execute(
             select(Premise)
             .where(Premise.session_id == session.id)
             .where(Premise.title == input_data["title"])
             .order_by(Premise.created_at.desc())
             .limit(1)
         )
-        premise = premise.scalar_one_or_none()
+        premise = result.scalar_one_or_none()
+        # ── IMPURE: write to DB ──
         if premise:
             premise.score = input_data.get("score")
             premise.user_comment = input_data.get("user_comment")
@@ -1184,6 +1399,7 @@ class ToolHandlers:
         return {"status": "stored"}
 
     async def query_premises(self, session, input_data) -> dict:
+        # ── IMPURE: read from DB ──
         query = select(Premise).where(Premise.session_id == session.id)
         filter_type = input_data["filter"]
         if filter_type == "winners":
@@ -1197,6 +1413,7 @@ class ToolHandlers:
         query = query.limit(input_data.get("limit", 10))
         result = await self.db.execute(query)
         premises = result.scalars().all()
+        # ── PURE: transform to response ──
         return {
             "premises": [
                 {
@@ -1211,9 +1428,9 @@ class ToolHandlers:
         }
 
     async def get_negative_context(self, session, input_data) -> dict:
-        # Mark that negative context was fetched (unlocks generation for rounds 2+)
+        # ── State: unlock generation for rounds 2+ ──
         self.state.negative_context_fetched = True
-
+        # ── IMPURE: read from DB ──
         result = await self.db.execute(
             select(Premise)
             .where(Premise.session_id == session.id)
@@ -1224,6 +1441,7 @@ class ToolHandlers:
         premises = result.scalars().all()
         if not premises:
             return {"negative_premises": [], "message": "No negative context yet."}
+        # ── PURE: transform to response ──
         return {
             "negative_premises": [
                 {
@@ -1240,9 +1458,11 @@ class ToolHandlers:
         }
 
     async def get_context_usage(self, session, input_data) -> dict:
+        # ── IMPURE: read token count ──
         max_tokens = 1_000_000
         used = session.total_tokens_used
         num_rounds = max(len(session.rounds), 1)
+        # ── PURE: compute metrics ──
         avg = used / num_rounds
         return {
             "tokens_used": used,
@@ -1835,7 +2055,7 @@ from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.tool_handlers import ToolHandlers
-from app.services.session_state import SessionState
+from app.core.session_state import SessionState
 from app.services.tools_registry import ALL_TOOLS
 from app.services.system_prompt import AGENT_SYSTEM_PROMPT
 from app.infrastructure.anthropic_client import ResilientAnthropicClient
@@ -2614,7 +2834,7 @@ from app.models.session import Session as SessionModel
 from app.models.premise import Premise
 from app.schemas.session import SessionCreate, SessionResponse, UserInput
 from app.services.agent_runner import AgentRunner
-from app.services.session_state import SessionState
+from app.core.session_state import SessionState
 from app.core.errors import ResourceNotFoundError
 from app.config import get_settings
 
@@ -3167,7 +3387,7 @@ Direct, no fluff. Each premise should make the user think
 
 ---
 
-## Final Directory Structure
+## Final Directory Structure (ExMA-Compliant)
 
 ```
 ghost-path/
@@ -3181,20 +3401,34 @@ ghost-path/
 │   ├── app/
 │   │   ├── main.py                          # FastAPI app + global error handlers
 │   │   ├── config.py                        # pydantic-settings configuration
+│   │   │
+│   │   │  ┌─────────────────────────────────────────────────┐
+│   │   │  │ CORE (pure) — no IO, no async, no DB           │
+│   │   │  │ Dependency arrows point INWARD only             │
+│   │   │  └─────────────────────────────────────────────────┘
 │   │   ├── core/
+│   │   │   ├── domain_types.py              # Rich types: SessionId, PremiseScore, enums (ExMA: Types as Docs)
+│   │   │   ├── protocols.py                 # Boundary contracts: PremiseRepository, SessionRepository (ExMA: Protocols)
+│   │   │   ├── enforcement.py              # Pure validation: 6 inviolable rules (ExMA: Functional Core)
+│   │   │   ├── session_state.py            # Per-session enforcement state (pure dataclass, no IO)
 │   │   │   └── errors.py                    # Error hierarchy (GhostPathError + subtypes)
+│   │   │
+│   │   │  ┌─────────────────────────────────────────────────┐
+│   │   │  │ SHELL (impure) — IO, async, DB, external APIs   │
+│   │   │  │ Imports from core, never the reverse            │
+│   │   │  └─────────────────────────────────────────────────┘
 │   │   ├── infrastructure/
 │   │   │   ├── anthropic_client.py          # Resilient Anthropic wrapper (retry/backoff)
 │   │   │   ├── database.py                  # DB session manager (pool/rollback)
 │   │   │   └── observability.py             # Structured JSON logging
 │   │   ├── db/
-│   │   │   ├── base.py
-│   │   │   └── session.py
+│   │   │   ├── base.py                      # SQLAlchemy declarative Base
+│   │   │   └── session.py                   # Async session factory
 │   │   ├── models/
-│   │   │   ├── session.py
-│   │   │   ├── round.py
-│   │   │   ├── premise.py
-│   │   │   └── tool_call.py
+│   │   │   ├── session.py                   # Session ORM
+│   │   │   ├── round.py                     # Round ORM
+│   │   │   ├── premise.py                   # Premise ORM
+│   │   │   └── tool_call.py                 # ToolCall ORM (logging)
 │   │   ├── schemas/
 │   │   │   ├── session.py                   # Validated Pydantic models (Field constraints)
 │   │   │   └── agent.py
@@ -3204,12 +3438,18 @@ ghost-path/
 │   │   │       └── sessions.py              # Session CRUD + SSE streams
 │   │   └── services/
 │   │       ├── agent_runner.py              # Resilient runner (MAX_ITERATIONS, error isolation)
-│   │       ├── tool_handlers.py
-│   │       ├── tool_definitions.py
-│   │       ├── tools_registry.py
-│   │       ├── session_state.py
-│   │       └── system_prompt.py
+│   │       ├── tool_handlers.py             # Impureim sandwich: read → core.enforcement → write
+│   │       ├── tool_definitions.py          # 17 tool JSON schemas (Anthropic format)
+│   │       ├── tools_registry.py            # ALL_TOOLS = analysis + generation + innovation + interaction + memory
+│   │       └── system_prompt.py             # AGENT_SYSTEM_PROMPT constant
 │   └── tests/
+│       ├── core/                            # Pure core tests — no mocks, no fixtures
+│       │   ├── test_session_state.py
+│       │   ├── test_enforcement.py          # Tests for all 6 enforcement rules
+│       │   └── test_domain_types.py
+│       └── services/                        # Shell tests — async fixtures, test DB
+│           ├── test_tool_handlers.py
+│           └── test_agent_runner.py
 └── frontend/
     ├── Dockerfile
     ├── package.json
@@ -3243,3 +3483,18 @@ ghost-path/
             ├── SessionPage.tsx
             └── ReportPage.tsx
 ```
+
+### ExMA Compliance Map
+
+| ExMA Pilar | Where Enforced | Key Files |
+|---|---|---|
+| Functional Core, Imperative Shell | `core/` = pure, `services/` = impure shell | `core/enforcement.py`, `services/tool_handlers.py` |
+| Impureim Sandwich | Every handler: read → pure validate → write | `services/tool_handlers.py` |
+| Types as Documentation | Rich types replace bare primitives | `core/domain_types.py` |
+| Protocols at Boundaries | Core never imports shell; Protocol contracts | `core/protocols.py` |
+| Module Headers | Every file: invariants + design decisions | All `.py` files |
+| ADR Inline | Trade-offs documented near code | `core/session_state.py` (in-memory ADR) |
+| Tests as Specification | Behavior-named tests, pure core tested without mocks | `tests/core/`, `tests/services/` |
+| No God Objects | ToolHandlers split by category if >7 methods | `services/tool_handlers.py` |
+| No Deep Inheritance | Protocol + composition, no BaseHandler | `core/protocols.py` |
+| No Convention-over-Config | Explicit route registration, no auto-discovery | `main.py` |
