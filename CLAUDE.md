@@ -326,7 +326,7 @@ frontend/src/
 ### Built-in Tool (Anthropic server-side)
 | Tool | Purpose |
 |---|---|
-| `web_search` | Real-time web search via Anthropic API (`web_search_20250305`). **No extra API key** — uses same `ANTHROPIC_API_KEY`. Executed server-side, not by ToolHandlers. $10/1000 searches. Agent decides when to use. |
+| `web_search` | Real-time web search via Anthropic API (`web_search_20250305`). **No extra API key** — uses same `ANTHROPIC_API_KEY`. Executed server-side, not by ToolHandlers. $10/1000 searches. **System prompt mandates use before and during premise generation** — not a code-enforced gate, but a hard behavioral rule to eliminate training-data bias. |
 
 ## Enforcement Rules (Non-Obvious)
 
@@ -433,6 +433,7 @@ _session_states: dict[UUID, SessionState] = {}
 Lives in `services/system_prompt.py`. Key aspects:
 - Personality: "Direct, no fluff. Each premise should make the user think 'I wouldn't have thought of that'. Never generate the obvious."
 - The prompt explains the 6 inviolable rules (gates, buffer, obviousness, radical prerequisite, negative context, round flow)
+- **Web research is mandatory in the prompt** (not code-enforced): the agent MUST search the web after gates and before/during premise generation to ground every premise in real-world evidence and avoid training-data bias
 - The agent decides tool order freely — there is no hardcoded pipeline
 - On "Problem Resolved": respond enthusiastically, then call `generate_final_spec` with complete Markdown (8 sections: Executive Summary, Problem, Solution, How It Works, Implementation, Risks, Metrics, Evolutionary Journey)
 

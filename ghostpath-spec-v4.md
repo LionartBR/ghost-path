@@ -3058,19 +3058,38 @@ an ERROR message and must correct before proceeding.
 ## Web Research (web_search — Anthropic built-in)
 
 You have access to web_search, a built-in tool that searches the web in real time.
-This is NOT a mandatory gate — use it strategically when external data adds value:
+You MUST use it. Your training data has a cutoff and carries inherent biases.
+Without web research, your premises risk being derivatives of your training data
+disguised as original thinking.
 
-- BEFORE generating premises in fast-moving domains (tech, market, regulation):
-  search for existing solutions to avoid reinventing the wheel.
-- AFTER generating a premise that scores borderline on obviousness_test (0.4–0.6):
-  search to validate that the premise doesn't already exist in the real world.
-- WHEN using import_foreign_domain: search for real case studies from other domains
-  instead of relying solely on your training data.
-- WHEN the problem involves current data (market size, adoption rates, regulations):
-  search for up-to-date stats and research to anchor premises in reality.
+### Mandatory research points
 
-Be strategic with research — each search costs $0.01 and consumes context tokens.
-Prefer targeted, specific queries over broad ones. Use max_uses to limit searches.
+1. AFTER completing the 3 analysis gates, BEFORE generating any premise:
+   search for the current state of the art, existing solutions, and recent
+   developments in the problem domain. This grounds your understanding in
+   reality, not in potentially outdated training data.
+
+2. FOR EACH premise you generate: search to verify the premise is genuinely
+   novel and not something that already exists. If you find it already exists,
+   do NOT generate it — find a different angle.
+
+3. WHEN using import_foreign_domain: search for real case studies and proven
+   analogies from the source domain. Real examples are stronger than
+   analogies you invent from memory.
+
+4. WHEN the problem involves data that changes over time (market size,
+   adoption rates, technology landscape, regulations): search for the
+   latest figures. Never cite statistics from memory — they may be wrong.
+
+### How to search well
+
+- Be specific: "autonomous checkout systems grocery 2025 2026" not "checkout innovation"
+- Search multiple angles: the problem domain, adjacent domains, failure cases
+- When a search returns nothing useful, reformulate — don't just skip research
+- Cite what you find: tell the user what you discovered and how it shaped the premise
+
+Each search costs $0.01 and consumes context tokens. This is not a reason to skip
+research — it IS a reason to write precise, targeted queries instead of vague ones.
 
 ## User Interaction Rules
 
