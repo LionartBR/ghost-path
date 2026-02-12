@@ -42,6 +42,9 @@
 │  │  • obviousness_test                                 │     │
 │  │  • invert_problem                                   │     │
 │  ├─────────────────────────────────────────────────────┤     │
+│  │ BUILT-IN TOOLS (Anthropic server-side)             │     │
+│  │  • web_search            ← real-time web research   │     │
+│  ├─────────────────────────────────────────────────────┤     │
 │  │ INTERACTION TOOLS                                   │     │
 │  │  • ask_user               ← question/options style  │     │
 │  │  • present_round          ← requires 3 premises     │     │
@@ -1797,12 +1800,23 @@ from app.services.tool_definitions import (
     TOOLS_MEMORY,
 )
 
+# ADR: web_search is an Anthropic built-in tool (server-side, not custom).
+# Uses a different schema format (type instead of name+input_schema).
+# Anthropic handles execution — no ToolHandlers method needed.
+# Pricing: $10/1000 searches, billed to the same ANTHROPIC_API_KEY.
+WEB_SEARCH_TOOL = {
+    "type": "web_search_20250305",
+    "name": "web_search",
+    "max_uses": 5,  # per agent turn — controls cost and context usage
+}
+
 ALL_TOOLS = (
     TOOLS_ANALYSIS
     + TOOLS_GENERATION
     + TOOLS_INNOVATION
     + TOOLS_INTERACTION
     + TOOLS_MEMORY
+    + [WEB_SEARCH_TOOL]
 )
 ```
 
@@ -1890,6 +1904,11 @@ class AgentRunner:
                 try:
                     tokens = response.usage.input_tokens + response.usage.output_tokens
                     session.total_tokens_used += tokens
+                    # Track web search requests for cost observability
+                    web_searches = getattr(response.usage, "server_tool_use", {})
+                    if web_searches:
+                        logger.info(f"Web searches this turn: {web_searches.get('web_search_requests', 0)}",
+                                    extra={"session_id": str(session.id)})
                     await self.db.commit()
                 except Exception as e:
                     logger.error(f"Failed to update token usage: {e}")
@@ -1911,6 +1930,28 @@ class AgentRunner:
                             "type": "tool_call",
                             "data": {"tool": block.name, "input_preview": str(block.input)[:300]},
                         }
+                    elif block.type == "server_tool_use":
+                        # web_search — executed server-side by Anthropic, no client handling needed
+                        yield {
+                            "type": "tool_call",
+                            "data": {"tool": block.name, "input_preview": str(block.input)[:300]},
+                        }
+                    elif block.type == "web_search_tool_result":
+                        # Search results — already resolved, just forward to frontend
+                        result_urls = [
+                            r.get("url", "") for r in getattr(block, "content", [])
+                            if hasattr(r, "get") and r.get("type") == "web_search_result"
+                        ]
+                        yield {
+                            "type": "tool_result",
+                            "data": f"Web search returned {len(result_urls)} result(s)",
+                        }
+
+                # Handle pause_turn stop reason (long-running web search)
+                if response.stop_reason == "pause_turn":
+                    serialized_content = [block.model_dump() for block in assistant_content]
+                    messages.append({"role": "assistant", "content": serialized_content})
+                    continue  # let Claude continue its turn
 
                 if not has_tool_use:
                     yield {"type": "done", "data": {"error": False, "awaiting_input": False}}
@@ -3013,6 +3054,42 @@ an ERROR message and must correct before proceeding.
    MUST have called challenge_axiom beforehand.
 
 5. ROUNDS 2+: MUST call get_negative_context before generating premises.
+
+## Web Research (web_search — Anthropic built-in)
+
+You have access to web_search, a built-in tool that searches the web in real time.
+You MUST use it. Your training data has a cutoff and carries inherent biases.
+Without web research, your premises risk being derivatives of your training data
+disguised as original thinking.
+
+### Mandatory research points
+
+1. AFTER completing the 3 analysis gates, BEFORE generating any premise:
+   search for the current state of the art, existing solutions, and recent
+   developments in the problem domain. This grounds your understanding in
+   reality, not in potentially outdated training data.
+
+2. FOR EACH premise you generate: search to verify the premise is genuinely
+   novel and not something that already exists. If you find it already exists,
+   do NOT generate it — find a different angle.
+
+3. WHEN using import_foreign_domain: search for real case studies and proven
+   analogies from the source domain. Real examples are stronger than
+   analogies you invent from memory.
+
+4. WHEN the problem involves data that changes over time (market size,
+   adoption rates, technology landscape, regulations): search for the
+   latest figures. Never cite statistics from memory — they may be wrong.
+
+### How to search well
+
+- Be specific: "autonomous checkout systems grocery 2025 2026" not "checkout innovation"
+- Search multiple angles: the problem domain, adjacent domains, failure cases
+- When a search returns nothing useful, reformulate — don't just skip research
+- Cite what you find: tell the user what you discovered and how it shaped the premise
+
+Each search costs $0.01 and consumes context tokens. This is not a reason to skip
+research — it IS a reason to write precise, targeted queries instead of vague ones.
 
 ## User Interaction Rules
 

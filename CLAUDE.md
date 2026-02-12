@@ -191,6 +191,7 @@ These terms have precise meaning across all code, tests, API, and UI. Use them c
 | **Score** | User's 0.0–10.0 rating of a premise | "rating", "grade", "evaluation" |
 | **Winner** | The premise the user selects when triggering "Problem Resolved" | "chosen", "selected", "best" |
 | **Spec** | The final .md document generated from the winning premise | "report", "document", "output" |
+| **Research** | Real-time web search (via Anthropic built-in `web_search`) to ground or validate premises | "lookup", "google", "browse" |
 
 ### Aggregate: Session
 
@@ -227,7 +228,6 @@ These are not persisted — they're the logical events that drive the agent loop
 - `PremiseRejectedAsObvious(index: int, score: float)` — obviousness_test > 0.6
 - `RoundPresented(round_number: int)` — present_round succeeded, resets triggered
 - `SessionResolved(winner_title: str)` — user triggered Problem Resolved
-
 These map directly to SSE events emitted to the frontend.
 
 ## Architecture: Layered (ADR)
@@ -284,7 +284,7 @@ frontend/src/
     └── ReportPage.tsx
 ```
 
-## The 17 Tools (5 Categories)
+## The 17 Custom Tools + 1 Built-in (5 Categories + Anthropic)
 
 ### Analysis Tools (mandatory gates)
 | Tool | Purpose |
@@ -322,6 +322,11 @@ frontend/src/
 | `query_premises` | Query by filter: all, winners, top_scored, low_scored, by_type, by_round |
 | `get_negative_context` | Get premises scored < 5.0. **Must be called before generation in rounds 2+** |
 | `get_context_usage` | Token usage stats for the 1M context window |
+
+### Built-in Tool (Anthropic server-side)
+| Tool | Purpose |
+|---|---|
+| `web_search` | Real-time web search via Anthropic API (`web_search_20250305`). **No extra API key** — uses same `ANTHROPIC_API_KEY`. Executed server-side, not by ToolHandlers. $10/1000 searches. **System prompt mandates use before and during premise generation** — not a code-enforced gate, but a hard behavioral rule to eliminate training-data bias. |
 
 ## Enforcement Rules (Non-Obvious)
 
@@ -428,6 +433,7 @@ _session_states: dict[UUID, SessionState] = {}
 Lives in `services/system_prompt.py`. Key aspects:
 - Personality: "Direct, no fluff. Each premise should make the user think 'I wouldn't have thought of that'. Never generate the obvious."
 - The prompt explains the 6 inviolable rules (gates, buffer, obviousness, radical prerequisite, negative context, round flow)
+- **Web research is mandatory in the prompt** (not code-enforced): the agent MUST search the web after gates and before/during premise generation to ground every premise in real-world evidence and avoid training-data bias
 - The agent decides tool order freely — there is no hardcoded pipeline
 - On "Problem Resolved": respond enthusiastically, then call `generate_final_spec` with complete Markdown (8 sections: Executive Summary, Problem, Solution, How It Works, Implementation, Risks, Metrics, Evolutionary Journey)
 
