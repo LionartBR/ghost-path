@@ -9,6 +9,7 @@ Design Decisions:
     - Defaults provided for all non-secret settings: works out-of-the-box with docker-compose
 """
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
@@ -22,6 +23,15 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+asyncpg://ghostpath:ghostpath@db:5432/ghostpath"
     )
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def convert_postgres_url(cls, v: str) -> str:
+        """Railway provides postgresql:// but asyncpg needs postgresql+asyncpg://."""
+        if isinstance(v, str) and v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
+
     database_pool_size: int = 20
     database_max_overflow: int = 10
 

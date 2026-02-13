@@ -14,12 +14,14 @@ Design Decisions:
 """
 
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.core.errors import GhostPathError, ErrorSeverity
 from app.infrastructure.database import init_db
@@ -62,6 +64,12 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(session_lifecycle.router)
 app.include_router(session_agent_stream.router)
+
+# Static files — serves React build in production (Railway/Docker)
+# ADR: mounted AFTER API routes so /api/v1/* takes precedence
+# html=True enables SPA fallback (serves index.html for unknown routes)
+if os.path.isdir("static"):
+    app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 
 # ─── GLOBAL ERROR HANDLERS ──────────────────────────────────────

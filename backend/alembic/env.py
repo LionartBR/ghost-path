@@ -2,9 +2,15 @@
 
 Uses async engine for PostgreSQL migrations. Imports all models
 to ensure metadata is populated before autogenerate.
+
+Design Decisions:
+    - Reads DATABASE_URL from env (Railway sets it automatically)
+    - Converts postgresql:// → postgresql+asyncpg:// (same as config.py)
+    - Falls back to alembic.ini value for local docker-compose
 """
 
 import asyncio
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -27,9 +33,20 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
+def _get_database_url() -> str:
+    """Get DB URL from env (Railway) or alembic.ini (local docker-compose)."""
+    url = os.environ.get("DATABASE_URL", "")
+    if url:
+        # Railway provides postgresql:// but asyncpg needs postgresql+asyncpg://
+        if url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return url
+    return config.get_main_option("sqlalchemy.url")
+
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
-    url = config.get_main_option("sqlalchemy.url")
+    url = _get_database_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -48,8 +65,13 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode with async engine."""
+    configuration = config.get_section(config.config_ini_section, {})
+    # Override with env var if present (Railway sets DATABASE_URL)
+    db_url = _get_database_url()
+    if db_url:
+        configuration["sqlalchemy.url"] = db_url
     connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
