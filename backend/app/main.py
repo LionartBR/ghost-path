@@ -1,4 +1,4 @@
-"""GhostPath API — FastAPI application entry point.
+"""O-Edger API — FastAPI application entry point.
 
 Invariants:
     - Routes registered explicitly (no auto-discovery — ExMA anti-pattern)
@@ -23,11 +23,12 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.core.errors import GhostPathError, ErrorSeverity
+from app.core.errors import OEdgerError, ErrorSeverity
 from app.infrastructure.database import init_db
 from app.infrastructure.observability import setup_logging
 from app.config import get_settings
 from app.api.routes import health, session_lifecycle, session_agent_stream
+from app.api.routes import knowledge_graph
 
 logger = logging.getLogger(__name__)
 
@@ -42,13 +43,13 @@ async def lifespan(app: FastAPI):
         pool_size=settings.database_pool_size,
         max_overflow=settings.database_max_overflow,
     )
-    logger.info("GhostPath API started")
+    logger.info("O-Edger API started")
     yield
-    logger.info("GhostPath API shutting down")
+    logger.info("O-Edger API shutting down")
 
 
 app = FastAPI(
-    title="GhostPath API", version="4.0.0", lifespan=lifespan,
+    title="O-Edger API", version="5.0.0", lifespan=lifespan,
 )
 
 # CORS — configured from settings, not hardcoded
@@ -64,6 +65,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(session_lifecycle.router)
 app.include_router(session_agent_stream.router)
+app.include_router(knowledge_graph.router)
 
 # Static files — serves React build in production (Railway/Docker)
 # ADR: mounted AFTER API routes so /api/v1/* takes precedence
@@ -74,11 +76,11 @@ if os.path.isdir("static"):
 
 # ─── GLOBAL ERROR HANDLERS ──────────────────────────────────────
 
-@app.exception_handler(GhostPathError)
-async def ghostpath_error_handler(request: Request, exc: GhostPathError):
-    """Handle all GhostPath domain/infrastructure errors."""
+@app.exception_handler(OEdgerError)
+async def oedger_error_handler(request: Request, exc: OEdgerError):
+    """Handle all O-Edger domain/infrastructure errors."""
     logger.error(
-        f"GhostPathError: {exc.message}",
+        f"OEdgerError: {exc.message}",
         extra={"error_code": exc.code, "path": request.url.path},
     )
     return JSONResponse(

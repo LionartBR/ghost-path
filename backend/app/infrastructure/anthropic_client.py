@@ -36,6 +36,7 @@ class ResilientAnthropicClient:
     # Without this, Anthropic defaults to 200K. Tier 4 account required.
     # Premium pricing applies for prompts > 200K tokens (2x input, 1.5x output).
     CONTEXT_1M_BETA = "context-1m-2025-08-07"
+    WEB_SEARCH_BETA = "web-search-2025-03-05"
 
     def __init__(
         self,
@@ -53,7 +54,10 @@ class ResilientAnthropicClient:
         self.max_retries = max_retries
         self.base_delay_ms = base_delay_ms
         self.max_delay_ms = max_delay_ms
-        self.betas = [self.CONTEXT_1M_BETA] if enable_1m_context else []
+        # Always include web_search beta; conditionally add 1M context beta
+        self.betas = [self.WEB_SEARCH_BETA]
+        if enable_1m_context:
+            self.betas.append(self.CONTEXT_1M_BETA)
 
     async def create_message(
         self,

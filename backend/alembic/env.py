@@ -22,8 +22,12 @@ from alembic import context
 from app.db.base import Base
 # Import all models so Base.metadata has them
 from app.models.session import Session  # noqa: F401
-from app.models.round import Round  # noqa: F401
-from app.models.premise import Premise  # noqa: F401
+from app.models.knowledge_claim import KnowledgeClaim  # noqa: F401
+from app.models.evidence import Evidence  # noqa: F401
+from app.models.claim_edge import ClaimEdge  # noqa: F401
+from app.models.problem_reframing import ProblemReframing  # noqa: F401
+from app.models.cross_domain_analogy import CrossDomainAnalogy  # noqa: F401
+from app.models.contradiction import Contradiction  # noqa: F401
 from app.models.tool_call import ToolCall  # noqa: F401
 
 config = context.config

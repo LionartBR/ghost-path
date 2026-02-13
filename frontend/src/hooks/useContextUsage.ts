@@ -7,7 +7,7 @@ export function formatContextUsage(usage: ContextUsage | null) {
   return {
     percentage: usage.usage_percentage,
     label: `${(usage.tokens_used / 1000).toFixed(0)}k / ${(usage.tokens_limit / 1000).toFixed(0)}k`,
-    roundsLeft: usage.estimated_rounds_left,
+    remaining: usage.tokens_remaining,
     color:
       usage.usage_percentage > 80
         ? "red"

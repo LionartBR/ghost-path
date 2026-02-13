@@ -1,15 +1,15 @@
-"""Session ORM — persists the aggregate root for problem-solving interactions.
+"""Session ORM — persists the aggregate root for knowledge-creation interactions.
 
 Invariants:
     - id is UUID primary key (server-default)
     - problem is non-nullable text
     - message_history stores full Anthropic conversation for resumption
-    - status transitions: created → active → resolved | cancelled
+    - status transitions: decomposing -> exploring -> ... -> crystallized | cancelled
 
 Design Decisions:
-    - JSON column for message_history: stores Anthropic message array as-is,
-      no separate MessageHistory table (ADR: hackathon simplicity)
-    - cascade delete for rounds: session owns all rounds and premises
+    - JSON column for message_history: stores Anthropic message array as-is (ADR: hackathon simplicity)
+    - current_phase/current_round denormalized: avoids JOIN to determine agent state
+    - cascade delete for claims, evidence, edges, reframings, analogies, contradictions
 """
 
 import uuid
@@ -23,7 +23,7 @@ from app.db.base import Base
 
 
 class Session(Base):
-    """Session aggregate root — owns Rounds and Premises."""
+    """Session aggregate root — owns all O-Edger entities."""
     __tablename__ = "sessions"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -31,10 +31,16 @@ class Session(Base):
     )
     problem: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="created",
+        String(20), nullable=False, default="decomposing",
     )
-    message_history: Mapped[list | None] = mapped_column(
-        JSON, nullable=True, default=None,
+    current_phase: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1,
+    )
+    current_round: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0,
+    )
+    message_history: Mapped[list] = mapped_column(
+        JSON, nullable=False, default=list,
     )
     total_tokens_used: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0,
@@ -48,7 +54,20 @@ class Session(Base):
         DateTime(timezone=True), nullable=True,
     )
 
-    rounds: Mapped[list["Round"]] = relationship(
-        "Round", back_populates="session", cascade="all, delete-orphan",
-        lazy="selectin",
+    # Relationships
+    claims: Mapped[list["KnowledgeClaim"]] = relationship(
+        "KnowledgeClaim", back_populates="session",
+        cascade="all, delete-orphan", lazy="selectin",
+    )
+    reframings: Mapped[list["ProblemReframing"]] = relationship(
+        "ProblemReframing", back_populates="session",
+        cascade="all, delete-orphan", lazy="selectin",
+    )
+    analogies: Mapped[list["CrossDomainAnalogy"]] = relationship(
+        "CrossDomainAnalogy", back_populates="session",
+        cascade="all, delete-orphan", lazy="selectin",
+    )
+    contradictions: Mapped[list["Contradiction"]] = relationship(
+        "Contradiction", back_populates="session",
+        cascade="all, delete-orphan", lazy="selectin",
     )

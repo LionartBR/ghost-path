@@ -9,6 +9,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/session/:sessionId" element={<SessionPage />} />
+        <Route path="/knowledge/:sessionId" element={<ReportPage />} />
         <Route path="/report/:sessionId" element={<ReportPage />} />
       </Routes>
     </BrowserRouter>

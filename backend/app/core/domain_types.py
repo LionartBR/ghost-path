@@ -1,10 +1,9 @@
-"""Domain Types — rich types that replace bare primitives across the codebase.
+"""Domain Types — rich types replacing bare primitives across the O-Edger codebase.
 
 Invariants:
-    - SessionId, RoundId, PremiseId wrap UUIDs — never use bare UUID in domain logic
-    - PremiseScore is bounded 0.0–10.0
-    - ObviousnessScore is bounded 0.0–1.0
+    - SessionId, ClaimId, EvidenceId wrap UUIDs — never use bare UUID in domain logic
     - All valid states encoded as Enums — no raw string matching
+    - Phase enum defines the 6-phase pipeline order
 
 Design Decisions:
     - NewType over dataclass wrappers: zero runtime cost, full type-checker support (ADR: hackathon speed)
@@ -16,49 +15,124 @@ from typing import NewType
 from uuid import UUID
 
 
-# ─── Identity Types ──────────────────────────────────────────────
+# --- Identity Types -----------------------------------------------------------
 
 SessionId = NewType("SessionId", UUID)
-RoundId = NewType("RoundId", UUID)
-PremiseId = NewType("PremiseId", UUID)
+ClaimId = NewType("ClaimId", UUID)
+EvidenceId = NewType("EvidenceId", UUID)
+EdgeId = NewType("EdgeId", UUID)
+ReframingId = NewType("ReframingId", UUID)
+AnalogyId = NewType("AnalogyId", UUID)
+ContradictionId = NewType("ContradictionId", UUID)
 
 
-# ─── Value Types ─────────────────────────────────────────────────
+# --- Enums --------------------------------------------------------------------
 
-PremiseScore = NewType("PremiseScore", float)           # 0.0–10.0
-ObviousnessScore = NewType("ObviousnessScore", float)   # 0.0–1.0
-MutationStrength = NewType("MutationStrength", float)   # 0.1–1.0
+class Phase(str, Enum):
+    """The 6-phase O-Edger pipeline. Order matters."""
+    DECOMPOSE = "decompose"
+    EXPLORE = "explore"
+    SYNTHESIZE = "synthesize"
+    VALIDATE = "validate"
+    BUILD = "build"
+    CRYSTALLIZE = "crystallize"
 
-
-# ─── Enums ───────────────────────────────────────────────────────
 
 class SessionStatus(str, Enum):
     """Session lifecycle states — maps to DB `status` column."""
-    CREATED = "created"
-    ACTIVE = "active"
-    RESOLVED = "resolved"
+    DECOMPOSING = "decomposing"
+    EXPLORING = "exploring"
+    SYNTHESIZING = "synthesizing"
+    VALIDATING = "validating"
+    BUILDING = "building"
+    CRYSTALLIZED = "crystallized"
     CANCELLED = "cancelled"
 
 
-class AnalysisGate(str, Enum):
-    """The 3 mandatory analysis gates. All must complete before generation."""
-    DECOMPOSE = "decompose_problem"
-    CONVENTIONAL = "map_conventional_approaches"
-    AXIOMS = "extract_hidden_axioms"
+class ClaimStatus(str, Enum):
+    """Knowledge claim lifecycle."""
+    PROPOSED = "proposed"
+    VALIDATED = "validated"
+    REJECTED = "rejected"
+    QUALIFIED = "qualified"
+    SUPERSEDED = "superseded"
 
 
-class PremiseType(str, Enum):
-    """Premise classification — radical requires challenge_axiom prerequisite."""
-    INITIAL = "initial"
-    CONSERVATIVE = "conservative"
-    RADICAL = "radical"
-    COMBINATION = "combination"
+class ClaimType(str, Enum):
+    """How the claim was produced."""
+    THESIS = "thesis"
+    ANTITHESIS = "antithesis"
+    SYNTHESIS = "synthesis"
+    USER_CONTRIBUTED = "user_contributed"
+    MERGED = "merged"
+
+
+class ClaimConfidence(str, Enum):
+    """Epistemic confidence level."""
+    SPECULATIVE = "speculative"
+    EMERGING = "emerging"
+    GROUNDED = "grounded"
+
+
+class EvidenceType(str, Enum):
+    """Relationship between evidence and its claim."""
+    SUPPORTING = "supporting"
+    CONTRADICTING = "contradicting"
+    CONTEXTUAL = "contextual"
+
+
+class EdgeType(str, Enum):
+    """Typed edges in the knowledge graph DAG."""
+    SUPPORTS = "supports"
+    CONTRADICTS = "contradicts"
+    EXTENDS = "extends"
+    SUPERSEDES = "supersedes"
+    DEPENDS_ON = "depends_on"
+    MERGED_FROM = "merged_from"
+
+
+class VerdictType(str, Enum):
+    """User's epistemic decision on a claim."""
+    ACCEPT = "accept"
+    REJECT = "reject"
+    QUALIFY = "qualify"
+    MERGE = "merge"
+
+
+class ReframingType(str, Enum):
+    """Types of problem reframing (Phase 1)."""
+    SCOPE_CHANGE = "scope_change"
+    ENTITY_QUESTION = "entity_question"
+    VARIABLE_CHANGE = "variable_change"
+    DOMAIN_CHANGE = "domain_change"
+
+
+class EvidenceContributor(str, Enum):
+    """Who contributed the evidence."""
+    AGENT = "agent"
+    USER = "user"
+
+
+class SemanticDistance(str, Enum):
+    """Distance between source and target domain for analogies."""
+    NEAR = "near"
+    MEDIUM = "medium"
+    FAR = "far"
 
 
 class ToolCategory(str, Enum):
     """Tool groupings for registry and observability."""
-    ANALYSIS = "analysis"
-    GENERATION = "generation"
-    INNOVATION = "innovation"
-    INTERACTION = "interaction"
-    MEMORY = "memory"
+    DECOMPOSE = "decompose"
+    EXPLORE = "explore"
+    SYNTHESIZE = "synthesize"
+    VALIDATE = "validate"
+    BUILD = "build"
+    CRYSTALLIZE = "crystallize"
+    CROSS_CUTTING = "cross_cutting"
+
+
+# --- Constants ----------------------------------------------------------------
+
+MAX_CLAIMS_PER_ROUND: int = 3
+MAX_ROUNDS_PER_SESSION: int = 5
+PHASE_ORDER: list[Phase] = list(Phase)

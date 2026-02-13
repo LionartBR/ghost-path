@@ -8,6 +8,26 @@ Semi-autonomous agent for evolutionary idea generation. Users submit a problem, 
 - **LLM**: Claude Opus 4.6 via Anthropic Tool Use (native function calling)
 - **Streaming**: SSE | **Infra**: Docker + Docker Compose
 
+## Running Tests
+
+All commands run from the repo root. Use **forward slashes** in paths — Windows Python/pytest handles them correctly; backslashes are interpreted as escape sequences and fail silently.
+
+```bash
+# All core tests (pure domain logic, no DB needed)
+cd backend && python -m pytest tests/core/ -v
+
+# A single test file
+cd backend && python -m pytest tests/core/test_forge_state.py -v
+
+# A single test by name
+cd backend && python -m pytest tests/core/ -k "test_initial_phase_is_decompose" -v
+
+# All tests (core + services — services require DB)
+cd backend && python -m pytest tests/ -v
+```
+
+> **Note**: Do NOT use backslash paths like `tests\core\` — pytest on Windows silently collects 0 tests. Always use `tests/core/`.
+
 ## Reference Documents
 - Full spec with code examples: `ghostpath-spec-v4.md`
 - Architecture philosophy: `exma-manual.md`

@@ -1,21 +1,24 @@
-"""Tools Registry — explicit assembly of all 17 custom tools + 1 built-in.
+"""Tools Registry — flat list of all O-Edger tools for Anthropic API.
 
 Invariants:
-    - ALL_TOOLS is the single source of truth passed to Anthropic messages.create()
-    - web_search uses Anthropic built-in format (type instead of name+input_schema)
-    - No auto-discovery — every tool is registered explicitly (ExMA: no convention-over-config)
+    - ALL_TOOLS is a flat list of tool schemas — Anthropic API expects this format
+    - web_search is built-in (server-side) — included with type "web_search_20250305"
+    - 20 custom tools + 1 built-in = 21 total
 
 Design Decisions:
-    - Flat list over registry pattern: Anthropic API expects a list, no need for lookup
-      (ADR: simplicity)
-    - max_uses=5 on web_search: controls cost ($10/1000) and context token usage per turn
+    - Explicit imports from each define_*_tools.py: no auto-discovery (ADR: ExMA anti-pattern)
+    - Flat list: Anthropic messages.create() takes tools=ALL_TOOLS directly
+    - max_uses=10 on web_search: O-Edger is research-heavy, needs more searches than v1
 """
 
-from app.services.define_analysis_tools import TOOLS_ANALYSIS
-from app.services.define_generation_tools import TOOLS_GENERATION
-from app.services.define_innovation_tools import TOOLS_INNOVATION
-from app.services.define_interaction_tools import TOOLS_INTERACTION
-from app.services.define_memory_tools import TOOLS_MEMORY
+from app.services.define_decompose_tools import TOOLS_DECOMPOSE
+from app.services.define_explore_tools import TOOLS_EXPLORE
+from app.services.define_synthesize_tools import TOOLS_SYNTHESIZE
+from app.services.define_validate_tools import TOOLS_VALIDATE
+from app.services.define_build_tools import TOOLS_BUILD
+from app.services.define_crystallize_tools import TOOLS_CRYSTALLIZE
+from app.services.define_cross_cutting_tools import TOOLS_CROSS_CUTTING
+
 
 # ADR: web_search is an Anthropic built-in tool (server-side, not custom).
 # Uses a different schema format (type instead of name+input_schema).
@@ -24,14 +27,17 @@ from app.services.define_memory_tools import TOOLS_MEMORY
 WEB_SEARCH_TOOL = {
     "type": "web_search_20250305",
     "name": "web_search",
-    "max_uses": 5,
+    "max_uses": 10,
 }
 
-ALL_TOOLS = (
-    TOOLS_ANALYSIS
-    + TOOLS_GENERATION
-    + TOOLS_INNOVATION
-    + TOOLS_INTERACTION
-    + TOOLS_MEMORY
-    + [WEB_SEARCH_TOOL]
-)
+ALL_TOOLS: list[dict] = [
+    *TOOLS_DECOMPOSE,        # 4 tools
+    *TOOLS_EXPLORE,          # 4 tools
+    *TOOLS_SYNTHESIZE,       # 3 tools
+    *TOOLS_VALIDATE,         # 3 tools
+    *TOOLS_BUILD,            # 3 tools
+    *TOOLS_CRYSTALLIZE,      # 1 tool
+    *TOOLS_CROSS_CUTTING,    # 2 tools
+    WEB_SEARCH_TOOL,         # 1 built-in
+]
+# Total: 20 custom + 1 built-in = 21

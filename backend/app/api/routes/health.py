@@ -24,8 +24,8 @@ async def health_check():
     """Basic liveness probe. Returns 200 if the process is up."""
     return {
         "status": "healthy",
-        "service": "ghostpath-api",
-        "version": "4.0.0",
+        "service": "o-edger-api",
+        "version": "5.0.0",
     }
 
 

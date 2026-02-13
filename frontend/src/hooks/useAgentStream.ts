@@ -1,11 +1,13 @@
-/* useAgentStream — SSE consumer that dispatches events by type. */
+/* useAgentStream — SSE consumer for O-Edger's 6-phase pipeline. */
 
 import { useCallback, useRef, useState } from "react";
 import { streamSession, sendUserInput } from "../api/client";
 import type {
   SSEEvent,
-  Premise,
-  AskUserData,
+  Claim,
+  DecomposeReviewData,
+  ExploreReviewData,
+  BuildReviewData,
   ContextUsage,
   UserInput,
 } from "../types";
@@ -15,14 +17,19 @@ interface AgentStreamState {
   agentText: string[];
   toolCalls: { tool: string; input_preview: string }[];
   toolErrors: { tool: string; error_code: string; message: string }[];
-  premises: Premise[] | null;
-  askUser: AskUserData | null;
-  finalSpec: string | null;
+
+  // Phase review data
+  decomposeReview: DecomposeReviewData | null;
+  exploreReview: ExploreReviewData | null;
+  claimsReview: Claim[] | null;
+  verdictsReview: Claim[] | null;
+  buildReview: BuildReviewData | null;
+  knowledgeDocument: string | null;
+
   contextUsage: ContextUsage | null;
-  specDownloadUrl: string | null;
   awaitingInput: boolean;
   error: string | null;
-  roundNumber: number;
+  currentPhase: string | null;
 }
 
 const initialState: AgentStreamState = {
@@ -30,14 +37,16 @@ const initialState: AgentStreamState = {
   agentText: [],
   toolCalls: [],
   toolErrors: [],
-  premises: null,
-  askUser: null,
-  finalSpec: null,
+  decomposeReview: null,
+  exploreReview: null,
+  claimsReview: null,
+  verdictsReview: null,
+  buildReview: null,
+  knowledgeDocument: null,
   contextUsage: null,
-  specDownloadUrl: null,
   awaitingInput: false,
   error: null,
-  roundNumber: 1,
+  currentPhase: null,
 };
 
 export function useAgentStream(sessionId: string | null) {
@@ -52,6 +61,7 @@ export function useAgentStream(sessionId: string | null) {
           agentText: [...s.agentText, event.data as string],
         }));
         break;
+
       case "tool_call":
         setState((s) => ({
           ...s,
@@ -61,61 +71,94 @@ export function useAgentStream(sessionId: string | null) {
           ],
         }));
         break;
+
       case "tool_error":
         setState((s) => ({
           ...s,
           toolErrors: [
             ...s.toolErrors,
-            event.data as {
-              tool: string;
-              error_code: string;
-              message: string;
-            },
+            event.data as { tool: string; error_code: string; message: string },
           ],
         }));
         break;
-      case "premises":
+
+      case "tool_result":
+        // Display only — no state change needed
+        break;
+
+      case "review_decompose":
         setState((s) => ({
           ...s,
-          premises: event.data as Premise[],
-          roundNumber: s.roundNumber + (s.premises ? 1 : 0),
+          decomposeReview: event.data as DecomposeReviewData,
+          awaitingInput: true,
+          currentPhase: "decompose",
         }));
         break;
-      case "ask_user":
+
+      case "review_explore":
         setState((s) => ({
           ...s,
-          askUser: event.data as AskUserData,
+          exploreReview: event.data as ExploreReviewData,
+          awaitingInput: true,
+          currentPhase: "explore",
         }));
         break;
-      case "final_spec":
-        setState((s) => ({ ...s, finalSpec: event.data as string }));
+
+      case "review_claims":
+        setState((s) => ({
+          ...s,
+          claimsReview: (event.data as { claims: Claim[] }).claims,
+          awaitingInput: true,
+          currentPhase: "synthesize",
+        }));
         break;
+
+      case "review_verdicts":
+        setState((s) => ({
+          ...s,
+          verdictsReview: (event.data as { claims: Claim[] }).claims,
+          awaitingInput: true,
+          currentPhase: "validate",
+        }));
+        break;
+
+      case "review_build":
+        setState((s) => ({
+          ...s,
+          buildReview: event.data as BuildReviewData,
+          awaitingInput: true,
+          currentPhase: "build",
+        }));
+        break;
+
+      case "knowledge_document":
+        setState((s) => ({
+          ...s,
+          knowledgeDocument: (event.data as { markdown: string }).markdown,
+          currentPhase: "crystallize",
+        }));
+        break;
+
       case "context_usage":
         setState((s) => ({
           ...s,
           contextUsage: event.data as ContextUsage,
         }));
         break;
-      case "spec_file_ready": {
-        const d = event.data as { download_url: string };
-        setState((s) => ({ ...s, specDownloadUrl: d.download_url }));
-        break;
-      }
+
       case "error":
         setState((s) => ({
           ...s,
           error: (event.data as { message: string }).message,
         }));
         break;
+
       case "done": {
-        const d = event.data as {
-          error: boolean;
-          awaiting_input: boolean;
-        };
+        const d = event.data as { error: boolean; awaiting_input: boolean };
         setState((s) => ({
           ...s,
           isStreaming: false,
-          awaitingInput: d.awaiting_input,
+          awaitingInput: s.awaitingInput || d.awaiting_input,
         }));
         break;
       }
@@ -133,11 +176,7 @@ export function useAgentStream(sessionId: string | null) {
       error: null,
     }));
     controllerRef.current = streamSession(sessionId, handleEvent, (err) => {
-      setState((s) => ({
-        ...s,
-        isStreaming: false,
-        error: err.message,
-      }));
+      setState((s) => ({ ...s, isStreaming: false, error: err.message }));
     });
   }, [sessionId, handleEvent]);
 
@@ -147,23 +186,21 @@ export function useAgentStream(sessionId: string | null) {
       setState((s) => ({
         ...s,
         isStreaming: true,
-        premises: null,
-        askUser: null,
+        decomposeReview: null,
+        exploreReview: null,
+        claimsReview: null,
+        verdictsReview: null,
+        buildReview: null,
+        awaitingInput: false,
         agentText: [],
         toolCalls: [],
         toolErrors: [],
         error: null,
       }));
       controllerRef.current = sendUserInput(
-        sessionId,
-        input,
-        handleEvent,
+        sessionId, input, handleEvent,
         (err) => {
-          setState((s) => ({
-            ...s,
-            isStreaming: false,
-            error: err.message,
-          }));
+          setState((s) => ({ ...s, isStreaming: false, error: err.message }));
         },
       );
     },

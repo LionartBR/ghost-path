@@ -1,12 +1,12 @@
-"""Session Lifecycle — CRUD operations and in-memory state management.
+"""Session Lifecycle — CRUD operations and in-memory ForgeState management.
 
 Invariants:
-    - SessionState is per-session, in-memory (module-level dict)
+    - ForgeState is per-session, in-memory (module-level dict)
     - User input is validated by Pydantic before reaching the route handler
-    - _session_states dict is the single source for in-memory state
+    - _forge_states dict is the single source for in-memory state
 
 Design Decisions:
-    - _session_states as module-level dict: deliberate exception to no-global-state rule
+    - _forge_states as module-level dict: deliberate exception to no-global-state rule
       (ADR: hackathon — single-process uvicorn, no multi-worker, state lost on restart)
     - get_session_or_404 exported for reuse by session_agent_stream (DRY over duplication)
 """
@@ -21,16 +21,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.infrastructure.database import get_db
 from app.models.session import Session as SessionModel
 from app.schemas.session import SessionCreate, SessionResponse
-from app.core.session_state import SessionState
+from app.core.forge_state import ForgeState
 from app.core.errors import ResourceNotFoundError
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])
 
-# ADR: SessionState is in-memory (not DB/Redis)
+# ADR: ForgeState is in-memory (not DB/Redis)
 # Context: hackathon — single-process uvicorn, no multi-worker
 # Trade-off: state lost on restart, acceptable for demo
-_session_states: dict[UUID, SessionState] = {}
+_forge_states: dict[UUID, ForgeState] = {}
 
 
 async def get_session_or_404(
@@ -58,17 +58,22 @@ async def get_session_or_404(
 async def create_session(
     body: SessionCreate, db: AsyncSession = Depends(get_db),
 ):
-    """Create a new GhostPath session."""
+    """Create a new O-Edger session."""
     try:
-        session = SessionModel(problem=body.problem, status="created")
+        session = SessionModel(problem=body.problem, status="decomposing")
         db.add(session)
+        _forge_states[session.id] = ForgeState()
         await db.commit()
         await db.refresh(session)
-        _session_states[session.id] = SessionState()
         return SessionResponse(
-            id=session.id, problem=session.problem, status=session.status,
+            id=session.id,
+            problem=session.problem,
+            status=session.status,
+            current_phase=session.current_phase,
+            current_round=session.current_round,
         )
     except Exception as e:
+        _forge_states.pop(session.id, None)  # cleanup on commit failure
         logger.error(f"Failed to create session: {e}", exc_info=True)
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -102,6 +107,8 @@ async def list_sessions(
                     s.problem[:200] + ("..." if len(s.problem) > 200 else "")
                 ),
                 "status": s.status,
+                "current_phase": s.current_phase,
+                "current_round": s.current_round,
                 "created_at": s.created_at.isoformat(),
             }
             for s in sessions
@@ -114,12 +121,14 @@ async def list_sessions(
 async def get_session(
     session_id: UUID, db: AsyncSession = Depends(get_db),
 ):
-    """Get session details. Returns 404 if not found."""
+    """Get session details."""
     session = await get_session_or_404(session_id, db)
     return {
         "id": str(session.id),
         "problem": session.problem,
         "status": session.status,
+        "current_phase": session.current_phase,
+        "current_round": session.current_round,
         "created_at": session.created_at.isoformat(),
         "resolved_at": (
             session.resolved_at.isoformat() if session.resolved_at else None
@@ -136,14 +145,9 @@ async def delete_session(
 ):
     """Delete a session and associated data."""
     session = await get_session_or_404(session_id, db)
-    if session.status == "active":
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail="Cannot delete active session",
-        )
     await db.delete(session)
     await db.commit()
-    _session_states.pop(session_id, None)
+    _forge_states.pop(session_id, None)
 
 
 @router.post("/{session_id}/cancel")
@@ -152,12 +156,10 @@ async def cancel_session(
 ):
     """Cancel an active session."""
     session = await get_session_or_404(session_id, db)
-    if session.status != "active":
+    if session.status == "cancelled":
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            detail=(
-                f"Cannot cancel session with status '{session.status}'"
-            ),
+            detail="Session is already cancelled",
         )
     session.status = "cancelled"
     await db.commit()

@@ -1,68 +1,98 @@
 """Tool Dispatch — explicit routing from tool_name to handler function.
 
 Invariants:
-    - Every tool→handler mapping is visible — no getattr magic, no auto-discovery
+    - Every tool->handler mapping is visible — no getattr magic, no auto-discovery
     - Unknown tools return UNKNOWN_TOOL error (never raises)
+    - web_search calls are intercepted and recorded in ForgeState for gate enforcement
     - Handlers instantiated per-dispatch with shared DB + state context
 
 Design Decisions:
     - Explicit dict over getattr: every mapping visible in one place
       (ADR: ExMA no convention-over-config)
-    - Split handlers by ToolCategory: max ~4 methods per class
+    - Split handlers by phase: max ~4 methods per class
       (ADR: ExMA no god objects)
+    - web_search interception: we can't "require" the built-in tool, but we CAN track it
 """
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.session_state import SessionState
-from app.services.handle_analysis import AnalysisHandlers
-from app.services.handle_generation import GenerationHandlers
-from app.services.handle_innovation import InnovationHandlers
-from app.services.handle_interaction import InteractionHandlers
-from app.services.handle_memory import MemoryHandlers
+from app.core.forge_state import ForgeState
+from app.services.handle_decompose import DecomposeHandlers
+from app.services.handle_explore import ExploreHandlers
+from app.services.handle_synthesize import SynthesizeHandlers
+from app.services.handle_validate import ValidateHandlers
+from app.services.handle_build import BuildHandlers
+from app.services.handle_crystallize import CrystallizeHandlers
+from app.services.handle_cross_cutting import CrossCuttingHandlers
+
+
+# Tools that pause the agent loop (agent yields 'done', waits for user input)
+PAUSE_TOOLS = frozenset({"generate_knowledge_document"})
 
 
 class ToolDispatch:
-    """Routes tool_name → handler. Explicit registration, no auto-discovery."""
+    """Routes tool_name -> handler. Explicit registration, no auto-discovery."""
 
-    def __init__(self, db: AsyncSession, state: SessionState):
-        analysis = AnalysisHandlers(db, state)
-        generation = GenerationHandlers(db, state)
-        innovation = InnovationHandlers(db, state)
-        interaction = InteractionHandlers(db, state)
-        memory = MemoryHandlers(db, state)
+    def __init__(self, db: AsyncSession, state: ForgeState):
+        decompose = DecomposeHandlers(db, state)
+        explore = ExploreHandlers(db, state)
+        synthesize = SynthesizeHandlers(db, state)
+        validate = ValidateHandlers(db, state)
+        build = BuildHandlers(db, state)
+        crystallize = CrystallizeHandlers(db, state)
+        cross_cutting = CrossCuttingHandlers(db, state)
+
+        self._state = state
 
         # ADR: every mapping explicit — adding a tool requires editing this dict
         self._handlers = {
-            # Analysis (gates)
-            "decompose_problem": analysis.decompose_problem,
-            "map_conventional_approaches": (
-                analysis.map_conventional_approaches
-            ),
-            "extract_hidden_axioms": analysis.extract_hidden_axioms,
-            # Generation (gate-checked, impureim sandwich)
-            "generate_premise": generation.generate_premise,
-            "mutate_premise": generation.mutate_premise,
-            "cross_pollinate": generation.cross_pollinate,
-            # Innovation
-            "challenge_axiom": innovation.challenge_axiom,
-            "import_foreign_domain": innovation.import_foreign_domain,
-            "obviousness_test": innovation.obviousness_test,
-            "invert_problem": innovation.invert_problem,
-            # Interaction
-            "ask_user": interaction.ask_user,
-            "present_round": interaction.present_round,
-            "generate_final_spec": interaction.generate_final_spec,
-            # Memory
-            "store_premise": memory.store_premise,
-            "query_premises": memory.query_premises,
-            "get_negative_context": memory.get_negative_context,
-            "get_context_usage": memory.get_context_usage,
+            # Phase 1: DECOMPOSE (4 tools)
+            "decompose_to_fundamentals": decompose.decompose_to_fundamentals,
+            "map_state_of_art": decompose.map_state_of_art,
+            "extract_assumptions": decompose.extract_assumptions,
+            "reframe_problem": decompose.reframe_problem,
+
+            # Phase 2: EXPLORE (4 tools)
+            "build_morphological_box": explore.build_morphological_box,
+            "search_cross_domain": explore.search_cross_domain,
+            "identify_contradictions": explore.identify_contradictions,
+            "map_adjacent_possible": explore.map_adjacent_possible,
+
+            # Phase 3: SYNTHESIZE (3 tools)
+            "state_thesis": synthesize.state_thesis,
+            "find_antithesis": synthesize.find_antithesis,
+            "create_synthesis": synthesize.create_synthesis,
+
+            # Phase 4: VALIDATE (3 tools)
+            "attempt_falsification": validate.attempt_falsification,
+            "check_novelty": validate.check_novelty,
+            "score_claim": validate.score_claim,
+
+            # Phase 5: BUILD (3 tools)
+            "add_to_knowledge_graph": build.add_to_knowledge_graph,
+            "analyze_gaps": build.analyze_gaps,
+            "get_negative_knowledge": build.get_negative_knowledge,
+
+            # Phase 6: CRYSTALLIZE (1 tool)
+            "generate_knowledge_document": crystallize.generate_knowledge_document,
+
+            # Cross-cutting (2 tools)
+            "get_session_status": cross_cutting.get_session_status,
+            "submit_user_insight": cross_cutting.submit_user_insight,
         }
 
+    def record_web_search(self, query: str, result_summary: str) -> None:
+        """Intercept web_search calls for enforcement tracking.
+
+        Called by agent_runner when it detects a web_search tool result
+        (server_tool_use / web_search_tool_result blocks).
+        """
+        self._state.record_web_search(query, result_summary)
+
     async def execute(
-        self, tool_name: str, session, input_data: dict,
+        self, tool_name: str, session: object, input_data: dict,
     ) -> dict:
+        """Route tool_name to handler. Returns result dict."""
         handler = self._handlers.get(tool_name)
         if not handler:
             return {

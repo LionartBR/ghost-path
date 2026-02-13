@@ -15,20 +15,34 @@ Design Decisions:
 from typing import Protocol
 from uuid import UUID
 
-from app.core.domain_types import SessionId, RoundId, PremiseId, PremiseScore
+from app.core.domain_types import SessionId, ClaimId, EvidenceId, EdgeId, Phase
 
 
-class PremiseRepository(Protocol):
-    """Contract for premise persistence — implemented by shell."""
-    async def save(
-        self, premise_data: dict, round_id: RoundId, session_id: SessionId,
-    ) -> PremiseId: ...
+class ClaimRepository(Protocol):
+    """Contract for knowledge claim persistence — implemented by shell."""
+    async def save(self, claim_data: dict, session_id: SessionId) -> ClaimId: ...
     async def get_by_session(self, session_id: SessionId) -> list[dict]: ...
-    async def get_negative_context(self, session_id: SessionId) -> list[dict]: ...
-    async def update_score(
-        self, session_id: SessionId, title: str,
-        score: PremiseScore, comment: str | None,
+    async def get_by_id(self, claim_id: ClaimId) -> dict | None: ...
+    async def update_status(
+        self, claim_id: ClaimId, status: str, **fields: object,
     ) -> None: ...
+    async def get_negative_knowledge(self, session_id: SessionId) -> list[dict]: ...
+
+
+class EvidenceRepository(Protocol):
+    """Contract for evidence persistence — implemented by shell."""
+    async def save(
+        self, evidence_data: dict, claim_id: ClaimId, session_id: SessionId,
+    ) -> EvidenceId: ...
+    async def get_by_claim(self, claim_id: ClaimId) -> list[dict]: ...
+
+
+class EdgeRepository(Protocol):
+    """Contract for knowledge graph edge persistence — implemented by shell."""
+    async def save(
+        self, edge_data: dict, session_id: SessionId,
+    ) -> EdgeId: ...
+    async def get_by_session(self, session_id: SessionId) -> list[dict]: ...
 
 
 class SessionRepository(Protocol):
@@ -40,11 +54,7 @@ class SessionRepository(Protocol):
     async def update_token_usage(
         self, session_id: SessionId, tokens: int,
     ) -> None: ...
+    async def update_phase(
+        self, session_id: SessionId, phase: Phase, status: str,
+    ) -> None: ...
     async def mark_resolved(self, session_id: SessionId) -> None: ...
-
-
-class RoundRepository(Protocol):
-    """Contract for round persistence — implemented by shell."""
-    async def create(
-        self, session_id: SessionId, round_number: int,
-    ) -> RoundId: ...

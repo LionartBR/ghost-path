@@ -1,4 +1,4 @@
-"""Error Hierarchy — typed, categorized exceptions for all GhostPath failure modes.
+"""Error Hierarchy — typed, categorized exceptions for all O-Edger failure modes.
 
 Invariants:
     - Every error has a code (str), category (ErrorCategory), severity (ErrorSeverity)
@@ -7,8 +7,9 @@ Invariants:
     - No internal details leaked in user-facing messages
 
 Design Decisions:
-    - Single hierarchy with GhostPathError base: FastAPI global handler catches all (ADR: uniform error shape)
+    - Single hierarchy with OEdgerError base: FastAPI global handler catches all (ADR: uniform error shape)
     - ErrorContext as dataclass: rich observability without coupling to logging framework
+    - All 15 enforcement error codes have dedicated classes for type safety
 """
 
 from dataclasses import dataclass, field
@@ -43,14 +44,15 @@ class ErrorContext:
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     session_id: str | None = None
     tool_name: str | None = None
+    phase: str | None = None
     round_number: int | None = None
     user_message: str | None = None
     debug_info: dict[str, Any] | None = None
     retry_after_ms: int | None = None
 
 
-class GhostPathError(Exception):
-    """Base exception for all GhostPath errors."""
+class OEdgerError(Exception):
+    """Base exception for all O-Edger errors."""
 
     def __init__(
         self,
@@ -81,6 +83,7 @@ class GhostPathError(Exception):
                 "context": {
                     "session_id": self.context.session_id,
                     "tool_name": self.context.tool_name,
+                    "phase": self.context.phase,
                     "round_number": self.context.round_number,
                     "retry_after_ms": self.context.retry_after_ms,
                 },
@@ -103,80 +106,179 @@ class GhostPathError(Exception):
         }
 
 
-# ─── Domain Errors (400-level) ──────────────────────────────────
+# Keep backward compat alias
+GhostPathError = OEdgerError
 
-class ToolValidationError(GhostPathError):
+
+# --- Phase Transition Errors (Rules #1, #2, #9, #10, #11) --------------------
+
+class DecomposeIncompleteError(OEdgerError):
+    """Rule #1: Cannot explore without decompose complete."""
+    def __init__(self, detail: str, context: ErrorContext | None = None):
+        super().__init__(
+            f"Decompose phase incomplete: {detail}",
+            "DECOMPOSE_INCOMPLETE", ErrorCategory.BUSINESS_RULE,
+            ErrorSeverity.ERROR, context, 400,
+        )
+
+
+class ExploreIncompleteError(OEdgerError):
+    """Rule #2: Cannot synthesize without explore complete."""
+    def __init__(self, detail: str, context: ErrorContext | None = None):
+        super().__init__(
+            f"Explore phase incomplete: {detail}",
+            "EXPLORE_INCOMPLETE", ErrorCategory.BUSINESS_RULE,
+            ErrorSeverity.ERROR, context, 400,
+        )
+
+
+class SynthesisIncompleteError(OEdgerError):
+    """Rule #4: Cannot validate without all claims having antithesis."""
+    def __init__(self, detail: str, context: ErrorContext | None = None):
+        super().__init__(
+            f"Synthesis incomplete: {detail}",
+            "SYNTHESIS_INCOMPLETE", ErrorCategory.BUSINESS_RULE,
+            ErrorSeverity.ERROR, context, 400,
+        )
+
+
+class NotCumulativeError(OEdgerError):
+    """Rule #9: Round 2+ must reference previous claims."""
+    def __init__(self, context: ErrorContext | None = None):
+        super().__init__(
+            "Round 2+ must reference at least one previous claim.",
+            "NOT_CUMULATIVE", ErrorCategory.BUSINESS_RULE,
+            ErrorSeverity.ERROR, context, 400,
+        )
+
+
+class NegativeKnowledgeMissingError(OEdgerError):
+    """Rule #10: Round 2+ must consult negative knowledge."""
+    def __init__(self, context: ErrorContext | None = None):
+        super().__init__(
+            "Round 2+ must call get_negative_knowledge before synthesis.",
+            "NEGATIVE_KNOWLEDGE_MISSING", ErrorCategory.BUSINESS_RULE,
+            ErrorSeverity.ERROR, context, 400,
+        )
+
+
+class MaxRoundsExceededError(OEdgerError):
+    """Rule #11: Max 5 rounds per session."""
+    def __init__(self, context: ErrorContext | None = None):
+        super().__init__(
+            "Maximum 5 rounds reached. Must resolve session.",
+            "MAX_ROUNDS_EXCEEDED", ErrorCategory.BUSINESS_RULE,
+            ErrorSeverity.ERROR, context, 400,
+        )
+
+
+# --- Claim Validation Errors (Rules #3, #5, #6, #7, #8) ----------------------
+
+class AntithesisMissingError(OEdgerError):
+    """Rule #3: Every synthesis must have antithesis searched."""
+    def __init__(self, claim_index: int, context: ErrorContext | None = None):
+        super().__init__(
+            f"Claim #{claim_index} has no antithesis. Call find_antithesis first.",
+            "ANTITHESIS_MISSING", ErrorCategory.BUSINESS_RULE,
+            ErrorSeverity.ERROR, context, 400,
+        )
+
+
+class FalsificationMissingError(OEdgerError):
+    """Rule #5: Every claim must have falsification attempt."""
+    def __init__(self, claim_index: int, context: ErrorContext | None = None):
+        super().__init__(
+            f"Claim #{claim_index} has not been falsification-tested.",
+            "FALSIFICATION_MISSING", ErrorCategory.BUSINESS_RULE,
+            ErrorSeverity.ERROR, context, 400,
+        )
+
+
+class NoveltyUncheckedError(OEdgerError):
+    """Rule #6: Every claim must have novelty check."""
+    def __init__(self, claim_index: int, context: ErrorContext | None = None):
+        super().__init__(
+            f"Claim #{claim_index} has not been novelty-checked.",
+            "NOVELTY_UNCHECKED", ErrorCategory.BUSINESS_RULE,
+            ErrorSeverity.ERROR, context, 400,
+        )
+
+
+class UngroundedClaimError(OEdgerError):
+    """Rule #7: Claims without external evidence are flagged."""
+    def __init__(self, context: ErrorContext | None = None):
+        super().__init__(
+            "Claim has no external evidence. Provide web-sourced evidence.",
+            "UNGROUNDED_CLAIM", ErrorCategory.BUSINESS_RULE,
+            ErrorSeverity.WARNING, context, 400,
+        )
+
+
+class ClaimLimitExceededError(OEdgerError):
+    """Rule #8: Max 3 claims per synthesis round."""
+    def __init__(self, context: ErrorContext | None = None):
+        super().__init__(
+            "Round claim limit reached (3/3).",
+            "CLAIM_LIMIT_EXCEEDED", ErrorCategory.BUSINESS_RULE,
+            ErrorSeverity.ERROR, context, 400,
+        )
+
+
+# --- web_search Enforcement Errors (Rules #12, #13, #14, #15) ----------------
+
+class StateOfArtNotResearchedError(OEdgerError):
+    """Rule #12: map_state_of_art requires web_search."""
+    def __init__(self, context: ErrorContext | None = None):
+        super().__init__(
+            "map_state_of_art requires calling web_search first.",
+            "STATE_OF_ART_NOT_RESEARCHED", ErrorCategory.BUSINESS_RULE,
+            ErrorSeverity.ERROR, context, 400,
+        )
+
+
+class CrossDomainNotSearchedError(OEdgerError):
+    """Rule #13: search_cross_domain requires web_search."""
+    def __init__(self, context: ErrorContext | None = None):
+        super().__init__(
+            "search_cross_domain requires calling web_search for the target domain first.",
+            "CROSS_DOMAIN_NOT_SEARCHED", ErrorCategory.BUSINESS_RULE,
+            ErrorSeverity.ERROR, context, 400,
+        )
+
+
+class AntithesisNotSearchedError(OEdgerError):
+    """Rule #14: find_antithesis requires web_search."""
+    def __init__(self, context: ErrorContext | None = None):
+        super().__init__(
+            "find_antithesis requires calling web_search for counter-evidence first.",
+            "ANTITHESIS_NOT_SEARCHED", ErrorCategory.BUSINESS_RULE,
+            ErrorSeverity.ERROR, context, 400,
+        )
+
+
+class FalsificationNotSearchedError(OEdgerError):
+    """Rule #15: attempt_falsification requires web_search."""
+    def __init__(self, context: ErrorContext | None = None):
+        super().__init__(
+            "attempt_falsification requires calling web_search to disprove first.",
+            "FALSIFICATION_NOT_SEARCHED", ErrorCategory.BUSINESS_RULE,
+            ErrorSeverity.ERROR, context, 400,
+        )
+
+
+# --- General Domain Errors ----------------------------------------------------
+
+class ToolValidationError(OEdgerError):
     """Tool input validation failed."""
-    def __init__(self, message: str, field: str, context: ErrorContext | None = None):
+    def __init__(self, message: str, field_name: str, context: ErrorContext | None = None):
         super().__init__(
             message, "VALIDATION_ERROR", ErrorCategory.VALIDATION,
             ErrorSeverity.ERROR, context, 400,
         )
-        self.field = field
+        self.field_name = field_name
 
 
-class GateNotSatisfiedError(GhostPathError):
-    """Analysis gate prerequisite not met."""
-    def __init__(self, missing_gates: list[str], context: ErrorContext | None = None):
-        super().__init__(
-            f"Missing mandatory analysis gates: {', '.join(missing_gates)}",
-            "GATES_NOT_SATISFIED", ErrorCategory.BUSINESS_RULE,
-            ErrorSeverity.ERROR, context, 400,
-        )
-        self.missing_gates = missing_gates
-
-
-class BufferFullError(GhostPathError):
-    """Round buffer already contains 3 premises."""
-    def __init__(self, context: ErrorContext | None = None):
-        super().__init__(
-            "Round buffer is full (3/3). Call present_round or discard a premise.",
-            "ROUND_BUFFER_FULL", ErrorCategory.BUSINESS_RULE,
-            ErrorSeverity.ERROR, context, 400,
-        )
-
-
-class AxiomNotChallengedError(GhostPathError):
-    """Radical premise attempted without calling challenge_axiom."""
-    def __init__(self, context: ErrorContext | None = None):
-        super().__init__(
-            "Radical premises require calling challenge_axiom first.",
-            "AXIOM_NOT_CHALLENGED", ErrorCategory.BUSINESS_RULE,
-            ErrorSeverity.ERROR, context, 400,
-        )
-
-
-class NegativeContextMissingError(GhostPathError):
-    """Rounds 2+ attempted without calling get_negative_context."""
-    def __init__(self, context: ErrorContext | None = None):
-        super().__init__(
-            "Rounds 2+ require calling get_negative_context before generating premises.",
-            "NEGATIVE_CONTEXT_MISSING", ErrorCategory.BUSINESS_RULE,
-            ErrorSeverity.ERROR, context, 400,
-        )
-
-
-class IncompleteRoundError(GhostPathError):
-    """present_round called with fewer than 3 premises."""
-    def __init__(self, count: int, context: ErrorContext | None = None):
-        super().__init__(
-            f"Round requires exactly 3 premises. Current buffer: {count}/3.",
-            "INCOMPLETE_ROUND", ErrorCategory.BUSINESS_RULE,
-            ErrorSeverity.ERROR, context, 400,
-        )
-
-
-class UntestedPremisesError(GhostPathError):
-    """present_round called with untested premises."""
-    def __init__(self, untested: int, context: ErrorContext | None = None):
-        super().__init__(
-            f"{untested} premise(s) have not passed the obviousness_test.",
-            "UNTESTED_PREMISES", ErrorCategory.BUSINESS_RULE,
-            ErrorSeverity.ERROR, context, 400,
-        )
-
-
-class ResourceNotFoundError(GhostPathError):
+class ResourceNotFoundError(OEdgerError):
     """Requested resource does not exist."""
     def __init__(
         self, resource_type: str, resource_id: str, context: ErrorContext | None = None,
@@ -188,9 +290,19 @@ class ResourceNotFoundError(GhostPathError):
         )
 
 
-# ─── Infrastructure Errors (500-level) ──────────────────────────
+class InvalidVerdictError(OEdgerError):
+    """Invalid verdict for claim."""
+    def __init__(self, verdict: str, context: ErrorContext | None = None):
+        super().__init__(
+            f"Invalid verdict: {verdict}. Must be accept/reject/qualify/merge.",
+            "INVALID_VERDICT", ErrorCategory.BUSINESS_RULE,
+            ErrorSeverity.ERROR, context, 400,
+        )
 
-class DatabaseError(GhostPathError):
+
+# --- Infrastructure Errors (500-level) ----------------------------------------
+
+class DatabaseError(OEdgerError):
     """Database operation failed."""
     def __init__(self, message: str, operation: str, context: ErrorContext | None = None):
         super().__init__(
@@ -201,7 +313,7 @@ class DatabaseError(GhostPathError):
         self.operation = operation
 
 
-class AnthropicAPIError(GhostPathError):
+class AnthropicAPIError(OEdgerError):
     """Anthropic API call failed."""
     def __init__(
         self,
@@ -220,7 +332,7 @@ class AnthropicAPIError(GhostPathError):
         self.api_error_type = api_error_type
 
 
-class ConcurrencyError(GhostPathError):
+class ConcurrencyError(OEdgerError):
     """Concurrent modification detected."""
     def __init__(self, message: str, context: ErrorContext | None = None):
         super().__init__(
@@ -229,7 +341,7 @@ class ConcurrencyError(GhostPathError):
         )
 
 
-class AgentLoopExceededError(GhostPathError):
+class AgentLoopExceededError(OEdgerError):
     """Agent exceeded maximum iteration limit."""
     def __init__(self, max_iterations: int, context: ErrorContext | None = None):
         super().__init__(
