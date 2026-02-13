@@ -23,7 +23,7 @@ from app.db.base import Base
 
 
 class Session(Base):
-    """Session aggregate root — owns all O-Edger entities."""
+    """Session aggregate root — owns all TRIZ entities."""
     __tablename__ = "sessions"
 
     id: Mapped[uuid.UUID] = mapped_column(

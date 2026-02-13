@@ -43,7 +43,7 @@ export function ProblemInput({ onSubmit, loading }: Props) {
                    hover:bg-blue-700 disabled:opacity-40
                    disabled:cursor-not-allowed transition-colors"
       >
-        {loading ? "Creating session..." : "Start O-Edger"}
+        {loading ? "Creating session..." : "Start TRIZ"}
       </button>
     </form>
   );

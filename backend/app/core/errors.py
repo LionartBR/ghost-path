@@ -1,4 +1,4 @@
-"""Error Hierarchy — typed, categorized exceptions for all O-Edger failure modes.
+"""Error Hierarchy — typed, categorized exceptions for all TRIZ failure modes.
 
 Invariants:
     - Every error has a code (str), category (ErrorCategory), severity (ErrorSeverity)
@@ -7,7 +7,7 @@ Invariants:
     - No internal details leaked in user-facing messages
 
 Design Decisions:
-    - Single hierarchy with OEdgerError base: FastAPI global handler catches all (ADR: uniform error shape)
+    - Single hierarchy with TrizError base: FastAPI global handler catches all (ADR: uniform error shape)
     - ErrorContext as dataclass: rich observability without coupling to logging framework
     - All 15 enforcement error codes have dedicated classes for type safety
 """
@@ -51,8 +51,8 @@ class ErrorContext:
     retry_after_ms: int | None = None
 
 
-class OEdgerError(Exception):
-    """Base exception for all O-Edger errors."""
+class TrizError(Exception):
+    """Base exception for all TRIZ errors."""
 
     def __init__(
         self,
@@ -106,13 +106,14 @@ class OEdgerError(Exception):
         }
 
 
-# Keep backward compat alias
-GhostPathError = OEdgerError
+# Keep backward compat aliases
+GhostPathError = TrizError
+OEdgerError = TrizError
 
 
 # --- Phase Transition Errors (Rules #1, #2, #9, #10, #11) --------------------
 
-class DecomposeIncompleteError(OEdgerError):
+class DecomposeIncompleteError(TrizError):
     """Rule #1: Cannot explore without decompose complete."""
     def __init__(self, detail: str, context: ErrorContext | None = None):
         super().__init__(
@@ -122,7 +123,7 @@ class DecomposeIncompleteError(OEdgerError):
         )
 
 
-class ExploreIncompleteError(OEdgerError):
+class ExploreIncompleteError(TrizError):
     """Rule #2: Cannot synthesize without explore complete."""
     def __init__(self, detail: str, context: ErrorContext | None = None):
         super().__init__(
@@ -132,7 +133,7 @@ class ExploreIncompleteError(OEdgerError):
         )
 
 
-class SynthesisIncompleteError(OEdgerError):
+class SynthesisIncompleteError(TrizError):
     """Rule #4: Cannot validate without all claims having antithesis."""
     def __init__(self, detail: str, context: ErrorContext | None = None):
         super().__init__(
@@ -142,7 +143,7 @@ class SynthesisIncompleteError(OEdgerError):
         )
 
 
-class NotCumulativeError(OEdgerError):
+class NotCumulativeError(TrizError):
     """Rule #9: Round 2+ must reference previous claims."""
     def __init__(self, context: ErrorContext | None = None):
         super().__init__(
@@ -152,7 +153,7 @@ class NotCumulativeError(OEdgerError):
         )
 
 
-class NegativeKnowledgeMissingError(OEdgerError):
+class NegativeKnowledgeMissingError(TrizError):
     """Rule #10: Round 2+ must consult negative knowledge."""
     def __init__(self, context: ErrorContext | None = None):
         super().__init__(
@@ -162,7 +163,7 @@ class NegativeKnowledgeMissingError(OEdgerError):
         )
 
 
-class MaxRoundsExceededError(OEdgerError):
+class MaxRoundsExceededError(TrizError):
     """Rule #11: Max 5 rounds per session."""
     def __init__(self, context: ErrorContext | None = None):
         super().__init__(
@@ -174,7 +175,7 @@ class MaxRoundsExceededError(OEdgerError):
 
 # --- Claim Validation Errors (Rules #3, #5, #6, #7, #8) ----------------------
 
-class AntithesisMissingError(OEdgerError):
+class AntithesisMissingError(TrizError):
     """Rule #3: Every synthesis must have antithesis searched."""
     def __init__(self, claim_index: int, context: ErrorContext | None = None):
         super().__init__(
@@ -184,7 +185,7 @@ class AntithesisMissingError(OEdgerError):
         )
 
 
-class FalsificationMissingError(OEdgerError):
+class FalsificationMissingError(TrizError):
     """Rule #5: Every claim must have falsification attempt."""
     def __init__(self, claim_index: int, context: ErrorContext | None = None):
         super().__init__(
@@ -194,7 +195,7 @@ class FalsificationMissingError(OEdgerError):
         )
 
 
-class NoveltyUncheckedError(OEdgerError):
+class NoveltyUncheckedError(TrizError):
     """Rule #6: Every claim must have novelty check."""
     def __init__(self, claim_index: int, context: ErrorContext | None = None):
         super().__init__(
@@ -204,7 +205,7 @@ class NoveltyUncheckedError(OEdgerError):
         )
 
 
-class UngroundedClaimError(OEdgerError):
+class UngroundedClaimError(TrizError):
     """Rule #7: Claims without external evidence are flagged."""
     def __init__(self, context: ErrorContext | None = None):
         super().__init__(
@@ -214,7 +215,7 @@ class UngroundedClaimError(OEdgerError):
         )
 
 
-class ClaimLimitExceededError(OEdgerError):
+class ClaimLimitExceededError(TrizError):
     """Rule #8: Max 3 claims per synthesis round."""
     def __init__(self, context: ErrorContext | None = None):
         super().__init__(
@@ -226,7 +227,7 @@ class ClaimLimitExceededError(OEdgerError):
 
 # --- web_search Enforcement Errors (Rules #12, #13, #14, #15) ----------------
 
-class StateOfArtNotResearchedError(OEdgerError):
+class StateOfArtNotResearchedError(TrizError):
     """Rule #12: map_state_of_art requires web_search."""
     def __init__(self, context: ErrorContext | None = None):
         super().__init__(
@@ -236,7 +237,7 @@ class StateOfArtNotResearchedError(OEdgerError):
         )
 
 
-class CrossDomainNotSearchedError(OEdgerError):
+class CrossDomainNotSearchedError(TrizError):
     """Rule #13: search_cross_domain requires web_search."""
     def __init__(self, context: ErrorContext | None = None):
         super().__init__(
@@ -246,7 +247,7 @@ class CrossDomainNotSearchedError(OEdgerError):
         )
 
 
-class AntithesisNotSearchedError(OEdgerError):
+class AntithesisNotSearchedError(TrizError):
     """Rule #14: find_antithesis requires web_search."""
     def __init__(self, context: ErrorContext | None = None):
         super().__init__(
@@ -256,7 +257,7 @@ class AntithesisNotSearchedError(OEdgerError):
         )
 
 
-class FalsificationNotSearchedError(OEdgerError):
+class FalsificationNotSearchedError(TrizError):
     """Rule #15: attempt_falsification requires web_search."""
     def __init__(self, context: ErrorContext | None = None):
         super().__init__(
@@ -268,7 +269,7 @@ class FalsificationNotSearchedError(OEdgerError):
 
 # --- General Domain Errors ----------------------------------------------------
 
-class ToolValidationError(OEdgerError):
+class ToolValidationError(TrizError):
     """Tool input validation failed."""
     def __init__(self, message: str, field_name: str, context: ErrorContext | None = None):
         super().__init__(
@@ -278,7 +279,7 @@ class ToolValidationError(OEdgerError):
         self.field_name = field_name
 
 
-class ResourceNotFoundError(OEdgerError):
+class ResourceNotFoundError(TrizError):
     """Requested resource does not exist."""
     def __init__(
         self, resource_type: str, resource_id: str, context: ErrorContext | None = None,
@@ -290,7 +291,7 @@ class ResourceNotFoundError(OEdgerError):
         )
 
 
-class InvalidVerdictError(OEdgerError):
+class InvalidVerdictError(TrizError):
     """Invalid verdict for claim."""
     def __init__(self, verdict: str, context: ErrorContext | None = None):
         super().__init__(
@@ -302,7 +303,7 @@ class InvalidVerdictError(OEdgerError):
 
 # --- Infrastructure Errors (500-level) ----------------------------------------
 
-class DatabaseError(OEdgerError):
+class DatabaseError(TrizError):
     """Database operation failed."""
     def __init__(self, message: str, operation: str, context: ErrorContext | None = None):
         super().__init__(
@@ -313,7 +314,7 @@ class DatabaseError(OEdgerError):
         self.operation = operation
 
 
-class AnthropicAPIError(OEdgerError):
+class AnthropicAPIError(TrizError):
     """Anthropic API call failed."""
     def __init__(
         self,
@@ -332,7 +333,7 @@ class AnthropicAPIError(OEdgerError):
         self.api_error_type = api_error_type
 
 
-class ConcurrencyError(OEdgerError):
+class ConcurrencyError(TrizError):
     """Concurrent modification detected."""
     def __init__(self, message: str, context: ErrorContext | None = None):
         super().__init__(
@@ -341,7 +342,7 @@ class ConcurrencyError(OEdgerError):
         )
 
 
-class AgentLoopExceededError(OEdgerError):
+class AgentLoopExceededError(TrizError):
     """Agent exceeded maximum iteration limit."""
     def __init__(self, max_iterations: int, context: ErrorContext | None = None):
         super().__init__(

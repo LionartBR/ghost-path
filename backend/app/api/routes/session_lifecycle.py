@@ -58,7 +58,7 @@ async def get_session_or_404(
 async def create_session(
     body: SessionCreate, db: AsyncSession = Depends(get_db),
 ):
-    """Create a new O-Edger session."""
+    """Create a new TRIZ session."""
     try:
         session = SessionModel(problem=body.problem, status="decomposing")
         db.add(session)

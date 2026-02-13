@@ -1,4 +1,4 @@
-/* O-Edger domain types — mirrors backend ubiquitous language. */
+/* TRIZ domain types — mirrors backend ubiquitous language. */
 
 // --- Session ---
 

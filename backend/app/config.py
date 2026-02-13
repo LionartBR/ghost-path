@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = (
-        "postgresql+asyncpg://ghostpath:ghostpath@db:5432/ghostpath"
+        "postgresql+asyncpg://triz:triz@db:5432/triz"
     )
 
     @field_validator("database_url", mode="before")

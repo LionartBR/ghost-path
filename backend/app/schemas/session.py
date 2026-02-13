@@ -72,7 +72,7 @@ class ClaimVerdict(BaseModel):
 # --- UserInput (all review types) ---------------------------------------------
 
 class UserInput(BaseModel):
-    """User input — handles all 5 review types from the O-Edger pipeline."""
+    """User input — handles all 5 review types from the TRIZ pipeline."""
     type: Literal[
         "decompose_review", "explore_review",
         "claims_review", "verdicts", "build_decision",

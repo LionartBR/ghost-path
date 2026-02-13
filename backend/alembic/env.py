@@ -1,4 +1,4 @@
-"""Alembic environment — async migration runner for GhostPath.
+"""Alembic environment — async migration runner for TRIZ.
 
 Uses async engine for PostgreSQL migrations. Imports all models
 to ensure metadata is populated before autogenerate.

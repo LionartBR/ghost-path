@@ -23,4 +23,4 @@ Thumbs.db
 docker-compose.override.yml
 
 # Specs output
-/tmp/ghostpath/
+/tmp/triz/

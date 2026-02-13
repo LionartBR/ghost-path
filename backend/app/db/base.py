@@ -12,5 +12,5 @@ from sqlalchemy.orm import DeclarativeBase
 
 
 class Base(DeclarativeBase):
-    """Base class for all GhostPath ORM models."""
+    """Base class for all TRIZ ORM models."""
     pass

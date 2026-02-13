@@ -1,4 +1,4 @@
-/* SessionPage — O-Edger 6-phase session UI with knowledge graph sidebar. */
+/* SessionPage — TRIZ 6-phase session UI with knowledge graph sidebar. */
 
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
@@ -48,7 +48,7 @@ export function SessionPage() {
       <header className="bg-gray-800 border-b border-gray-700 px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">O-Edger</h1>
+            <h1 className="text-xl font-bold">TRIZ</h1>
             <p className="text-xs text-gray-500 font-mono">{sessionId?.slice(0, 8)}</p>
           </div>
           <ContextMeter usage={stream.contextUsage} />

@@ -1,10 +1,10 @@
-"""O-Edger schema — knowledge claims, evidence, edges, reframings, analogies, contradictions.
+"""TRIZ schema — knowledge claims, evidence, edges, reframings, analogies, contradictions.
 
 Revision ID: 002_o_edger
 Revises: 001_initial
 Create Date: 2026-02-13
 
-Drops v1 tables (rounds, premises) and creates O-Edger domain tables.
+Drops v1 tables (rounds, premises) and creates TRIZ domain tables.
 Modifies sessions table to add current_phase and current_round columns.
 """
 from typing import Sequence, Union
@@ -21,12 +21,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # WARNING: Destructive — drops all v1 data (rounds, premises).
-    # Acceptable for hackathon (O-Edger replaces GhostPath v1 schema entirely).
+    # Acceptable for hackathon (TRIZ replaces GhostPath v1 schema entirely).
     # In production, migrate data before dropping.
     op.drop_table("premises")
     op.drop_table("rounds")
 
-    # Modify sessions: add O-Edger columns, change default status
+    # Modify sessions: add TRIZ columns, change default status
     op.add_column("sessions", sa.Column("current_phase", sa.Integer, nullable=False, server_default="1"))
     op.add_column("sessions", sa.Column("current_round", sa.Integer, nullable=False, server_default="0"))
     op.alter_column("sessions", "status", server_default="decomposing")

@@ -1,5 +1,5 @@
 [project]
-name = "ghostpath"
+name = "triz"
 version = "4.0.0"
 description = "Semi-autonomous agent for evolutionary idea generation"
 requires-python = ">=3.11"

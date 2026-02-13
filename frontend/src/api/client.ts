@@ -1,4 +1,4 @@
-/* API Client — communicates with O-Edger backend. */
+/* API Client — communicates with TRIZ backend. */
 
 import type { Session, UserInput, SSEEvent, GraphData } from "../types";
 

@@ -2,15 +2,15 @@ services:
   db:
     image: postgres:18
     environment:
-      POSTGRES_DB: ghostpath
-      POSTGRES_USER: ghostpath
-      POSTGRES_PASSWORD: ghostpath
+      POSTGRES_DB: triz
+      POSTGRES_USER: triz
+      POSTGRES_PASSWORD: triz
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ghostpath -d ghostpath"]
+      test: ["CMD-SHELL", "pg_isready -U triz -d triz"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -20,7 +20,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql+asyncpg://ghostpath:ghostpath@db:5432/ghostpath
+      DATABASE_URL: postgresql+asyncpg://triz:triz@db:5432/triz
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       LOG_LEVEL: INFO
       LOG_FORMAT: json

@@ -1,15 +1,15 @@
-"""O-Edger API — FastAPI application entry point.
+"""TRIZ API — FastAPI application entry point.
 
 Invariants:
     - Routes registered explicitly (no auto-discovery — ExMA anti-pattern)
-    - Global error handlers map GhostPathError → structured JSON responses
+    - Global error handlers map TrizError → structured JSON responses
     - CORS configured from settings (not hardcoded)
     - Database initialized on startup via lifespan context manager
 
 Design Decisions:
     - Lifespan over @app.on_event: FastAPI recommended pattern, cleaner cleanup
       (ADR: FastAPI 0.128)
-    - Three error handler layers: GhostPathError (domain), RequestValidationError
+    - Three error handler layers: TrizError (domain), RequestValidationError
       (Pydantic), Exception (catch-all) — never leaks internal details
 """
 
@@ -23,7 +23,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.core.errors import OEdgerError, ErrorSeverity
+from app.core.errors import TrizError, ErrorSeverity
 from app.infrastructure.database import init_db
 from app.infrastructure.observability import setup_logging
 from app.config import get_settings
@@ -43,13 +43,13 @@ async def lifespan(app: FastAPI):
         pool_size=settings.database_pool_size,
         max_overflow=settings.database_max_overflow,
     )
-    logger.info("O-Edger API started")
+    logger.info("TRIZ API started")
     yield
-    logger.info("O-Edger API shutting down")
+    logger.info("TRIZ API shutting down")
 
 
 app = FastAPI(
-    title="O-Edger API", version="5.0.0", lifespan=lifespan,
+    title="TRIZ API", version="5.0.0", lifespan=lifespan,
 )
 
 # CORS — configured from settings, not hardcoded
@@ -76,11 +76,11 @@ if os.path.isdir("static"):
 
 # ─── GLOBAL ERROR HANDLERS ──────────────────────────────────────
 
-@app.exception_handler(OEdgerError)
-async def oedger_error_handler(request: Request, exc: OEdgerError):
-    """Handle all O-Edger domain/infrastructure errors."""
+@app.exception_handler(TrizError)
+async def triz_error_handler(request: Request, exc: TrizError):
+    """Handle all TRIZ domain/infrastructure errors."""
     logger.error(
-        f"OEdgerError: {exc.message}",
+        f"TrizError: {exc.message}",
         extra={"error_code": exc.code, "path": request.url.path},
     )
     return JSONResponse(

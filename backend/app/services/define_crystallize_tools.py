@@ -16,7 +16,7 @@ TOOLS_CRYSTALLIZE = [
         "name": "generate_knowledge_document",
         "description": """Produce the final knowledge artifact — a comprehensive 10-section markdown document.
 
-This tool is called when the user signals 'Knowledge Complete' (equivalent to 'Problem Resolved' in GhostPath).
+This tool is called when the user signals 'Knowledge Complete' (equivalent to 'Problem Resolved' in TRIZ v1).
 
 You MUST include all 10 sections:
 1. Executive Summary — 2-3 paragraphs distilling the entire investigation

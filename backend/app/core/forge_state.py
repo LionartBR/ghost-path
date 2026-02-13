@@ -1,4 +1,4 @@
-"""Forge State — in-memory enforcement engine for the O-Edger pipeline.
+"""Forge State — in-memory enforcement engine for the TRIZ pipeline.
 
 Invariants:
     - Phase transitions are user-initiated (never automatic)

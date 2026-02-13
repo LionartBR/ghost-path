@@ -47,7 +47,7 @@ export function HomePage() {
     <div className="min-h-screen bg-gray-900 text-white p-8">
       <div className="max-w-6xl mx-auto">
         <header className="mb-12 text-center">
-          <h1 className="text-5xl font-bold mb-2">O-Edger</h1>
+          <h1 className="text-5xl font-bold mb-2">TRIZ</h1>
           <p className="text-gray-400 text-lg">
             Research-grade knowledge synthesis with multi-model consensus
           </p>

@@ -1,4 +1,4 @@
-"""Domain Types — rich types replacing bare primitives across the O-Edger codebase.
+"""Domain Types — rich types replacing bare primitives across the TRIZ codebase.
 
 Invariants:
     - SessionId, ClaimId, EvidenceId wrap UUIDs — never use bare UUID in domain logic
@@ -29,7 +29,7 @@ ContradictionId = NewType("ContradictionId", UUID)
 # --- Enums --------------------------------------------------------------------
 
 class Phase(str, Enum):
-    """The 6-phase O-Edger pipeline. Order matters."""
+    """The 6-phase TRIZ pipeline. Order matters."""
     DECOMPOSE = "decompose"
     EXPLORE = "explore"
     SYNTHESIZE = "synthesize"

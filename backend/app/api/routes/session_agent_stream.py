@@ -115,7 +115,7 @@ async def send_user_input(
 async def download_document(session_id: UUID):
     """Download the Knowledge Document as a .md file."""
     import tempfile
-    specs_dir = os.path.join(tempfile.gettempdir(), "o-edger", "specs")
+    specs_dir = os.path.join(tempfile.gettempdir(), "triz", "specs")
     file_path = os.path.join(specs_dir, f"{session_id}.md")
     if not os.path.exists(file_path):
         raise HTTPException(
@@ -124,7 +124,7 @@ async def download_document(session_id: UUID):
     return FileResponse(
         file_path,
         media_type="text/markdown",
-        filename=f"o-edger-knowledge-{session_id}.md",
+        filename=f"triz-knowledge-{session_id}.md",
     )
 
 

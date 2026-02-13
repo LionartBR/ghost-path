@@ -1,4 +1,4 @@
-/* useAgentStream — SSE consumer for O-Edger's 6-phase pipeline. */
+/* useAgentStream — SSE consumer for TRIZ's 6-phase pipeline. */
 
 import { useCallback, useRef, useState } from "react";
 import { streamSession, sendUserInput } from "../api/client";

@@ -1,4 +1,4 @@
-"""Tools Registry — flat list of all O-Edger tools for Anthropic API.
+"""Tools Registry — flat list of all TRIZ tools for Anthropic API.
 
 Invariants:
     - ALL_TOOLS is a flat list of tool schemas — Anthropic API expects this format
@@ -8,7 +8,7 @@ Invariants:
 Design Decisions:
     - Explicit imports from each define_*_tools.py: no auto-discovery (ADR: ExMA anti-pattern)
     - Flat list: Anthropic messages.create() takes tools=ALL_TOOLS directly
-    - max_uses=10 on web_search: O-Edger is research-heavy, needs more searches than v1
+    - max_uses=10 on web_search: TRIZ is research-heavy, needs more searches than v1
 """
 
 from app.services.define_decompose_tools import TOOLS_DECOMPOSE

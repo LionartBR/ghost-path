@@ -27,7 +27,7 @@ from app.services.tools_registry import ALL_TOOLS
 from app.services.system_prompt import AGENT_SYSTEM_PROMPT
 from app.infrastructure.anthropic_client import ResilientAnthropicClient
 from app.core.errors import (
-    OEdgerError, AgentLoopExceededError,
+    TrizError, AgentLoopExceededError,
     ErrorContext, ErrorSeverity,
 )
 
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class AgentRunner:
-    """Async agentic loop — yields SSE events for the O-Edger pipeline."""
+    """Async agentic loop — yields SSE events for the TRIZ pipeline."""
 
     MAX_ITERATIONS = 50
 
@@ -70,7 +70,7 @@ class AgentRunner:
                             session_id=str(session.id),
                         ),
                     )
-                except OEdgerError as e:
+                except TrizError as e:
                     logger.error(
                         f"Anthropic API error: {e.message}",
                         extra={"session_id": str(session.id)},
@@ -262,7 +262,7 @@ class AgentRunner:
         """Execute tool with error boundary — never raises."""
         try:
             return await dispatch.execute(tool_name, session, tool_input)
-        except OEdgerError as e:
+        except TrizError as e:
             logger.warning(
                 f"Tool error: {e.message}",
                 extra={"tool_name": tool_name, "error_code": e.code},
