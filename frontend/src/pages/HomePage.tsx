@@ -9,13 +9,13 @@ const STATUS_COLORS: Record<
   Session["status"],
   { bg: string; text: string }
 > = {
-  decomposing: { bg: "bg-blue-600", text: "text-blue-100" },
-  exploring: { bg: "bg-purple-600", text: "text-purple-100" },
-  synthesizing: { bg: "bg-indigo-600", text: "text-indigo-100" },
-  validating: { bg: "bg-yellow-600", text: "text-yellow-100" },
-  building: { bg: "bg-green-600", text: "text-green-100" },
-  crystallized: { bg: "bg-emerald-600", text: "text-emerald-100" },
-  cancelled: { bg: "bg-gray-600", text: "text-gray-100" },
+  decomposing: { bg: "bg-indigo-50", text: "text-indigo-700" },
+  exploring: { bg: "bg-blue-50", text: "text-blue-700" },
+  synthesizing: { bg: "bg-teal-50", text: "text-teal-700" },
+  validating: { bg: "bg-amber-50", text: "text-amber-700" },
+  building: { bg: "bg-rose-50", text: "text-rose-700" },
+  crystallized: { bg: "bg-green-50", text: "text-green-700" },
+  cancelled: { bg: "bg-gray-100", text: "text-gray-500" },
 };
 
 export function HomePage() {
@@ -44,33 +44,33 @@ export function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
+    <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
         <header className="mb-12 text-center">
-          <h1 className="text-5xl font-bold mb-2">TRIZ</h1>
-          <p className="text-gray-400 text-lg">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">TRIZ</h1>
+          <p className="text-gray-500 text-base">
             Research-grade knowledge synthesis with multi-model consensus
           </p>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <section className="bg-gray-800 rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4">
+          <section className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
               Start New Investigation
             </h2>
             <ProblemInput onSubmit={handleSubmit} loading={loading} />
             {error && (
-              <div className="mt-4 bg-red-900 bg-opacity-30 border border-red-700 rounded-lg p-3">
-                <p className="text-red-300 text-sm">{error}</p>
+              <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-700 text-sm">{error}</p>
               </div>
             )}
           </section>
 
-          <section className="bg-gray-800 rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4">Recent Sessions</h2>
+          <section className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Sessions</h2>
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {sessions.length === 0 ? (
-                <p className="text-gray-400 text-center py-8">
+                <p className="text-gray-400 text-sm text-center py-8">
                   No sessions yet. Create one to get started.
                 </p>
               ) : (
@@ -78,24 +78,24 @@ export function HomePage() {
                   <button
                     key={session.id}
                     onClick={() => navigate(`/session/${session.id}`)}
-                    className="w-full text-left bg-gray-900 hover:bg-gray-750 border border-gray-700 rounded-lg p-4 transition-colors"
+                    className="w-full text-left bg-white hover:bg-gray-50 border border-gray-200 rounded-lg p-4 transition-colors"
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <span className="text-xs font-mono text-gray-500">
+                      <span className="text-xs font-mono text-gray-400">
                         {session.id.slice(0, 8)}
                       </span>
                       <span
-                        className={`px-2 py-1 rounded text-xs font-semibold ${
+                        className={`px-2 py-0.5 rounded text-xs font-medium ${
                           STATUS_COLORS[session.status].bg
                         } ${STATUS_COLORS[session.status].text}`}
                       >
                         {session.status}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-300 line-clamp-2">
+                    <p className="text-sm text-gray-700 line-clamp-2">
                       {session.problem}
                     </p>
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-xs text-gray-400 mt-2">
                       Created {new Date(session.created_at).toLocaleString()}
                     </p>
                   </button>

@@ -52,12 +52,12 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-        <h2 className="text-xl font-semibold text-white mb-2">
+    <div className="space-y-5">
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
+        <h2 className="text-base font-semibold text-gray-900 mb-1">
           Phase 5: Build Decision (Round {data.round})
         </h2>
-        <p className="text-gray-400 text-sm">
+        <p className="text-gray-500 text-sm">
           Review the knowledge graph, gaps, and negative knowledge. Decide whether to
           continue exploring, deep-dive on a claim, resolve the session, or add your own
           insight.
@@ -65,15 +65,15 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
       </div>
 
       {data.gaps.length > 0 && (
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-white mb-3">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">
             Knowledge Gaps Identified
           </h3>
           <ul className="space-y-2">
             {data.gaps.map((gap, i) => (
               <li key={i} className="flex items-start gap-2">
-                <span className="text-yellow-500 text-sm mt-0.5">▲</span>
-                <span className="text-gray-300 text-sm">{gap}</span>
+                <span className="text-amber-500 text-sm mt-0.5">&#9650;</span>
+                <span className="text-gray-600 text-sm">{gap}</span>
               </li>
             ))}
           </ul>
@@ -81,15 +81,15 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
       )}
 
       {data.negative_knowledge.length > 0 && (
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-white mb-3">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">
             Negative Knowledge (Rejected Claims)
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {data.negative_knowledge.map((nk, i) => (
-              <div key={i} className="bg-gray-900 border border-gray-700 rounded p-3">
-                <p className="text-gray-300 text-sm mb-1">{nk.claim_text}</p>
-                <p className="text-red-400 text-xs">
+              <div key={i} className="bg-gray-50 border border-gray-100 rounded-md p-3">
+                <p className="text-gray-700 text-sm mb-1">{nk.claim_text}</p>
+                <p className="text-red-500 text-xs">
                   Rejected (Round {nk.round}): {nk.rejection_reason}
                 </p>
               </div>
@@ -98,20 +98,20 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
         </div>
       )}
 
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-white mb-3">
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">
           Graph Summary
         </h3>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <span className="text-gray-400">Nodes:</span>
-            <span className="text-white ml-2 font-mono">
+            <span className="text-gray-500">Nodes:</span>
+            <span className="text-gray-900 ml-2 font-mono font-semibold">
               {data.graph.nodes.length}
             </span>
           </div>
           <div>
-            <span className="text-gray-400">Edges:</span>
-            <span className="text-white ml-2 font-mono">
+            <span className="text-gray-500">Edges:</span>
+            <span className="text-gray-900 ml-2 font-mono font-semibold">
               {data.graph.edges.length}
             </span>
           </div>
@@ -123,9 +123,9 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
           <button
             onClick={() => handleDecision("continue")}
             disabled={data.max_rounds_reached}
-            className={`py-3 px-4 rounded-lg font-medium transition-colors ${
+            className={`py-2.5 px-4 rounded-md font-medium text-sm transition-colors ${
               data.max_rounds_reached
-                ? "bg-gray-700 text-gray-500 cursor-not-allowed"
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                 : "bg-green-600 hover:bg-green-700 text-white"
             }`}
           >
@@ -133,14 +133,14 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
           </button>
           <button
             onClick={() => handleDecision("resolve")}
-            className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-4 rounded-md font-medium text-sm transition-colors"
           >
             Resolve (Crystallize)
           </button>
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
-          <label className="block text-sm text-gray-400 mb-2">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
+          <label className="block text-xs text-gray-500 mb-2">
             Deep-dive on a specific claim
           </label>
           <div className="flex gap-2">
@@ -148,7 +148,7 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
               value={selectedClaimId}
               onChange={(e) => setSelectedClaimId(e.target.value)}
               disabled={data.max_rounds_reached}
-              className="flex-1 bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">Select a claim...</option>
               {data.graph.nodes.map((node) => (
@@ -160,7 +160,7 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
             <button
               onClick={() => handleDecision("deep_dive")}
               disabled={data.max_rounds_reached || !selectedClaimId}
-              className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-md font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Deep-dive
             </button>
@@ -169,15 +169,15 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
 
         <button
           onClick={() => handleDecision("add_insight")}
-          className="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+          className="w-full bg-amber-500 hover:bg-amber-600 text-white py-2.5 px-4 rounded-md font-medium text-sm transition-colors"
         >
           Add Your Own Insight
         </button>
       </div>
 
       {data.max_rounds_reached && (
-        <div className="bg-red-900 border border-red-700 rounded-lg p-4">
-          <p className="text-red-200 text-sm">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-700 text-sm">
             Maximum rounds reached. You can only Resolve or Add Your Own Insight.
           </p>
         </div>

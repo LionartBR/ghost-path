@@ -7,6 +7,25 @@ interface VerdictPanelProps {
   onSubmit: (input: UserInput) => void;
 }
 
+const VERDICT_STYLES: Record<VerdictType, { active: string; inactive: string }> = {
+  accept: {
+    active: "bg-green-500 text-white",
+    inactive: "bg-white border border-gray-200 text-gray-600 hover:bg-green-50",
+  },
+  reject: {
+    active: "bg-red-500 text-white",
+    inactive: "bg-white border border-gray-200 text-gray-600 hover:bg-red-50",
+  },
+  qualify: {
+    active: "bg-amber-500 text-white",
+    inactive: "bg-white border border-gray-200 text-gray-600 hover:bg-amber-50",
+  },
+  merge: {
+    active: "bg-blue-500 text-white",
+    inactive: "bg-white border border-gray-200 text-gray-600 hover:bg-blue-50",
+  },
+};
+
 export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
   const [verdicts, setVerdicts] = useState<Map<number, ClaimVerdict>>(new Map());
 
@@ -50,12 +69,12 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-        <h2 className="text-xl font-semibold text-white mb-2">
+    <div className="space-y-5">
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
+        <h2 className="text-base font-semibold text-gray-900 mb-1">
           Phase 4: Render Verdicts
         </h2>
-        <p className="text-gray-400 text-sm">
+        <p className="text-gray-500 text-sm">
           Decide the fate of each claim. Accept, reject, qualify (true only if...), or
           merge with another claim.
         </p>
@@ -67,53 +86,26 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
         return (
           <div key={i} className="space-y-3">
             <ClaimCard claim={claim} index={i} />
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-3">
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 space-y-3">
               <div className="grid grid-cols-4 gap-2">
-                <button
-                  onClick={() => setVerdictType(i, "accept")}
-                  className={`py-2 px-3 rounded font-medium text-sm transition-colors ${
-                    currentVerdict === "accept"
-                      ? "bg-green-600 text-white"
-                      : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                  }`}
-                >
-                  Accept
-                </button>
-                <button
-                  onClick={() => setVerdictType(i, "reject")}
-                  className={`py-2 px-3 rounded font-medium text-sm transition-colors ${
-                    currentVerdict === "reject"
-                      ? "bg-red-600 text-white"
-                      : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                  }`}
-                >
-                  Reject
-                </button>
-                <button
-                  onClick={() => setVerdictType(i, "qualify")}
-                  className={`py-2 px-3 rounded font-medium text-sm transition-colors ${
-                    currentVerdict === "qualify"
-                      ? "bg-yellow-600 text-white"
-                      : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                  }`}
-                >
-                  Qualify
-                </button>
-                <button
-                  onClick={() => setVerdictType(i, "merge")}
-                  className={`py-2 px-3 rounded font-medium text-sm transition-colors ${
-                    currentVerdict === "merge"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                  }`}
-                >
-                  Merge
-                </button>
+                {(["accept", "reject", "qualify", "merge"] as VerdictType[]).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setVerdictType(i, v)}
+                    className={`py-2 px-3 rounded-md font-medium text-sm transition-colors capitalize ${
+                      currentVerdict === v
+                        ? VERDICT_STYLES[v].active
+                        : VERDICT_STYLES[v].inactive
+                    }`}
+                  >
+                    {v}
+                  </button>
+                ))}
               </div>
 
               {currentVerdict === "reject" && (
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">
+                  <label className="block text-xs text-gray-500 mb-1">
                     Rejection reason
                   </label>
                   <input
@@ -123,14 +115,14 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                       updateVerdict(i, "rejection_reason", e.target.value)
                     }
                     placeholder="Why is this claim invalid..."
-                    className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent placeholder-gray-400"
                   />
                 </div>
               )}
 
               {currentVerdict === "qualify" && (
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">
+                  <label className="block text-xs text-gray-500 mb-1">
                     Qualification (true only if...)
                   </label>
                   <input
@@ -140,14 +132,14 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                       updateVerdict(i, "qualification", e.target.value)
                     }
                     placeholder="This claim is true only if..."
-                    className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder-gray-400"
                   />
                 </div>
               )}
 
               {currentVerdict === "merge" && (
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">
+                  <label className="block text-xs text-gray-500 mb-1">
                     Merge with claim
                   </label>
                   <select
@@ -155,7 +147,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                     onChange={(e) =>
                       updateVerdict(i, "merge_with_claim_id", e.target.value)
                     }
-                    className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">Select a claim...</option>
                     {claims.map((c, origIdx) =>
@@ -175,7 +167,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
 
       <button
         onClick={handleSubmit}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2.5 px-6 rounded-md transition-colors"
       >
         Submit Verdicts
       </button>
