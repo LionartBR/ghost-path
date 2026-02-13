@@ -60,13 +60,13 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
   };
 
   return (
-    <div className="space-y-6 p-6 bg-gray-800 rounded-lg">
+    <div className="space-y-5 p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
       <div>
-        <h3 className="text-xl font-bold text-purple-400 mb-3">Fundamentals</h3>
+        <h3 className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">Fundamentals</h3>
         <ul className="space-y-2">
           {data.fundamentals.map((fundamental, i) => (
-            <li key={i} className="text-gray-300 flex items-start">
-              <span className="text-purple-500 mr-2">•</span>
+            <li key={i} className="text-gray-700 text-sm flex items-start">
+              <span className="text-indigo-400 mr-2 mt-0.5">&bull;</span>
               {fundamental}
             </li>
           ))}
@@ -74,28 +74,28 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
       </div>
 
       <div>
-        <h3 className="text-xl font-bold text-purple-400 mb-3">Assumptions</h3>
-        <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">Assumptions</h3>
+        <div className="space-y-2">
           {data.assumptions.map((assumption, i) => (
-            <div key={i} className="p-3 bg-gray-900 rounded border border-gray-700">
-              <p className="text-gray-300 mb-2">{assumption.text}</p>
-              <div className="flex gap-3">
+            <div key={i} className="p-3 bg-gray-50 rounded-md border border-gray-100">
+              <p className="text-gray-700 text-sm mb-2">{assumption.text}</p>
+              <div className="flex gap-2">
                 <button
                   onClick={() => toggleAssumption(i, "confirm")}
-                  className={`px-3 py-1 rounded text-sm ${
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                     confirmedAssumptions.has(i)
-                      ? "bg-green-600 text-white"
-                      : "bg-gray-700 text-gray-400 hover:bg-gray-600"
+                      ? "bg-green-500 text-white"
+                      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
                   }`}
                 >
                   Confirm
                 </button>
                 <button
                   onClick={() => toggleAssumption(i, "reject")}
-                  className={`px-3 py-1 rounded text-sm ${
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                     rejectedAssumptions.has(i)
-                      ? "bg-red-600 text-white"
-                      : "bg-gray-700 text-gray-400 hover:bg-gray-600"
+                      ? "bg-red-500 text-white"
+                      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
                   }`}
                 >
                   Reject
@@ -109,24 +109,24 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
           value={newAssumption}
           onChange={(e) => setNewAssumption(e.target.value)}
           placeholder="Add new assumption..."
-          className="mt-3 w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-gray-300 placeholder-gray-500"
+          className="mt-3 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
       </div>
 
       <div>
-        <h3 className="text-xl font-bold text-purple-400 mb-3">Reframings</h3>
+        <h3 className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">Reframings</h3>
         <div className="space-y-2">
           {data.reframings.map((reframing, i) => (
-            <label key={i} className="flex items-start p-3 bg-gray-900 rounded border border-gray-700 cursor-pointer hover:bg-gray-850">
+            <label key={i} className="flex items-start p-3 bg-gray-50 rounded-md border border-gray-100 cursor-pointer hover:bg-gray-100 transition-colors">
               <input
                 type="checkbox"
                 checked={selectedReframings.has(i)}
                 onChange={() => toggleReframing(i)}
-                className="mt-1 mr-3"
+                className="mt-0.5 mr-3 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
               />
               <div>
-                <p className="text-gray-300">{reframing.text}</p>
-                <p className="text-xs text-gray-500 mt-1">Type: {reframing.type}</p>
+                <p className="text-gray-700 text-sm">{reframing.text}</p>
+                <p className="text-xs text-gray-400 mt-1">Type: {reframing.type}</p>
               </div>
             </label>
           ))}
@@ -136,13 +136,13 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
           value={newReframing}
           onChange={(e) => setNewReframing(e.target.value)}
           placeholder="Add new reframing..."
-          className="mt-3 w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-gray-300 placeholder-gray-500"
+          className="mt-3 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
       </div>
 
       <button
         onClick={handleSubmit}
-        className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded transition-colors"
+        className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-md transition-colors"
       >
         Submit Review
       </button>

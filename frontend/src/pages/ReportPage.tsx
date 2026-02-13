@@ -36,10 +36,10 @@ export function ReportPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading knowledge document...</p>
+          <div className="animate-spin w-12 h-12 border-3 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-gray-500 text-sm">Loading knowledge document...</p>
         </div>
       </div>
     );
@@ -47,13 +47,13 @@ export function ReportPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <div className="bg-red-900 bg-opacity-30 border border-red-700 rounded-lg p-6 max-w-md">
-          <h2 className="text-xl font-bold mb-2">Error</h2>
-          <p className="text-red-300 mb-4">{error}</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white border border-red-200 rounded-lg shadow-sm p-6 max-w-md">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Error</h2>
+          <p className="text-red-600 text-sm mb-4">{error}</p>
           <button
             onClick={() => navigate("/")}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium transition-colors"
           >
             Back to Home
           </button>
@@ -63,15 +63,15 @@ export function ReportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
+    <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-6">
           <button
             onClick={() => navigate(`/session/${sessionId}`)}
-            className="text-blue-400 hover:text-blue-300 flex items-center gap-2"
+            className="text-indigo-600 hover:text-indigo-500 flex items-center gap-2 text-sm font-medium"
           >
             <svg
-              className="w-5 h-5"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
