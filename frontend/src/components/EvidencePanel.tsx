@@ -7,30 +7,30 @@ interface EvidencePanelProps {
 
 const EVIDENCE_TYPE_COLORS: Record<
   string,
-  { bg: string; text: string }
+  { bg: string; text: string; border: string }
 > = {
-  supporting: { bg: "bg-green-600", text: "text-green-100" },
-  contradicting: { bg: "bg-red-600", text: "text-red-100" },
-  contextual: { bg: "bg-blue-600", text: "text-blue-100" },
+  supporting: { bg: "bg-green-50", text: "text-green-700", border: "border-green-200" },
+  contradicting: { bg: "bg-red-50", text: "text-red-700", border: "border-red-200" },
+  contextual: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
 };
 
 export default function EvidencePanel({ evidence }: EvidencePanelProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="bg-gray-800 rounded-lg overflow-hidden">
+    <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-750 transition-colors"
+        className="w-full px-5 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className="text-lg font-semibold text-white">Evidence</span>
-          <span className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-sm">
+          <span className="text-sm font-semibold text-gray-900">Evidence</span>
+          <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-xs font-medium">
             {evidence.length}
           </span>
         </div>
         <svg
-          className={`w-5 h-5 text-gray-400 transition-transform ${
+          className={`w-4 h-4 text-gray-400 transition-transform ${
             isOpen ? "rotate-180" : ""
           }`}
           fill="none"
@@ -47,7 +47,7 @@ export default function EvidencePanel({ evidence }: EvidencePanelProps) {
       </button>
 
       {isOpen && (
-        <div className="border-t border-gray-700 p-4 space-y-3 max-h-96 overflow-y-auto">
+        <div className="border-t border-gray-100 p-5 space-y-3 max-h-96 overflow-y-auto">
           {evidence.length === 0 ? (
             <p className="text-gray-400 text-sm text-center py-4">
               No evidence available yet.
@@ -56,7 +56,7 @@ export default function EvidencePanel({ evidence }: EvidencePanelProps) {
             evidence.map((item, idx) => (
               <div
                 key={idx}
-                className="bg-gray-900 rounded-lg p-3 border border-gray-700"
+                className="bg-gray-50 rounded-md p-3 border border-gray-100"
               >
                 <div className="flex items-start justify-between mb-2">
                   {item.url ? (
@@ -64,26 +64,28 @@ export default function EvidencePanel({ evidence }: EvidencePanelProps) {
                       href={item.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-400 hover:text-blue-300 font-medium text-sm underline flex-1"
+                      className="text-indigo-600 hover:text-indigo-500 font-medium text-sm flex-1"
                     >
                       {item.title}
                     </a>
                   ) : (
-                    <span className="text-white font-medium text-sm flex-1">
+                    <span className="text-gray-900 font-medium text-sm flex-1">
                       {item.title}
                     </span>
                   )}
                   {item.type && (
                     <span
-                      className={`ml-2 px-2 py-1 rounded text-xs font-semibold ${
-                        EVIDENCE_TYPE_COLORS[item.type]?.bg || "bg-gray-600"
-                      } ${EVIDENCE_TYPE_COLORS[item.type]?.text || "text-gray-100"}`}
+                      className={`ml-2 px-2 py-0.5 rounded text-xs font-medium border ${
+                        EVIDENCE_TYPE_COLORS[item.type]?.bg || "bg-gray-100"
+                      } ${EVIDENCE_TYPE_COLORS[item.type]?.text || "text-gray-600"} ${
+                        EVIDENCE_TYPE_COLORS[item.type]?.border || "border-gray-200"
+                      }`}
                     >
                       {item.type}
                     </span>
                   )}
                 </div>
-                <p className="text-gray-300 text-sm leading-relaxed">
+                <p className="text-gray-600 text-sm leading-relaxed">
                   {item.summary}
                 </p>
               </div>
