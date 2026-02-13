@@ -24,32 +24,12 @@ const STATUS_COLORS: Record<
   Session["status"],
   { bg: string; text: string; dot: string }
 > = {
-  decomposing: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
-  exploring: {
-    bg: "bg-purple-50",
-    text: "text-purple-700",
-    dot: "bg-purple-500",
-  },
-  synthesizing: {
-    bg: "bg-indigo-50",
-    text: "text-indigo-700",
-    dot: "bg-indigo-500",
-  },
-  validating: {
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    dot: "bg-amber-500",
-  },
-  building: {
-    bg: "bg-green-50",
-    text: "text-green-700",
-    dot: "bg-green-500",
-  },
-  crystallized: {
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    dot: "bg-emerald-500",
-  },
+  decomposing: { bg: "bg-indigo-50", text: "text-indigo-700", dot: "bg-indigo-500" },
+  exploring: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
+  synthesizing: { bg: "bg-teal-50", text: "text-teal-700", dot: "bg-teal-500" },
+  validating: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
+  building: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500" },
+  crystallized: { bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500" },
   cancelled: { bg: "bg-gray-100", text: "text-gray-500", dot: "bg-gray-400" },
 };
 
@@ -154,7 +134,7 @@ export function HomePage() {
                   <button
                     key={session.id}
                     onClick={() => navigate(`/session/${session.id}`)}
-                    className="w-full text-left bg-white hover:bg-gray-50 border border-gray-150
+                    className="w-full text-left bg-white hover:bg-gray-50 border border-gray-200
                                rounded-xl p-4 transition-all group"
                   >
                     <div className="flex items-start justify-between mb-1.5">

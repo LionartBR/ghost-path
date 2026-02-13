@@ -48,12 +48,12 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-        <h2 className="text-xl font-semibold text-white mb-2">
+    <div className="space-y-5">
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
+        <h2 className="text-base font-semibold text-gray-900 mb-1">
           Phase 3: Validate Evidence
         </h2>
-        <p className="text-gray-400 text-sm">
+        <p className="text-gray-500 text-sm">
           Review each claim's evidence quality. Mark whether the evidence is valid,
           provide counter-examples if you know of any, note missing factors, or suggest
           additional evidence sources.
@@ -63,7 +63,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
       {claims.map((claim, i) => (
         <div key={i} className="space-y-3">
           <ClaimCard claim={claim} index={i} />
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-3">
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 space-y-3">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -71,15 +71,15 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                 onChange={(e) =>
                   updateFeedback(i, "evidence_valid", e.target.checked)
                 }
-                className="w-4 h-4 bg-gray-700 border-gray-600 rounded text-blue-500 focus:ring-blue-500"
+                className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
               />
-              <span className="text-white text-sm font-medium">
+              <span className="text-gray-900 text-sm font-medium">
                 Evidence is valid and supports the claim
               </span>
             </label>
 
             <div>
-              <label className="block text-sm text-gray-400 mb-1">
+              <label className="block text-xs text-gray-500 mb-1">
                 Counter-example (if any)
               </label>
               <input
@@ -89,12 +89,12 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                   updateFeedback(i, "counter_example", e.target.value)
                 }
                 placeholder="Describe a case where this claim doesn't hold..."
-                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400"
               />
             </div>
 
             <div>
-              <label className="block text-sm text-gray-400 mb-1">
+              <label className="block text-xs text-gray-500 mb-1">
                 Missing factors in synthesis
               </label>
               <input
@@ -104,12 +104,12 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                   updateFeedback(i, "synthesis_ignores", e.target.value)
                 }
                 placeholder="What important factors were ignored..."
-                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400"
               />
             </div>
 
             <div>
-              <label className="block text-sm text-gray-400 mb-1">
+              <label className="block text-xs text-gray-500 mb-1">
                 Additional evidence (URLs or references)
               </label>
               <input
@@ -119,7 +119,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                   updateFeedback(i, "additional_evidence", e.target.value)
                 }
                 placeholder="Suggest additional sources..."
-                className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400"
               />
             </div>
           </div>
@@ -128,7 +128,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
 
       <button
         onClick={handleSubmit}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2.5 px-6 rounded-md transition-colors"
       >
         Submit Evidence Review
       </button>

@@ -20,6 +20,12 @@ export function ProblemInput({ onSubmit, loading, exampleProblem }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
+        <label
+          htmlFor="problem"
+          className="block text-sm font-medium text-gray-700 mb-2"
+        >
+          Describe your problem
+        </label>
         <textarea
           id="problem"
           value={problem}
