@@ -40,6 +40,7 @@ class DatabaseSessionManager:
             max_overflow=max_overflow,
             pool_pre_ping=True,
             pool_recycle=3600,
+            connect_args={"ssl": False},
         )
         self._session_factory = async_sessionmaker(
             self.engine,
