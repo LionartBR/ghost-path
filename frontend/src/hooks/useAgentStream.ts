@@ -153,6 +153,10 @@ export function useAgentStream(sessionId: string | null) {
         }));
         break;
 
+      case "heartbeat":
+        // Keep-alive during API calls — no state change needed
+        break;
+
       case "done": {
         const d = event.data as { error: boolean; awaiting_input: boolean };
         setState((s) => ({

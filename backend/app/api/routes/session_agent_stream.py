@@ -4,11 +4,14 @@ Invariants:
     - Every SSE stream instantiates AgentRunner with fresh DB session and Anthropic client
     - User input triggers phase-appropriate processing based on UserInput.type
     - Phase review events (review_decompose, review_explore, etc.) emitted by route, not agent
+    - ForgeState synced to DB after every phase transition (observability + crash recovery)
+    - Message history reset on phase transition (token explosion prevention)
 
 Design Decisions:
     - Imports _forge_states and get_session_or_404 from session_lifecycle (shared state, DRY)
     - StreamingResponse for SSE: event_generator yields formatted SSE lines
     - Phase review logic in route: agent does the work, route emits the review event
+    - History reset: ForgeState already has structured data, conversational history is redundant
 """
 
 import asyncio
@@ -26,7 +29,7 @@ from app.infrastructure.anthropic_client import ResilientAnthropicClient
 from app.schemas.session import UserInput
 from app.services.agent_runner import AgentRunner
 from app.core.forge_state import ForgeState
-from app.core.domain_types import Phase
+from app.core.domain_types import Phase, SessionStatus
 from app.config import get_settings
 from app.api.routes.session_lifecycle import (
     _forge_states, get_session_or_404,
@@ -91,7 +94,7 @@ async def send_user_input(
     runner = _create_runner(db)
 
     message = _format_user_input(body, forge_state)
-    _apply_user_input(body, forge_state)
+    await _apply_user_input(body, forge_state, session, db)
 
     async def event_generator():
         try:
@@ -254,11 +257,12 @@ def _format_user_input(body: UserInput, state: ForgeState) -> str:
     return "Unknown user input type."
 
 
-def _apply_user_input(body: UserInput, state: ForgeState) -> None:
-    """Apply user input to ForgeState (side effects)."""
+async def _apply_user_input(
+    body: UserInput, state: ForgeState, session, db: AsyncSession,
+) -> None:
+    """Apply user input to ForgeState, sync to DB, reset history on phase change."""
     match body.type:
         case "decompose_review":
-            # Mark selected reframings
             if body.selected_reframings:
                 for idx in body.selected_reframings:
                     if idx < len(state.reframings):
@@ -267,7 +271,6 @@ def _apply_user_input(body: UserInput, state: ForgeState) -> None:
                 state.user_added_reframings.extend(body.added_reframings)
             if body.added_assumptions:
                 state.user_added_assumptions.extend(body.added_assumptions)
-            # Confirm/reject assumptions
             if body.confirmed_assumptions:
                 for idx in body.confirmed_assumptions:
                     if idx < len(state.assumptions):
@@ -276,8 +279,9 @@ def _apply_user_input(body: UserInput, state: ForgeState) -> None:
                 for idx in body.rejected_assumptions:
                     if idx < len(state.assumptions):
                         state.assumptions[idx]["confirmed"] = False
-            # Transition phase
             state.transition_to(Phase.EXPLORE)
+            session.message_history = []
+            await _sync_state_to_db(session, state, db)
 
         case "explore_review":
             if body.starred_analogies:
@@ -285,12 +289,15 @@ def _apply_user_input(body: UserInput, state: ForgeState) -> None:
                     if idx < len(state.cross_domain_analogies):
                         state.cross_domain_analogies[idx]["starred"] = True
             state.transition_to(Phase.SYNTHESIZE)
+            session.message_history = []
+            await _sync_state_to_db(session, state, db)
 
         case "claims_review":
             state.transition_to(Phase.VALIDATE)
+            session.message_history = []
+            await _sync_state_to_db(session, state, db)
 
         case "verdicts":
-            # Process verdicts: add to negative knowledge or mark for graph
             if body.verdicts:
                 for v in body.verdicts:
                     if v.claim_index < len(state.current_round_claims):
@@ -304,16 +311,48 @@ def _apply_user_input(body: UserInput, state: ForgeState) -> None:
                         claim["verdict"] = v.verdict
                         claim["qualification"] = v.qualification
             state.transition_to(Phase.BUILD)
+            session.message_history = []
+            await _sync_state_to_db(session, state, db)
 
         case "build_decision":
             if body.decision == "continue":
                 state.reset_for_new_round()
                 state.transition_to(Phase.SYNTHESIZE)
+                session.message_history = []
+                await _sync_state_to_db(session, state, db)
             elif body.decision == "deep_dive":
                 state.deep_dive_active = True
                 state.deep_dive_target_claim_id = body.deep_dive_claim_id
             elif body.decision == "resolve":
                 state.transition_to(Phase.CRYSTALLIZE)
+                session.message_history = []
+                await _sync_state_to_db(session, state, db)
+
+
+async def _sync_state_to_db(
+    session, state: ForgeState, db: AsyncSession,
+) -> None:
+    """Sync ForgeState -> DB for observability and crash recovery.
+
+    ADR: ForgeState is in-memory but DB should reflect current phase/round/status
+    so GET /sessions returns accurate data.
+    """
+    _PHASE_TO_STATUS = {
+        Phase.DECOMPOSE: SessionStatus.DECOMPOSING,
+        Phase.EXPLORE: SessionStatus.EXPLORING,
+        Phase.SYNTHESIZE: SessionStatus.SYNTHESIZING,
+        Phase.VALIDATE: SessionStatus.VALIDATING,
+        Phase.BUILD: SessionStatus.BUILDING,
+        Phase.CRYSTALLIZE: SessionStatus.CRYSTALLIZED,
+    }
+    phase_list = list(Phase)
+    session.current_phase = phase_list.index(state.current_phase) + 1
+    session.current_round = state.current_round
+    session.status = _PHASE_TO_STATUS[state.current_phase].value
+    try:
+        await db.commit()
+    except Exception as e:
+        logger.error(f"Failed to sync state to DB: {e}")
 
 
 def _build_review_event(state: ForgeState) -> dict | None:

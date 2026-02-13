@@ -44,7 +44,9 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
               <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
               <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping opacity-75" />
             </div>
-            <span className="text-green-400 text-sm font-medium">Streaming</span>
+            <span className="text-green-400 text-sm font-medium">
+              {hasActivity ? "Streaming" : "Thinking..."}
+            </span>
           </div>
         )}
       </div>

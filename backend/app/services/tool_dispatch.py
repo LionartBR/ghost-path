@@ -4,6 +4,7 @@ Invariants:
     - Every tool->handler mapping is visible — no getattr magic, no auto-discovery
     - Unknown tools return UNKNOWN_TOOL error (never raises)
     - web_search calls are intercepted and recorded in ForgeState for gate enforcement
+    - Every tool call logged to ToolCall ORM for observability
     - Handlers instantiated per-dispatch with shared DB + state context
 
 Design Decisions:
@@ -12,7 +13,11 @@ Design Decisions:
     - Split handlers by phase: max ~4 methods per class
       (ADR: ExMA no god objects)
     - web_search interception: we can't "require" the built-in tool, but we CAN track it
+    - Tool call logging wrapped in try/except: never crashes the agent loop
 """
+
+import logging
+from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,6 +30,7 @@ from app.services.handle_build import BuildHandlers
 from app.services.handle_crystallize import CrystallizeHandlers
 from app.services.handle_cross_cutting import CrossCuttingHandlers
 
+logger = logging.getLogger(__name__)
 
 # Tools that pause the agent loop (agent yields 'done', waits for user input)
 PAUSE_TOOLS = frozenset({"generate_knowledge_document"})
@@ -33,7 +39,12 @@ PAUSE_TOOLS = frozenset({"generate_knowledge_document"})
 class ToolDispatch:
     """Routes tool_name -> handler. Explicit registration, no auto-discovery."""
 
-    def __init__(self, db: AsyncSession, state: ForgeState):
+    def __init__(
+        self, db: AsyncSession, state: ForgeState,
+        session_id: UUID | None = None,
+    ):
+        self._session_id = session_id
+        self._db = db
         decompose = DecomposeHandlers(db, state)
         explore = ExploreHandlers(db, state)
         synthesize = SynthesizeHandlers(db, state)
@@ -92,12 +103,36 @@ class ToolDispatch:
     async def execute(
         self, tool_name: str, session: object, input_data: dict,
     ) -> dict:
-        """Route tool_name to handler. Returns result dict."""
+        """Route tool_name to handler. Returns result dict. Logs every call."""
         handler = self._handlers.get(tool_name)
         if not handler:
-            return {
+            result = {
                 "status": "error",
                 "error_code": "UNKNOWN_TOOL",
                 "message": f"Tool '{tool_name}' does not exist.",
             }
-        return await handler(session, input_data)
+            await self._log_tool_call(tool_name, input_data, result)
+            return result
+        result = await handler(session, input_data)
+        await self._log_tool_call(tool_name, input_data, result)
+        return result
+
+    async def _log_tool_call(
+        self, tool_name: str, input_data: dict, result: dict,
+    ) -> None:
+        """Log tool call to DB. Never crashes the agent loop."""
+        if not self._session_id:
+            return
+        try:
+            from app.models.tool_call import ToolCall
+            is_error = result.get("status") == "error"
+            self._db.add(ToolCall(
+                session_id=self._session_id,
+                tool_name=tool_name,
+                tool_input=input_data,
+                tool_output=None if is_error else result,
+                error_code=result.get("error_code") if is_error else None,
+            ))
+            await self._db.flush()
+        except Exception as e:
+            logger.warning(f"Failed to log tool call '{tool_name}': {e}")

@@ -64,12 +64,16 @@ class ResilientAnthropicClient:
         *,
         model: str,
         max_tokens: int,
-        system: str,
+        system: str | list[dict],
         tools: list,
         messages: list,
         context: ErrorContext | None = None,
     ):
-        """Create message with automatic retry on transient failures."""
+        """Create message with automatic retry on transient failures.
+
+        Supports prompt caching: system/tools/messages may include
+        cache_control blocks per Anthropic's caching API.
+        """
         for attempt in range(self.max_retries + 1):
             try:
                 response = await self._call_api(
@@ -79,12 +83,18 @@ class ResilientAnthropicClient:
                     tools=tools,
                     messages=messages,
                 )
+                # Log cache metrics when available
+                usage = response.usage
+                cache_read = getattr(usage, "cache_read_input_tokens", 0)
+                cache_create = getattr(usage, "cache_creation_input_tokens", 0)
                 logger.info(
                     "Anthropic API success",
                     extra={
                         "attempt": attempt + 1,
-                        "input_tokens": response.usage.input_tokens,
-                        "output_tokens": response.usage.output_tokens,
+                        "input_tokens": usage.input_tokens,
+                        "output_tokens": usage.output_tokens,
+                        "cache_read_input_tokens": cache_read,
+                        "cache_creation_input_tokens": cache_create,
                     },
                 )
                 return response

@@ -58,18 +58,32 @@ class AgentRunner:
             while iteration < self.MAX_ITERATIONS:
                 iteration += 1
 
-                # -- Call Anthropic API (with retry in client) --
+                # -- Call Anthropic API with heartbeat (3s interval) --
                 try:
-                    response = await self.client.create_message(
-                        model=self.model,
-                        max_tokens=16384,
-                        system=AGENT_SYSTEM_PROMPT,
-                        tools=ALL_TOOLS,
-                        messages=messages,
-                        context=ErrorContext(
-                            session_id=str(session.id),
+                    cached_system = _with_system_cache(AGENT_SYSTEM_PROMPT)
+                    cached_tools = _with_tools_cache(ALL_TOOLS)
+                    cached_msgs = _with_message_cache(messages)
+                    api_task = asyncio.create_task(
+                        self.client.create_message(
+                            model=self.model,
+                            max_tokens=16384,
+                            system=cached_system,
+                            tools=cached_tools,
+                            messages=cached_msgs,
+                            context=ErrorContext(
+                                session_id=str(session.id),
+                            ),
                         ),
                     )
+                    try:
+                        while not api_task.done():
+                            await asyncio.sleep(3)
+                            if not api_task.done():
+                                yield _heartbeat_event(iteration)
+                    except asyncio.CancelledError:
+                        api_task.cancel()
+                        raise
+                    response = api_task.result()
                 except TrizError as e:
                     logger.error(
                         f"Anthropic API error: {e.message}",
@@ -99,7 +113,7 @@ class AgentRunner:
                 assistant_content = []
                 has_tool_use = False
                 should_pause = False
-                dispatch = ToolDispatch(self.db, forge_state)
+                dispatch = ToolDispatch(self.db, forge_state, session.id)
 
                 for block in response.content:
                     assistant_content.append(block)
@@ -156,6 +170,12 @@ class AgentRunner:
                     continue
 
                 if not has_tool_use:
+                    # Save message history on normal completion (not just pause)
+                    try:
+                        session.message_history = messages
+                        await self.db.commit()
+                    except Exception as e:
+                        logger.error(f"Failed to save message history: {e}")
                     yield _done_event(error=False)
                     return
 
@@ -295,6 +315,13 @@ def _done_event(error: bool = False, awaiting_input: bool = False) -> dict:
     }
 
 
+def _heartbeat_event(iteration: int) -> dict:
+    return {
+        "type": "heartbeat",
+        "data": {"status": "thinking", "iteration": iteration},
+    }
+
+
 def _get_context_usage(session: object) -> dict:
     max_t = 1_000_000
     used = session.total_tokens_used
@@ -313,3 +340,45 @@ def _extract_web_search_query(blocks: list) -> str:
             input_data = getattr(block, "input", {})
             return input_data.get("query", "unknown query")
     return "unknown query"
+
+
+# -- Prompt Caching helpers ----------------------------------------------------
+# ADR: Anthropic prompt caching reduces input token costs by 90% for cached
+# content. System prompt (~2.8K tokens) + tools (~8.5K tokens) are identical
+# every call. cache_control: {"type": "ephemeral"} marks the cache breakpoint.
+
+_CACHE_CONTROL = {"type": "ephemeral"}
+
+
+def _with_system_cache(system: str) -> list[dict]:
+    """Wrap system prompt as list with cache_control on the text block."""
+    return [{"type": "text", "text": system, "cache_control": _CACHE_CONTROL}]
+
+
+def _with_tools_cache(tools: list[dict]) -> list[dict]:
+    """Add cache_control to the last tool definition."""
+    if not tools:
+        return tools
+    cached = list(tools)
+    cached[-1] = {**cached[-1], "cache_control": _CACHE_CONTROL}
+    return cached
+
+
+def _with_message_cache(messages: list[dict]) -> list[dict]:
+    """Add cache_control to the last user message for multi-turn caching."""
+    if not messages:
+        return messages
+    cached = [dict(m) for m in messages]
+    # Find last user message and mark it for caching
+    for i in range(len(cached) - 1, -1, -1):
+        if cached[i].get("role") == "user":
+            content = cached[i].get("content")
+            if isinstance(content, str):
+                cached[i]["content"] = [
+                    {"type": "text", "text": content, "cache_control": _CACHE_CONTROL},
+                ]
+            elif isinstance(content, list) and content:
+                last_block = {**content[-1], "cache_control": _CACHE_CONTROL}
+                cached[i]["content"] = content[:-1] + [last_block]
+            break
+    return cached
