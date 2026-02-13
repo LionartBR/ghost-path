@@ -5,26 +5,69 @@ import { useSession } from "../hooks/useSession";
 import { listSessions } from "../api/client";
 import type { Session } from "../types";
 
+const EXAMPLE_PROBLEMS = [
+  "How can we reduce developer onboarding from 2 weeks to 2 days?",
+  "How might we make renewable energy storage cost-competitive with fossil fuels?",
+  "How can distributed teams maintain innovation speed without co-location?",
+];
+
+const PHASES = [
+  "Decompose",
+  "Explore",
+  "Synthesize",
+  "Validate",
+  "Build",
+  "Crystallize",
+];
+
 const STATUS_COLORS: Record<
   Session["status"],
-  { bg: string; text: string }
+  { bg: string; text: string; dot: string }
 > = {
-  decomposing: { bg: "bg-blue-600", text: "text-blue-100" },
-  exploring: { bg: "bg-purple-600", text: "text-purple-100" },
-  synthesizing: { bg: "bg-indigo-600", text: "text-indigo-100" },
-  validating: { bg: "bg-yellow-600", text: "text-yellow-100" },
-  building: { bg: "bg-green-600", text: "text-green-100" },
-  crystallized: { bg: "bg-emerald-600", text: "text-emerald-100" },
-  cancelled: { bg: "bg-gray-600", text: "text-gray-100" },
+  decomposing: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
+  exploring: {
+    bg: "bg-purple-50",
+    text: "text-purple-700",
+    dot: "bg-purple-500",
+  },
+  synthesizing: {
+    bg: "bg-indigo-50",
+    text: "text-indigo-700",
+    dot: "bg-indigo-500",
+  },
+  validating: {
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    dot: "bg-amber-500",
+  },
+  building: {
+    bg: "bg-green-50",
+    text: "text-green-700",
+    dot: "bg-green-500",
+  },
+  crystallized: {
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    dot: "bg-emerald-500",
+  },
+  cancelled: { bg: "bg-gray-100", text: "text-gray-500", dot: "bg-gray-400" },
 };
 
 export function HomePage() {
   const navigate = useNavigate();
   const { loading, error, create } = useSession();
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [exampleIndex, setExampleIndex] = useState(0);
 
   useEffect(() => {
     loadSessions();
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setExampleIndex((i) => (i + 1) % EXAMPLE_PROBLEMS.length);
+    }, 4000);
+    return () => clearInterval(timer);
   }, []);
 
   const loadSessions = async () => {
@@ -44,66 +87,98 @@ export function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
-      <div className="max-w-6xl mx-auto">
-        <header className="mb-12 text-center">
-          <h1 className="text-5xl font-bold mb-2">TRIZ</h1>
-          <p className="text-gray-400 text-lg">
-            Research-grade knowledge synthesis with multi-model consensus
-          </p>
-        </header>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-16">
+      <div className="w-full max-w-xl flex flex-col items-center">
+        {/* Decorative gradient line */}
+        <div className="w-16 h-px bg-gradient-to-r from-transparent via-indigo-400 to-transparent mb-6" />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <section className="bg-gray-800 rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4">
-              Start New Investigation
-            </h2>
-            <ProblemInput onSubmit={handleSubmit} loading={loading} />
-            {error && (
-              <div className="mt-4 bg-red-900 bg-opacity-30 border border-red-700 rounded-lg p-3">
-                <p className="text-red-300 text-sm">{error}</p>
+        {/* Title */}
+        <h1 className="text-5xl font-bold text-gray-900 tracking-tight">
+          TRIZ
+        </h1>
+
+        {/* Subtitle */}
+        <p className="mt-3 text-gray-500 text-center text-lg leading-relaxed">
+          Transform complex problems into structured knowledge
+        </p>
+        <p className="text-gray-400 text-center text-sm">
+          through dialectical reasoning in 6 phases
+        </p>
+
+        {/* Phase pipeline visualization */}
+        <div className="mt-8 flex items-center gap-0">
+          {PHASES.map((phase, i) => (
+            <div key={phase} className="flex items-center">
+              <div className="flex flex-col items-center">
+                <div className="w-2.5 h-2.5 rounded-full bg-indigo-300" />
+                <span className="mt-2 text-[11px] uppercase tracking-wider text-gray-400 font-medium">
+                  {phase}
+                </span>
               </div>
-            )}
-          </section>
+              {i < PHASES.length - 1 && (
+                <div className="w-8 h-px bg-gray-300 -mt-4 mx-1" />
+              )}
+            </div>
+          ))}
+        </div>
 
-          <section className="bg-gray-800 rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4">Recent Sessions</h2>
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {sessions.length === 0 ? (
-                <p className="text-gray-400 text-center py-8">
-                  No sessions yet. Create one to get started.
-                </p>
-              ) : (
-                sessions.map((session) => (
+        {/* Main input card */}
+        <div className="mt-10 w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <ProblemInput
+            onSubmit={handleSubmit}
+            loading={loading}
+            exampleProblem={EXAMPLE_PROBLEMS[exampleIndex]}
+          />
+          {error && (
+            <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-3">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Recent sessions */}
+        {sessions.length > 0 && (
+          <div className="mt-12 w-full">
+            <div className="flex items-center gap-4 mb-5">
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Recent Sessions
+              </span>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+
+            <div className="space-y-2.5">
+              {sessions.map((session) => {
+                const colors = STATUS_COLORS[session.status];
+                return (
                   <button
                     key={session.id}
                     onClick={() => navigate(`/session/${session.id}`)}
-                    className="w-full text-left bg-gray-900 hover:bg-gray-750 border border-gray-700 rounded-lg p-4 transition-colors"
+                    className="w-full text-left bg-white hover:bg-gray-50 border border-gray-150
+                               rounded-xl p-4 transition-all group"
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-xs font-mono text-gray-500">
-                        {session.id.slice(0, 8)}
-                      </span>
+                    <div className="flex items-start justify-between mb-1.5">
+                      <p className="text-sm text-gray-700 line-clamp-2 leading-snug group-hover:text-gray-900 transition-colors">
+                        {session.problem}
+                      </p>
                       <span
-                        className={`px-2 py-1 rounded text-xs font-semibold ${
-                          STATUS_COLORS[session.status].bg
-                        } ${STATUS_COLORS[session.status].text}`}
+                        className={`ml-3 shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${colors.bg} ${colors.text}`}
                       >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${colors.dot}`}
+                        />
                         {session.status}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-300 line-clamp-2">
-                      {session.problem}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Created {new Date(session.created_at).toLocaleString()}
+                    <p className="text-xs text-gray-400 mt-1">
+                      {new Date(session.created_at).toLocaleString()}
                     </p>
                   </button>
-                ))
-              )}
+                );
+              })}
             </div>
-          </section>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
