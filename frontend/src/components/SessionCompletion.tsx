@@ -60,7 +60,7 @@ export default function SessionCompletion({ data }: SessionCompletionProps) {
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 animate-fade-in">
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 rounded-2xl p-8 text-white shadow-xl shadow-indigo-200/50">
+      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 rounded-2xl p-8 text-white shadow-xl shadow-blue-200/50">
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0 w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
             <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -71,7 +71,7 @@ export default function SessionCompletion({ data }: SessionCompletionProps) {
             <h1 className="text-2xl font-extrabold tracking-tight">
               {t("completion.hero.title")}
             </h1>
-            <p className="mt-2 text-indigo-100 text-sm leading-relaxed line-clamp-3">
+            <p className="mt-2 text-blue-100 text-sm leading-relaxed line-clamp-3">
               {problem}
             </p>
           </div>
@@ -94,14 +94,14 @@ export default function SessionCompletion({ data }: SessionCompletionProps) {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard value={stats.claims_validated} label={t("completion.stats.claimsValidated")} color="text-green-600" delay={100} />
-        <StatCard value={stats.claims_rejected} label={t("completion.stats.claimsRejected")} color="text-red-500" delay={150} />
-        <StatCard value={stats.claims_qualified} label={t("completion.stats.claimsQualified")} color="text-amber-500" delay={200} />
+        <StatCard value={stats.claims_validated} label={t("completion.stats.claimsValidated")} color="text-blue-600" delay={100} />
+        <StatCard value={stats.claims_rejected} label={t("completion.stats.claimsRejected")} color="text-blue-500" delay={150} />
+        <StatCard value={stats.claims_qualified} label={t("completion.stats.claimsQualified")} color="text-blue-500" delay={200} />
         <StatCard value={stats.evidence_collected} label={t("completion.stats.evidenceCollected")} color="text-blue-600" delay={250} />
-        <StatCard value={stats.analogies_used} label={t("completion.stats.analogiesUsed")} color="text-purple-600" delay={300} />
-        <StatCard value={stats.contradictions_found} label={t("completion.stats.contradictions")} color="text-pink-600" delay={350} />
-        <StatCard value={stats.fundamentals_identified} label={t("completion.stats.fundamentals")} color="text-cyan-600" delay={400} />
-        <StatCard value={stats.assumptions_examined} label={t("completion.stats.assumptions")} color="text-teal-600" delay={450} />
+        <StatCard value={stats.analogies_used} label={t("completion.stats.analogiesUsed")} color="text-blue-600" delay={300} />
+        <StatCard value={stats.contradictions_found} label={t("completion.stats.contradictions")} color="text-blue-600" delay={350} />
+        <StatCard value={stats.fundamentals_identified} label={t("completion.stats.fundamentals")} color="text-blue-600" delay={400} />
+        <StatCard value={stats.assumptions_examined} label={t("completion.stats.assumptions")} color="text-blue-600" delay={450} />
       </div>
 
       {/* Knowledge Graph */}

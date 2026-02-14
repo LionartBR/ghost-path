@@ -30,7 +30,7 @@ export default function KnowledgeDocument({
         <h2 className="text-lg font-semibold text-gray-900">{t("document.title")}</h2>
         <button
           onClick={handleDownload}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/50 transition-all"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-md shadow-blue-200/50 hover:shadow-lg hover:shadow-blue-300/50 transition-all"
         >
           {t("document.download")}
         </button>
@@ -69,12 +69,12 @@ export default function KnowledgeDocument({
             ),
             li: ({ children }) => <li className="ml-4">{children}</li>,
             blockquote: ({ children }) => (
-              <blockquote className="border-l-4 border-indigo-400 pl-4 italic text-gray-500 my-4">
+              <blockquote className="border-l-4 border-blue-400 pl-4 italic text-gray-500 my-4">
                 {children}
               </blockquote>
             ),
             code: ({ children }) => (
-              <code className="bg-gray-100 text-indigo-700 px-1.5 py-0.5 rounded text-sm font-mono">
+              <code className="bg-gray-100 text-blue-700 px-1.5 py-0.5 rounded text-sm font-mono">
                 {children}
               </code>
             ),
@@ -86,7 +86,7 @@ export default function KnowledgeDocument({
             a: ({ href, children }) => (
               <a
                 href={href}
-                className="text-indigo-600 hover:text-indigo-500 underline"
+                className="text-blue-600 hover:text-blue-500 underline"
                 target="_blank"
                 rel="noopener noreferrer"
               >

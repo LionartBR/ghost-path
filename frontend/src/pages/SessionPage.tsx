@@ -106,8 +106,8 @@ export function SessionPage() {
             {/* Phase header — visible as soon as phase starts, before review data arrives.
                 Shown for all 6 phases; hidden once SessionCompletion replaces the crystallize header. */}
             {stream.currentPhase && !stream.completionData && (
-              <div className="bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 p-5">
-                <h2 className="text-base font-semibold text-gray-900 mb-1">
+              <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5">
+                <h2 className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-1">
                   {t(`${stream.currentPhase}.title`, { round: stream.buildReview?.round ?? 1 })}
                 </h2>
                 <p className="text-gray-500 text-sm">

@@ -95,10 +95,10 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
                         <em className="italic text-gray-600">{children}</em>
                       ),
                       blockquote: ({ children }) => (
-                        <blockquote className="border-l-3 border-indigo-300 pl-3 italic text-gray-500 my-2 text-sm">{children}</blockquote>
+                        <blockquote className="border-l-3 border-blue-300 pl-3 italic text-gray-500 my-2 text-sm">{children}</blockquote>
                       ),
                       code: ({ children }) => (
-                        <code className="bg-gray-100 text-indigo-700 px-1 py-0.5 rounded text-xs font-mono">{children}</code>
+                        <code className="bg-gray-100 text-blue-700 px-1 py-0.5 rounded text-xs font-mono">{children}</code>
                       ),
                       pre: ({ children }) => (
                         <pre className="bg-gray-50 border border-gray-200 p-3 rounded-md overflow-x-auto mb-2 text-xs">{children}</pre>
@@ -106,7 +106,7 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
                       a: ({ href, children }) => (
                         <a
                           href={href}
-                          className="text-indigo-600 hover:text-indigo-500 underline decoration-indigo-300"
+                          className="text-blue-600 hover:text-blue-500 underline decoration-blue-300"
                           target="_blank"
                           rel="noopener noreferrer"
                         >{children}</a>
@@ -134,9 +134,9 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
             case "tool_call":
               return (
                 <div key={i} className="flex items-center gap-2 py-1 animate-fade-in">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 border border-purple-200 rounded-full">
-                    <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-                    <span className="text-xs font-mono text-purple-700 font-medium">{item.tool}</span>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                    <span className="text-xs font-mono text-blue-700 font-medium">{item.tool}</span>
                   </div>
                   {item.input_preview && (
                     <span className="text-xs text-gray-400 truncate max-w-[200px]">{item.input_preview}</span>
@@ -146,12 +146,12 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
             case "tool_error":
               return (
                 <div key={i} className="flex items-start gap-2 py-1 animate-fade-in">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-50 border border-red-200 rounded-full flex-shrink-0">
-                    <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                    <span className="text-xs font-mono text-red-700 font-medium">{item.tool}</span>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full flex-shrink-0">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                    <span className="text-xs font-mono text-blue-700 font-medium">{item.tool}</span>
                   </div>
                   <div className="min-w-0 pt-0.5">
-                    <span className="text-xs text-red-600 font-semibold">{item.error_code}</span>
+                    <span className="text-xs text-blue-600 font-semibold">{item.error_code}</span>
                     <p className="text-xs text-gray-500 mt-0.5">{item.message}</p>
                   </div>
                 </div>

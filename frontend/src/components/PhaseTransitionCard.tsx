@@ -29,36 +29,8 @@ const PHASE_INDEX: Record<Phase, number> = {
   crystallize: 6,
 };
 
-/* ADR: color palette mirrors PhaseTimeline so the transition card
-   visually "belongs" to the incoming phase's identity */
-const PHASE_STYLE: Record<Phase, {
-  border: string; bg: string; label: string;
-}> = {
-  decompose: {
-    border: "border-l-blue-500", bg: "bg-blue-50/80",
-    label: "text-blue-600",
-  },
-  explore: {
-    border: "border-l-blue-500", bg: "bg-blue-50/80",
-    label: "text-blue-600",
-  },
-  synthesize: {
-    border: "border-l-blue-500", bg: "bg-blue-50/80",
-    label: "text-blue-600",
-  },
-  validate: {
-    border: "border-l-blue-500", bg: "bg-blue-50/80",
-    label: "text-blue-600",
-  },
-  build: {
-    border: "border-l-blue-500", bg: "bg-blue-50/80",
-    label: "text-blue-600",
-  },
-  crystallize: {
-    border: "border-l-blue-500", bg: "bg-blue-50/80",
-    label: "text-blue-600",
-  },
-};
+/* ADR: removed per-phase color map — all cards now follow the standard
+   blue-accent card style used across all review components */
 
 const ENTER_MS = 400;
 
@@ -75,7 +47,6 @@ export const PhaseTransitionCard: React.FC<PhaseTransitionCardProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  const style = PHASE_STYLE[to];
   const phaseNum = PHASE_INDEX[to];
 
   /* ADR: "returning to synthesize from build" has a distinct narrative
@@ -89,20 +60,14 @@ export const PhaseTransitionCard: React.FC<PhaseTransitionCardProps> = ({
 
   return (
     <div
-      className={`
-        ${animClass} overflow-hidden rounded-xl border-l-4
-        ${style.border} ${style.bg}
-        shadow-md shadow-gray-200/40
-      `}
+      className={`${animClass} bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5`}
     >
-      <div className="px-5 py-4 flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div
-            className={`text-xs font-semibold uppercase tracking-wider ${style.label} mb-1.5`}
-          >
+          <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1.5">
             {phaseNum} &middot; {t(`phases.${to}`)}
           </div>
-          <p className="text-sm text-gray-700 leading-relaxed">
+          <p className="text-gray-500 text-sm leading-relaxed">
             {t(narrativeKey)}
           </p>
         </div>

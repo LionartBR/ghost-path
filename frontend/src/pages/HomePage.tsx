@@ -11,12 +11,12 @@ const STATUS_COLORS: Record<
   Session["status"],
   { bg: string; text: string; dot: string }
 > = {
-  decomposing: { bg: "bg-indigo-50", text: "text-indigo-700", dot: "bg-indigo-500" },
+  decomposing: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
   exploring: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
-  synthesizing: { bg: "bg-teal-50", text: "text-teal-700", dot: "bg-teal-500" },
-  validating: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
-  building: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500" },
-  crystallized: { bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500" },
+  synthesizing: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
+  validating: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
+  building: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
+  crystallized: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-600" },
   cancelled: { bg: "bg-gray-100", text: "text-gray-500", dot: "bg-gray-400" },
 };
 
@@ -84,7 +84,7 @@ export function HomePage() {
 
       <div className="w-full max-w-xl flex flex-col items-center">
         {/* Decorative gradient line */}
-        <div className="w-16 h-px bg-gradient-to-r from-transparent via-indigo-400 to-transparent mb-6" />
+        <div className="w-16 h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent mb-6" />
 
         {/* Title */}
         <h1 className="text-5xl font-extrabold tracking-tight bg-gradient-to-b from-gray-900 to-gray-600 bg-clip-text text-transparent">
@@ -104,13 +104,13 @@ export function HomePage() {
           {PHASE_KEYS.map((key, i) => (
             <div key={key} className="flex items-center">
               <div className="flex flex-col items-center">
-                <div className="w-3 h-3 rounded-full bg-indigo-400/50 ring-[3px] ring-indigo-100" />
+                <div className="w-3 h-3 rounded-full bg-blue-400/50 ring-[3px] ring-blue-100" />
                 <span className="mt-2.5 text-[11px] uppercase tracking-wider text-gray-400 font-medium">
                   {t(key)}
                 </span>
               </div>
               {i < PHASE_KEYS.length - 1 && (
-                <div className="w-10 h-px bg-gradient-to-r from-indigo-200 to-indigo-100 -mt-4 mx-1.5" />
+                <div className="w-10 h-px bg-gradient-to-r from-blue-200 to-blue-100 -mt-4 mx-1.5" />
               )}
             </div>
           ))}

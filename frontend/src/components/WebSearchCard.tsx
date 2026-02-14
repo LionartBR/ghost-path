@@ -26,19 +26,19 @@ export const WebSearchCard: React.FC<WebSearchCardProps> = ({
   const [expanded, setExpanded] = useState(true);
 
   return (
-    <div className="bg-indigo-50/60 border border-indigo-200 rounded-lg p-3 animate-fade-in">
+    <div className="bg-blue-50/60 border border-blue-200 rounded-lg p-3 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-2 h-2 rounded-full bg-indigo-400 flex-shrink-0" />
-          <span className="text-xs font-semibold text-indigo-700 truncate">
+          <div className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
+          <span className="text-xs font-semibold text-blue-700 truncate">
             {query}
           </span>
         </div>
         {results.length > 0 && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="text-xs text-indigo-400 hover:text-indigo-600 flex-shrink-0 ml-2"
+            className="text-xs text-blue-400 hover:text-blue-600 flex-shrink-0 ml-2"
           >
             {expanded ? t("research.collapse") : t("research.expand")}
           </button>
@@ -50,12 +50,12 @@ export const WebSearchCard: React.FC<WebSearchCardProps> = ({
         <ul className="space-y-1 mt-2">
           {results.map((r, i) => (
             <li key={i} className="flex items-start gap-1.5">
-              <span className="text-indigo-300 text-xs mt-0.5">-</span>
+              <span className="text-blue-300 text-xs mt-0.5">-</span>
               <a
                 href={r.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-indigo-600 hover:text-indigo-500 underline decoration-indigo-300 truncate"
+                className="text-xs text-blue-600 hover:text-blue-500 underline decoration-blue-300 truncate"
                 title={r.url}
               >
                 {r.title || r.url}

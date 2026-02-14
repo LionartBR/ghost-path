@@ -62,7 +62,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                 onChange={(e) =>
                   updateFeedback(i, "evidence_valid", e.target.checked)
                 }
-                className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
               <span className="text-gray-900 text-sm font-medium">
                 {t("claims.evidenceValid")}
@@ -79,7 +79,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                 onChange={(e) =>
                   updateFeedback(i, "counter_example", e.target.value)
                 }
-                className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400"
+                className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
               />
             </div>
 
@@ -93,7 +93,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                 onChange={(e) =>
                   updateFeedback(i, "synthesis_ignores", e.target.value)
                 }
-                className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400"
+                className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
               />
             </div>
 
@@ -107,7 +107,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                 onChange={(e) =>
                   updateFeedback(i, "additional_evidence", e.target.value)
                 }
-                className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400"
+                className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
               />
             </div>
           </div>
@@ -116,7 +116,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
 
       <button
         onClick={handleSubmit}
-        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-3 px-6 rounded-lg shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/50 transition-all"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm py-3 px-6 rounded-lg shadow-md shadow-blue-200/50 hover:shadow-lg hover:shadow-blue-300/50 transition-all"
       >
         {t("claims.submit")}
       </button>

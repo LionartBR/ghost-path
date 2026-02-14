@@ -17,10 +17,10 @@ const formatNumber = (num: number): string => {
 };
 
 const getBarColor = (percentage: number): string => {
-  if (percentage >= 90) return "bg-red-500";
-  if (percentage >= 70) return "bg-amber-500";
-  if (percentage >= 50) return "bg-yellow-500";
-  return "bg-teal-500";
+  if (percentage >= 90) return "bg-blue-700";
+  if (percentage >= 70) return "bg-blue-600";
+  if (percentage >= 50) return "bg-blue-500";
+  return "bg-blue-400";
 };
 
 export const ContextMeter: React.FC<ContextMeterProps> = ({ usage }) => {
@@ -53,7 +53,7 @@ export const ContextMeter: React.FC<ContextMeterProps> = ({ usage }) => {
         {formatNumber(tokens_used)} / {formatNumber(tokens_limit)}
       </span>
       {usage_percentage >= 90 && (
-        <span className="text-xs text-red-600 font-medium">{t("context.approaching")}</span>
+        <span className="text-xs text-blue-700 font-medium">{t("context.approaching")}</span>
       )}
     </div>
   );
