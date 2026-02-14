@@ -20,6 +20,7 @@ router = APIRouter(prefix="/api/v1/health", tags=["health"])
 
 
 @router.get("/", status_code=status.HTTP_200_OK)
+@router.get("", status_code=status.HTTP_200_OK, include_in_schema=False)
 async def health_check():
     """Basic liveness probe. Returns 200 if the process is up."""
     return {

@@ -3,21 +3,28 @@
 Invariants:
     - Always returns a valid Locale (never None)
     - Short text (<30 chars) defaults to EN with confidence 0.0
-    - DetectorFactory.seed = 0 set at module import (deterministic results)
+    - Falls back to EN if langdetect is unavailable (graceful degradation)
 
 Design Decisions:
     - langdetect over lingua-py: lighter dependency, pure Python, no binary wheels (ADR: Docker compat)
-    - Seed set at module level before any detect() call (ADR: thread-safety note below)
+    - Lazy import with try/except: prevents app startup crash if langdetect fails to install
     - Thread safety: Python GIL + asyncio single-thread-per-event-loop means concurrent
       detect() calls are serialized. Safe for FastAPI async handlers.
 """
 
-from langdetect import detect_langs, DetectorFactory
+import logging
 
 from app.core.domain_types import Locale
 
-# Deterministic: must be set BEFORE any detect() call
-DetectorFactory.seed = 0
+logger = logging.getLogger(__name__)
+
+try:
+    from langdetect import detect_langs, DetectorFactory
+    DetectorFactory.seed = 0  # Deterministic: must be set BEFORE any detect() call
+    _LANGDETECT_AVAILABLE = True
+except ImportError:
+    logger.warning("langdetect not installed — language detection disabled, defaulting to EN")
+    _LANGDETECT_AVAILABLE = False
 
 # langdetect code -> Locale mapping
 _CODE_TO_LOCALE: dict[str, Locale] = {
@@ -42,7 +49,7 @@ def detect_locale(text: str) -> tuple[Locale, float]:
     Short or empty text defaults to (Locale.EN, 0.0).
     Unsupported languages fall back to (Locale.EN, 0.0).
     """
-    if not text or len(text.strip()) < 30:
+    if not _LANGDETECT_AVAILABLE or not text or len(text.strip()) < 30:
         return Locale.EN, 0.0
 
     try:
