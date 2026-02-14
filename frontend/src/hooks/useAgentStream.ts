@@ -59,12 +59,20 @@ export function useAgentStream(sessionId: string | null) {
 
   const handleEvent = useCallback((event: SSEEvent) => {
     switch (event.type) {
-      case "agent_text":
-        setState((s) => ({
-          ...s,
-          activityItems: [...s.activityItems, { kind: "text", text: event.data as string }],
-        }));
+      case "agent_text": {
+        const chunk = event.data as string;
+        setState((s) => {
+          const items = s.activityItems;
+          const last = items.length > 0 ? items[items.length - 1] : null;
+          if (last && last.kind === "text") {
+            const merged = [...items];
+            merged[merged.length - 1] = { kind: "text", text: last.text + chunk };
+            return { ...s, activityItems: merged };
+          }
+          return { ...s, activityItems: [...items, { kind: "text", text: chunk }] };
+        });
         break;
+      }
 
       case "tool_call": {
         const tc = event.data as { tool: string; input_preview: string };
