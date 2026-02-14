@@ -32,7 +32,7 @@ export default function LanguageSwitcher() {
   }, []);
 
   const handleSelect = (code: string) => {
-    i18n.changeLanguage(code);
+    void i18n.changeLanguage(code);
     setOpen(false);
   };
 
@@ -50,7 +50,7 @@ export default function LanguageSwitcher() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1 max-h-80 overflow-y-auto">
+        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1 max-h-80 overflow-y-auto">
           {LANGUAGES.map((lang) => (
             <button
               key={lang.code}
