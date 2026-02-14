@@ -89,9 +89,9 @@ def test_language_instruction_includes_adaptive_rule():
 
 def test_pt_br_prompt_uses_translated_base():
     prompt = build_system_prompt(Locale.PT_BR)
-    # Should contain Portuguese content, NOT English base
-    assert "Motor de Criacao de Conhecimento" in prompt
-    assert "Metodo Dialetico" in prompt
+    # Should contain Portuguese content with accents, NOT English base
+    assert "Motor de Criação de Conhecimento" in prompt
+    assert "Método Dialético" in prompt
     assert "Falseabilidade" in prompt
     # English base content should NOT be present
     assert "Knowledge Creation Engine" not in prompt
