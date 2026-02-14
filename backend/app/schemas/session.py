@@ -35,6 +35,7 @@ class SessionResponse(BaseModel):
     status: str
     current_phase: int
     current_round: int
+    locale: str = "en"
 
 
 # --- Claim feedback (Phase 3 review) -----------------------------------------

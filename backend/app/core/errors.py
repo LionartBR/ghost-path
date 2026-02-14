@@ -267,6 +267,18 @@ class FalsificationNotSearchedError(TrizError):
         )
 
 
+# --- Language Enforcement Error (Rule #16) ------------------------------------
+
+class LanguageMismatchError(TrizError):
+    """Rule #16: Agent must respond in user's locale."""
+    def __init__(self, detected: str, expected: str, context: ErrorContext | None = None):
+        super().__init__(
+            f"Agent responded in {detected} but user locale is {expected}.",
+            "LANGUAGE_MISMATCH", ErrorCategory.BUSINESS_RULE,
+            ErrorSeverity.WARNING, context, 400,
+        )
+
+
 # --- General Domain Errors ----------------------------------------------------
 
 class ToolValidationError(TrizError):

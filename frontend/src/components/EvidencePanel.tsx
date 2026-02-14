@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Evidence } from "../types";
 
 interface EvidencePanelProps {
@@ -15,6 +16,7 @@ const EVIDENCE_TYPE_COLORS: Record<
 };
 
 export default function EvidencePanel({ evidence }: EvidencePanelProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -24,7 +26,7 @@ export default function EvidencePanel({ evidence }: EvidencePanelProps) {
         className="w-full px-5 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold text-gray-900">Evidence</span>
+          <span className="text-sm font-semibold text-gray-900">{t("evidence.title")}</span>
           <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-xs font-medium">
             {evidence.length}
           </span>
@@ -50,7 +52,7 @@ export default function EvidencePanel({ evidence }: EvidencePanelProps) {
         <div className="border-t border-gray-100 p-5 space-y-3 max-h-96 overflow-y-auto">
           {evidence.length === 0 ? (
             <p className="text-gray-400 text-sm text-center py-4">
-              No evidence available yet.
+              {t("evidence.empty")}
             </p>
           ) : (
             evidence.map((item, idx) => (

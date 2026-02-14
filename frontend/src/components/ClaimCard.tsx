@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Claim } from "../types";
 
 interface ClaimCardProps {
@@ -14,18 +15,32 @@ const CLAIM_TYPE_BORDER: Record<string, string> = {
   merged: "border-l-blue-500",
 };
 
-const CLAIM_TYPE_LABEL: Record<string, { text: string; color: string }> = {
-  thesis: { text: "Thesis", color: "text-indigo-600" },
-  antithesis: { text: "Antithesis", color: "text-rose-600" },
-  synthesis: { text: "Synthesis", color: "text-teal-600" },
-  user_contributed: { text: "User Contributed", color: "text-purple-600" },
-  merged: { text: "Merged", color: "text-blue-600" },
+const CLAIM_TYPE_KEY: Record<string, string> = {
+  thesis: "claims.type.thesis",
+  antithesis: "claims.type.antithesis",
+  synthesis: "claims.type.synthesis",
+  user_contributed: "claims.type.user_contributed",
+  merged: "claims.type.merged",
+};
+
+const CLAIM_TYPE_COLOR: Record<string, string> = {
+  thesis: "text-indigo-600",
+  antithesis: "text-rose-600",
+  synthesis: "text-teal-600",
+  user_contributed: "text-purple-600",
+  merged: "text-blue-600",
 };
 
 const CONFIDENCE_BADGE: Record<string, string> = {
   speculative: "bg-amber-50 text-amber-700 border border-amber-200",
   emerging: "bg-yellow-50 text-yellow-700 border border-yellow-200",
   grounded: "bg-green-50 text-green-700 border border-green-200",
+};
+
+const CONFIDENCE_KEY: Record<string, string> = {
+  speculative: "claims.confidence.speculative",
+  emerging: "claims.confidence.emerging",
+  grounded: "claims.confidence.grounded",
 };
 
 const SCORE_COLORS: Record<string, string> = {
@@ -35,16 +50,23 @@ const SCORE_COLORS: Record<string, string> = {
   significance: "bg-rose-500",
 };
 
+const SCORE_KEY: Record<string, string> = {
+  novelty: "score.novelty",
+  groundedness: "score.groundedness",
+  falsifiability: "score.falsifiability",
+  significance: "score.significance",
+};
+
 export default function ClaimCard({ claim, index }: ClaimCardProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   const borderColor = claim.claim_type
     ? CLAIM_TYPE_BORDER[claim.claim_type] || "border-l-gray-300"
     : "border-l-gray-300";
 
-  const typeLabel = claim.claim_type
-    ? CLAIM_TYPE_LABEL[claim.claim_type]
-    : null;
+  const typeKey = claim.claim_type ? CLAIM_TYPE_KEY[claim.claim_type] : null;
+  const typeColor = claim.claim_type ? CLAIM_TYPE_COLOR[claim.claim_type] : null;
 
   const badgeClasses = claim.confidence
     ? CONFIDENCE_BADGE[claim.confidence] || "bg-gray-50 text-gray-600 border border-gray-200"
@@ -55,17 +77,17 @@ export default function ClaimCard({ claim, index }: ClaimCardProps) {
       <div className="p-5">
         {/* Header */}
         <div className="flex items-center gap-3 mb-3">
-          {typeLabel && (
-            <span className={`text-xs font-semibold uppercase tracking-wide ${typeLabel.color}`}>
-              {typeLabel.text}
+          {typeKey && typeColor && (
+            <span className={`text-xs font-semibold uppercase tracking-wide ${typeColor}`}>
+              {t(typeKey)}
             </span>
           )}
-          {!typeLabel && (
+          {!typeKey && (
             <span className="text-xs text-gray-400 font-mono">#{index + 1}</span>
           )}
           {claim.confidence && badgeClasses && (
             <span className={`px-2 py-0.5 rounded text-xs font-medium ${badgeClasses}`}>
-              {claim.confidence}
+              {t(CONFIDENCE_KEY[claim.confidence] || claim.confidence)}
             </span>
           )}
         </div>
@@ -78,7 +100,7 @@ export default function ClaimCard({ claim, index }: ClaimCardProps) {
         {/* Reasoning */}
         {claim.reasoning && (
           <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-100">
-            <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wide">Reasoning</p>
+            <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wide">{t("common.reasoning")}</p>
             <p className="text-gray-600 text-sm leading-relaxed">{claim.reasoning}</p>
           </div>
         )}
@@ -86,7 +108,7 @@ export default function ClaimCard({ claim, index }: ClaimCardProps) {
         {/* Falsifiability */}
         {claim.falsifiability_condition && (
           <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-100">
-            <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wide">Falsifiability Condition</p>
+            <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wide">{t("common.falsifiability")}</p>
             <p className="text-gray-600 text-sm leading-relaxed">{claim.falsifiability_condition}</p>
           </div>
         )}
@@ -98,7 +120,7 @@ export default function ClaimCard({ claim, index }: ClaimCardProps) {
               value !== null ? (
                 <div key={key}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-500 capitalize">{key}</span>
+                    <span className="text-xs text-gray-500 capitalize">{t(SCORE_KEY[key] || key)}</span>
                     <span className="text-xs text-gray-700 font-semibold tabular-nums">
                       {Math.round(value * 10)}%
                     </span>
@@ -122,7 +144,7 @@ export default function ClaimCard({ claim, index }: ClaimCardProps) {
               onClick={() => setExpanded(!expanded)}
               className="text-sm text-indigo-600 hover:text-indigo-500 font-medium"
             >
-              {expanded ? "Hide" : "Show"} Evidence ({claim.evidence.length})
+              {expanded ? t("common.hide") : t("common.show")} {t("evidence.title")} ({claim.evidence.length})
             </button>
             {expanded && (
               <div className="mt-2 space-y-2">
@@ -152,7 +174,7 @@ export default function ClaimCard({ claim, index }: ClaimCardProps) {
         {/* Score reasoning */}
         {claim.score_reasoning && (
           <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-100">
-            <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wide">Score Reasoning</p>
+            <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wide">{t("common.scoreReasoning")}</p>
             <p className="text-gray-600 text-sm leading-relaxed">{claim.score_reasoning}</p>
           </div>
         )}

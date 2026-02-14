@@ -10,7 +10,7 @@ Tests cover:
 """
 
 from app.core.forge_state import ForgeState
-from app.core.domain_types import Phase
+from app.core.domain_types import Locale, Phase
 
 
 # --- Initial state defaults ---------------------------------------------------
@@ -253,3 +253,19 @@ def test_deep_dive_can_be_activated():
     state.deep_dive_target_claim_id = "claim-uuid-123"
     assert state.deep_dive_active
     assert state.deep_dive_target_claim_id == "claim-uuid-123"
+
+
+# --- Locale tracking ----------------------------------------------------------
+
+def test_locale_defaults_to_english():
+    state = ForgeState()
+    assert state.locale == Locale.EN
+    assert state.locale_confidence == 0.0
+
+
+def test_locale_persists_across_round_reset():
+    state = ForgeState(locale=Locale.PT_BR, locale_confidence=0.95)
+    state.current_round_claims = [{"claim_text": "C1"}]
+    state.reset_for_new_round()
+    assert state.locale == Locale.PT_BR
+    assert state.locale_confidence == 0.95

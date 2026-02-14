@@ -24,7 +24,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.tool_dispatch import ToolDispatch, PAUSE_TOOLS
 from app.core.forge_state import ForgeState
 from app.services.tools_registry import ALL_TOOLS
-from app.services.system_prompt import AGENT_SYSTEM_PROMPT
+from app.services.system_prompt import build_system_prompt
+from app.core.enforce_language import check_response_language
 from app.infrastructure.anthropic_client import ResilientAnthropicClient
 from app.core.errors import (
     TrizError, AgentLoopExceededError,
@@ -38,6 +39,7 @@ class AgentRunner:
     """Async agentic loop — yields SSE events for the TRIZ pipeline."""
 
     MAX_ITERATIONS = 50
+    MAX_LANGUAGE_RETRIES = 2
 
     def __init__(
         self, db: AsyncSession, anthropic_client: ResilientAnthropicClient,
@@ -51,6 +53,8 @@ class AgentRunner:
     ):
         """Async generator yielding SSE events."""
         iteration = 0
+        language_retries = 0
+        system_prompt = build_system_prompt(forge_state.locale)
 
         try:
             messages = self._build_messages(session, user_message)
@@ -60,7 +64,7 @@ class AgentRunner:
 
                 # -- Call Anthropic API with heartbeat (3s interval) --
                 try:
-                    cached_system = _with_system_cache(AGENT_SYSTEM_PROMPT)
+                    cached_system = _with_system_cache(system_prompt)
                     cached_tools = _with_tools_cache(ALL_TOOLS)
                     cached_msgs = _with_message_cache(messages)
                     api_task = asyncio.create_task(
@@ -111,6 +115,7 @@ class AgentRunner:
 
                 # -- Process response blocks --
                 assistant_content = []
+                text_buffer = []
                 has_tool_use = False
                 should_pause = False
                 dispatch = ToolDispatch(self.db, forge_state, session.id)
@@ -119,7 +124,7 @@ class AgentRunner:
                     assistant_content.append(block)
 
                     if block.type == "text":
-                        yield {"type": "agent_text", "data": block.text}
+                        text_buffer.append(block.text)
 
                     elif block.type == "tool_use":
                         has_tool_use = True
@@ -168,6 +173,41 @@ class AgentRunner:
                         "role": "assistant", "content": serialized,
                     })
                     continue
+
+                # === LANGUAGE ENFORCEMENT (text-only responses only) ===
+                # Only enforce on text-only responses — tool calls contain
+                # brief working text, not user-facing output.
+                if (
+                    not has_tool_use
+                    and text_buffer
+                    and language_retries < self.MAX_LANGUAGE_RETRIES
+                ):
+                    full_text = "".join(text_buffer)
+                    lang_error = check_response_language(
+                        full_text, forge_state.locale,
+                    )
+                    if lang_error:
+                        language_retries += 1
+                        logger.warning(
+                            "Language mismatch (retry %d/%d)",
+                            language_retries, self.MAX_LANGUAGE_RETRIES,
+                        )
+                        serialized = [
+                            b.model_dump() for b in assistant_content
+                        ]
+                        messages.append({
+                            "role": "assistant", "content": serialized,
+                        })
+                        messages.append({
+                            "role": "user",
+                            "content": lang_error["message"],
+                        })
+                        continue  # Retry WITHOUT yielding text
+
+                # Yield buffered text (passed check, has tool_use, or
+                # retries exhausted)
+                for text in text_buffer:
+                    yield {"type": "agent_text", "data": text}
 
                 if not has_tool_use:
                     # Save message history on normal completion (not just pause)

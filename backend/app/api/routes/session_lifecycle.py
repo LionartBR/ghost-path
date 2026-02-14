@@ -22,6 +22,7 @@ from app.infrastructure.database import get_db
 from app.models.session import Session as SessionModel
 from app.schemas.session import SessionCreate, SessionResponse
 from app.core.forge_state import ForgeState
+from app.core.detect_language import detect_locale
 from app.core.errors import ResourceNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -60,9 +61,15 @@ async def create_session(
 ):
     """Create a new TRIZ session."""
     try:
-        session = SessionModel(problem=body.problem, status="decomposing")
+        locale, confidence = detect_locale(body.problem)
+        session = SessionModel(
+            problem=body.problem, status="decomposing",
+            locale=locale.value, locale_confidence=confidence,
+        )
         db.add(session)
-        _forge_states[session.id] = ForgeState()
+        _forge_states[session.id] = ForgeState(
+            locale=locale, locale_confidence=confidence,
+        )
         await db.commit()
         await db.refresh(session)
         return SessionResponse(
@@ -71,6 +78,7 @@ async def create_session(
             status=session.status,
             current_phase=session.current_phase,
             current_round=session.current_round,
+            locale=session.locale,
         )
     except Exception as e:
         _forge_states.pop(session.id, None)  # cleanup on commit failure
@@ -109,6 +117,7 @@ async def list_sessions(
                 "status": s.status,
                 "current_phase": s.current_phase,
                 "current_round": s.current_round,
+                "locale": s.locale,
                 "created_at": s.created_at.isoformat(),
             }
             for s in sessions
@@ -129,6 +138,7 @@ async def get_session(
         "status": session.status,
         "current_phase": session.current_phase,
         "current_round": session.current_round,
+        "locale": session.locale,
         "created_at": session.created_at.isoformat(),
         "resolved_at": (
             session.resolved_at.isoformat() if session.resolved_at else None

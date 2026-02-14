@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { BuildReviewData, UserInput, BuildDecision as BuildDecisionType } from "../types";
 import UserInsightForm from "./UserInsightForm";
 
@@ -8,13 +9,14 @@ interface BuildDecisionProps {
 }
 
 export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
+  const { t } = useTranslation();
   const [showInsightForm, setShowInsightForm] = useState(false);
   const [selectedClaimId, setSelectedClaimId] = useState<string>("");
 
   const handleDecision = (decision: BuildDecisionType) => {
     if (decision === "deep_dive") {
       if (!selectedClaimId) {
-        alert("Please select a claim to deep-dive on");
+        alert(t("build.selectClaim"));
         return;
       }
       onSubmit({
@@ -55,19 +57,17 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
     <div className="space-y-5">
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-1">
-          Phase 5: Build Decision (Round {data.round})
+          {t("build.title", { round: data.round })}
         </h2>
         <p className="text-gray-500 text-sm">
-          Review the knowledge graph, gaps, and negative knowledge. Decide whether to
-          continue exploring, deep-dive on a claim, resolve the session, or add your own
-          insight.
+          {t("build.description")}
         </p>
       </div>
 
       {data.gaps.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
           <h3 className="text-sm font-semibold text-gray-900 mb-3">
-            Knowledge Gaps Identified
+            {t("build.gaps")}
           </h3>
           <ul className="space-y-2">
             {data.gaps.map((gap, i) => (
@@ -83,14 +83,14 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
       {data.negative_knowledge.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
           <h3 className="text-sm font-semibold text-gray-900 mb-3">
-            Negative Knowledge (Rejected Claims)
+            {t("build.negativeKnowledge")}
           </h3>
           <div className="space-y-2">
             {data.negative_knowledge.map((nk, i) => (
               <div key={i} className="bg-gray-50 border border-gray-100 rounded-md p-3">
                 <p className="text-gray-700 text-sm mb-1">{nk.claim_text}</p>
                 <p className="text-red-500 text-xs">
-                  Rejected (Round {nk.round}): {nk.rejection_reason}
+                  {t("common.rejected")} ({t("graph.round", { round: nk.round })}): {nk.rejection_reason}
                 </p>
               </div>
             ))}
@@ -100,17 +100,17 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
 
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
         <h3 className="text-sm font-semibold text-gray-900 mb-3">
-          Graph Summary
+          {t("build.graphSummary")}
         </h3>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <span className="text-gray-500">Nodes:</span>
+            <span className="text-gray-500">{t("build.nodes")}:</span>
             <span className="text-gray-900 ml-2 font-mono font-semibold">
               {data.graph.nodes.length}
             </span>
           </div>
           <div>
-            <span className="text-gray-500">Edges:</span>
+            <span className="text-gray-500">{t("build.edges")}:</span>
             <span className="text-gray-900 ml-2 font-mono font-semibold">
               {data.graph.edges.length}
             </span>
@@ -129,19 +129,19 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
                 : "bg-green-600 hover:bg-green-700 text-white"
             }`}
           >
-            Continue Next Round
+            {t("build.continue")}
           </button>
           <button
             onClick={() => handleDecision("resolve")}
             className="bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-4 rounded-md font-medium text-sm transition-colors"
           >
-            Resolve (Crystallize)
+            {t("build.resolve")}
           </button>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
           <label className="block text-xs text-gray-500 mb-2">
-            Deep-dive on a specific claim
+            {t("build.deepDive")}
           </label>
           <div className="flex gap-2">
             <select
@@ -150,7 +150,7 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
               disabled={data.max_rounds_reached}
               className="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="">Select a claim...</option>
+              <option value="">{t("build.selectClaim")}</option>
               {data.graph.nodes.map((node) => (
                 <option key={node.id} value={node.id}>
                   {node.data.claim_text.slice(0, 60)}...
@@ -162,7 +162,7 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
               disabled={data.max_rounds_reached || !selectedClaimId}
               className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-md font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Deep-dive
+              {t("build.deepDiveAction")}
             </button>
           </div>
         </div>
@@ -171,14 +171,14 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
           onClick={() => handleDecision("add_insight")}
           className="w-full bg-amber-500 hover:bg-amber-600 text-white py-2.5 px-4 rounded-md font-medium text-sm transition-colors"
         >
-          Add Your Own Insight
+          {t("build.addInsight")}
         </button>
       </div>
 
       {data.max_rounds_reached && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-700 text-sm">
-            Maximum rounds reached. You can only Resolve or Add Your Own Insight.
+            {t("build.maxRounds")}
           </p>
         </div>
       )}

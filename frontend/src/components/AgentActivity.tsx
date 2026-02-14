@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 interface ToolCall {
   tool: string;
@@ -24,6 +25,7 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
   toolCalls,
   toolErrors,
 }) => {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,12 +39,12 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm h-96 flex flex-col">
       <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
-        <h3 className="text-sm font-semibold text-gray-900">Agent Activity</h3>
+        <h3 className="text-sm font-semibold text-gray-900">{t("agent.title")}</h3>
         {isStreaming && (
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full" />
             <span className="text-xs text-green-600 font-medium">
-              {hasActivity ? "Processing..." : "Thinking..."}
+              {hasActivity ? t("agent.processing") : t("agent.thinking")}
             </span>
           </div>
         )}
@@ -54,7 +56,7 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
       >
         {!hasActivity && (
           <div className="h-full flex items-center justify-center text-gray-400 text-sm">
-            Waiting for agent activity...
+            {t("agent.waiting")}
           </div>
         )}
 

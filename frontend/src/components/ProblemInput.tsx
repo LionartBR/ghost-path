@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   onSubmit: (problem: string) => void;
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export function ProblemInput({ onSubmit, loading, exampleProblem }: Props) {
+  const { t } = useTranslation();
   const [problem, setProblem] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -24,7 +26,7 @@ export function ProblemInput({ onSubmit, loading, exampleProblem }: Props) {
           htmlFor="problem"
           className="block text-sm font-medium text-gray-700 mb-2"
         >
-          Describe your problem
+          {t("problemInput.label")}
         </label>
         <textarea
           id="problem"
@@ -34,7 +36,7 @@ export function ProblemInput({ onSubmit, loading, exampleProblem }: Props) {
                      text-sm resize-none focus:ring-2 focus:ring-indigo-500
                      focus:border-transparent placeholder-gray-400 transition-all"
           style={{ height: 136 }}
-          placeholder="What complex problem are you trying to solve? Be specific about context, constraints, and what you've already tried..."
+          placeholder={t("problemInput.placeholder")}
           disabled={loading}
         />
         <div className="flex items-center justify-between mt-1.5">
@@ -43,7 +45,7 @@ export function ProblemInput({ onSubmit, loading, exampleProblem }: Props) {
               isTooShort ? "text-amber-500" : "text-gray-400"
             }`}
           >
-            {charCount}/10000{isTooShort && " — minimum 10 characters"}
+            {charCount}/10000{isTooShort && ` — ${t("problemInput.minChars", { count: 10 })}`}
           </span>
         </div>
       </div>
@@ -56,7 +58,7 @@ export function ProblemInput({ onSubmit, loading, exampleProblem }: Props) {
                      rounded-xl text-sm transition-colors group"
         >
           <span className="text-indigo-400 text-xs font-medium uppercase tracking-wide">
-            Try an example
+            {t("problemInput.tryExample")}
           </span>
           <p className="text-indigo-700 mt-0.5 leading-snug">
             &ldquo;{exampleProblem}&rdquo;
@@ -93,10 +95,10 @@ export function ProblemInput({ onSubmit, loading, exampleProblem }: Props) {
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
               />
             </svg>
-            Creating session...
+            {t("problemInput.creating")}
           </>
         ) : (
-          "Start Investigation"
+          t("problemInput.submit")
         )}
       </button>
     </form>

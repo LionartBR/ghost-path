@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { DecomposeReviewData, UserInput } from "../types";
 
 interface DecomposeReviewProps {
@@ -7,6 +8,7 @@ interface DecomposeReviewProps {
 }
 
 export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit }) => {
+  const { t } = useTranslation();
   const [confirmedAssumptions, setConfirmedAssumptions] = useState<Set<number>>(new Set());
   const [rejectedAssumptions, setRejectedAssumptions] = useState<Set<number>>(new Set());
   const [selectedReframings, setSelectedReframings] = useState<Set<number>>(new Set());
@@ -62,7 +64,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
   return (
     <div className="space-y-5 p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
       <div>
-        <h3 className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">Fundamentals</h3>
+        <h3 className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">{t("decompose.fundamentals")}</h3>
         <ul className="space-y-2">
           {data.fundamentals.map((fundamental, i) => (
             <li key={i} className="text-gray-700 text-sm flex items-start">
@@ -74,7 +76,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">Assumptions</h3>
+        <h3 className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">{t("decompose.assumptions")}</h3>
         <div className="space-y-2">
           {data.assumptions.map((assumption, i) => (
             <div key={i} className="p-3 bg-gray-50 rounded-md border border-gray-100">
@@ -88,7 +90,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                       : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
                   }`}
                 >
-                  Confirm
+                  {t("decompose.confirm")}
                 </button>
                 <button
                   onClick={() => toggleAssumption(i, "reject")}
@@ -98,7 +100,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                       : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
                   }`}
                 >
-                  Reject
+                  {t("decompose.reject")}
                 </button>
               </div>
             </div>
@@ -108,13 +110,13 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
           type="text"
           value={newAssumption}
           onChange={(e) => setNewAssumption(e.target.value)}
-          placeholder="Add new assumption..."
+          placeholder={t("decompose.addAssumption")}
           className="mt-3 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">Reframings</h3>
+        <h3 className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">{t("decompose.reframings")}</h3>
         <div className="space-y-2">
           {data.reframings.map((reframing, i) => (
             <label key={i} className="flex items-start p-3 bg-gray-50 rounded-md border border-gray-100 cursor-pointer hover:bg-gray-100 transition-colors">
@@ -135,7 +137,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
           type="text"
           value={newReframing}
           onChange={(e) => setNewReframing(e.target.value)}
-          placeholder="Add new reframing..."
+          placeholder={t("decompose.addReframing")}
           className="mt-3 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
       </div>
@@ -144,7 +146,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
         onClick={handleSubmit}
         className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-md transition-colors"
       >
-        Submit Review
+        {t("decompose.submitReview")}
       </button>
     </div>
   );

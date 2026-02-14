@@ -1,17 +1,18 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import type { Phase } from "../types";
 
 interface PhaseTimelineProps {
   currentPhase: Phase | null;
 }
 
-const PHASES: { name: Phase; label: string; color: string }[] = [
-  { name: "decompose", label: "Decompose", color: "indigo" },
-  { name: "explore", label: "Explore", color: "blue" },
-  { name: "synthesize", label: "Synthesize", color: "teal" },
-  { name: "validate", label: "Validate", color: "amber" },
-  { name: "build", label: "Build", color: "rose" },
-  { name: "crystallize", label: "Crystallize", color: "slate" },
+const PHASES: { name: Phase; key: string; color: string }[] = [
+  { name: "decompose", key: "phases.decompose", color: "indigo" },
+  { name: "explore", key: "phases.explore", color: "blue" },
+  { name: "synthesize", key: "phases.synthesize", color: "teal" },
+  { name: "validate", key: "phases.validate", color: "amber" },
+  { name: "build", key: "phases.build", color: "rose" },
+  { name: "crystallize", key: "phases.crystallize", color: "slate" },
 ];
 
 const getPhaseIndex = (phase: Phase | null): number => {
@@ -56,6 +57,7 @@ const LABEL_COLOR: Record<string, string> = {
 };
 
 export const PhaseTimeline: React.FC<PhaseTimelineProps> = ({ currentPhase }) => {
+  const { t } = useTranslation();
   const currentIndex = getPhaseIndex(currentPhase);
 
   return (
@@ -99,7 +101,7 @@ export const PhaseTimeline: React.FC<PhaseTimelineProps> = ({ currentPhase }) =>
                     ${state === "future" ? "text-gray-400" : ""}
                   `}
                 >
-                  {phase.label}
+                  {t(phase.key)}
                 </span>
               </div>
 

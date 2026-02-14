@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ExploreReviewData, UserInput } from "../types";
 
 interface ExploreReviewProps {
@@ -7,6 +8,7 @@ interface ExploreReviewProps {
 }
 
 export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) => {
+  const { t } = useTranslation();
   const [starredAnalogies, setStarredAnalogies] = useState<Set<number>>(new Set());
   const [newDomain, setNewDomain] = useState("");
 
@@ -31,7 +33,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
     <div className="space-y-5 p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
       {data.morphological_box && (
         <div>
-          <h3 className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Morphological Box</h3>
+          <h3 className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">{t("explore.morphBox")}</h3>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
@@ -70,7 +72,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
       )}
 
       <div>
-        <h3 className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Analogies</h3>
+        <h3 className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">{t("explore.analogies")}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {data.analogies.map((analogy, i) => (
             <div
@@ -91,7 +93,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
                       : "text-gray-400 hover:text-gray-600"
                   }`}
                 >
-                  {starredAnalogies.has(i) ? "Starred" : "Star"}
+                  {starredAnalogies.has(i) ? t("explore.starred") : t("explore.star")}
                 </button>
               </div>
               <p className="text-gray-600 text-sm mb-2">{analogy.description}</p>
@@ -107,13 +109,13 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
           type="text"
           value={newDomain}
           onChange={(e) => setNewDomain(e.target.value)}
-          placeholder="Suggest a new domain for analogy..."
+          placeholder={t("explore.suggestDomain")}
           className="mt-3 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Contradictions</h3>
+        <h3 className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">{t("explore.contradictions")}</h3>
         <div className="space-y-2">
           {data.contradictions.map((contradiction, i) => (
             <div key={i} className="p-3 bg-gray-50 rounded-md border border-gray-100">
@@ -137,7 +139,9 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
         disabled={starredAnalogies.size === 0}
         className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-medium text-sm rounded-md transition-colors"
       >
-        Submit Review {starredAnalogies.size > 0 && `(${starredAnalogies.size} starred)`}
+        {starredAnalogies.size > 0
+          ? t("explore.submitReview", { count: starredAnalogies.size })
+          : t("explore.submitReviewNone")}
       </button>
     </div>
   );

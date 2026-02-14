@@ -15,7 +15,7 @@ Design Decisions:
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import String, Text, Integer, DateTime, JSON
+from sqlalchemy import String, Text, Integer, Float, DateTime, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -41,6 +41,12 @@ class Session(Base):
     )
     message_history: Mapped[list] = mapped_column(
         JSON, nullable=False, default=list,
+    )
+    locale: Mapped[str] = mapped_column(
+        String(10), nullable=False, default="en",
+    )
+    locale_confidence: Mapped[float] = mapped_column(
+        Float, nullable=False, default=0.0,
     )
     total_tokens_used: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0,

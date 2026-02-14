@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Claim, ClaimFeedback, UserInput } from "../types";
 import ClaimCard from "./ClaimCard";
 
@@ -8,6 +9,7 @@ interface ClaimReviewProps {
 }
 
 export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
+  const { t } = useTranslation();
   const [feedback, setFeedback] = useState<Map<number, ClaimFeedback>>(
     new Map()
   );
@@ -51,12 +53,10 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
     <div className="space-y-5">
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-1">
-          Phase 3: Validate Evidence
+          {t("claims.title")}
         </h2>
         <p className="text-gray-500 text-sm">
-          Review each claim's evidence quality. Mark whether the evidence is valid,
-          provide counter-examples if you know of any, note missing factors, or suggest
-          additional evidence sources.
+          {t("claims.description")}
         </p>
       </div>
 
@@ -74,13 +74,13 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                 className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
               />
               <span className="text-gray-900 text-sm font-medium">
-                Evidence is valid and supports the claim
+                {t("claims.evidenceValid")}
               </span>
             </label>
 
             <div>
               <label className="block text-xs text-gray-500 mb-1">
-                Counter-example (if any)
+                {t("claims.counterExample")}
               </label>
               <input
                 type="text"
@@ -88,14 +88,13 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                 onChange={(e) =>
                   updateFeedback(i, "counter_example", e.target.value)
                 }
-                placeholder="Describe a case where this claim doesn't hold..."
                 className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400"
               />
             </div>
 
             <div>
               <label className="block text-xs text-gray-500 mb-1">
-                Missing factors in synthesis
+                {t("claims.missingFactors")}
               </label>
               <input
                 type="text"
@@ -103,14 +102,13 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                 onChange={(e) =>
                   updateFeedback(i, "synthesis_ignores", e.target.value)
                 }
-                placeholder="What important factors were ignored..."
                 className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400"
               />
             </div>
 
             <div>
               <label className="block text-xs text-gray-500 mb-1">
-                Additional evidence (URLs or references)
+                {t("claims.additionalEvidence")}
               </label>
               <input
                 type="text"
@@ -118,7 +116,6 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                 onChange={(e) =>
                   updateFeedback(i, "additional_evidence", e.target.value)
                 }
-                placeholder="Suggest additional sources..."
                 className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400"
               />
             </div>
@@ -130,7 +127,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
         onClick={handleSubmit}
         className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2.5 px-6 rounded-md transition-colors"
       >
-        Submit Evidence Review
+        {t("claims.submit")}
       </button>
     </div>
   );

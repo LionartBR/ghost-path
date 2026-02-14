@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAgentStream } from "../hooks/useAgentStream";
 import { PhaseTimeline } from "../components/PhaseTimeline";
 import { AgentActivity } from "../components/AgentActivity";
@@ -13,9 +14,11 @@ import VerdictPanel from "../components/VerdictPanel";
 import BuildDecision from "../components/BuildDecision";
 import KnowledgeGraph from "../components/KnowledgeGraph";
 import KnowledgeDocument from "../components/KnowledgeDocument";
+import LanguageSwitcher from "../components/LanguageSwitcher";
 import type { Phase, UserInput } from "../types";
 
 export function SessionPage() {
+  const { t } = useTranslation();
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const stream = useAgentStream(sessionId ?? null);
@@ -57,7 +60,10 @@ export function SessionPage() {
             </button>
             <span className="text-xs text-gray-400 font-mono">{sessionId?.slice(0, 8)}</span>
           </div>
-          <ContextMeter usage={stream.contextUsage} />
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <ContextMeter usage={stream.contextUsage} />
+          </div>
         </div>
       </header>
 
@@ -129,7 +135,7 @@ export function SessionPage() {
             {showNothing && stream.isStreaming && (
               <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8 text-center">
                 <div className="w-10 h-10 border-3 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4 animate-spin" />
-                <p className="text-gray-500 text-sm">Agent is working on your investigation...</p>
+                <p className="text-gray-500 text-sm">{t("agent.working")}</p>
               </div>
             )}
 

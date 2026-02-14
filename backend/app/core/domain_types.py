@@ -131,6 +131,20 @@ class ToolCategory(str, Enum):
     CROSS_CUTTING = "cross_cutting"
 
 
+class Locale(str, Enum):
+    """Supported locales for i18n — covers ~75% of web users."""
+    EN = "en"
+    PT_BR = "pt-BR"
+    ES = "es"
+    FR = "fr"
+    DE = "de"
+    ZH = "zh"
+    JA = "ja"
+    KO = "ko"
+    IT = "it"
+    RU = "ru"
+
+
 # --- Constants ----------------------------------------------------------------
 
 MAX_CLAIMS_PER_ROUND: int = 3

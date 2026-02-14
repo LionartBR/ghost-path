@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import type { ContextUsage } from "../types";
 
 interface ContextMeterProps {
@@ -23,10 +24,12 @@ const getBarColor = (percentage: number): string => {
 };
 
 export const ContextMeter: React.FC<ContextMeterProps> = ({ usage }) => {
+  const { t } = useTranslation();
+
   if (!usage) {
     return (
       <div className="flex items-center gap-3">
-        <span className="text-xs text-gray-400">Context</span>
+        <span className="text-xs text-gray-400">{t("context.label")}</span>
         <div className="w-32 h-1.5 bg-gray-200 rounded-full overflow-hidden">
           <div className="h-full bg-gray-300 w-0" />
         </div>
@@ -50,7 +53,7 @@ export const ContextMeter: React.FC<ContextMeterProps> = ({ usage }) => {
         {formatNumber(tokens_used)} / {formatNumber(tokens_limit)}
       </span>
       {usage_percentage >= 90 && (
-        <span className="text-xs text-red-600 font-medium">Limit approaching</span>
+        <span className="text-xs text-red-600 font-medium">{t("context.approaching")}</span>
       )}
     </div>
   );

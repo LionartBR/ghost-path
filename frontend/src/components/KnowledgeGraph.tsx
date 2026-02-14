@@ -1,4 +1,5 @@
 /* KnowledgeGraph — visual graph of validated knowledge claims. */
+import { useTranslation } from "react-i18next";
 import type { GraphData } from "../types";
 
 interface KnowledgeGraphProps {
@@ -30,6 +31,8 @@ const EDGE_COLOR: Record<string, string> = {
 };
 
 export default function KnowledgeGraph({ data }: KnowledgeGraphProps) {
+  const { t } = useTranslation();
+
   const nodesByRound = data.nodes.reduce((acc, node) => {
     const round = node.data.round_created || 0;
     if (!acc[round]) acc[round] = [];
@@ -48,9 +51,9 @@ export default function KnowledgeGraph({ data }: KnowledgeGraphProps) {
   return (
     <div className="w-full h-full bg-white border border-gray-200 rounded-lg shadow-sm overflow-auto">
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-gray-900">Knowledge Graph</h2>
+        <h2 className="text-sm font-semibold text-gray-900">{t("graph.title")}</h2>
         <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-medium">
-          {data.nodes.length} nodes
+          {t("graph.nodeCount", { count: data.nodes.length })}
         </span>
       </div>
 
@@ -58,7 +61,7 @@ export default function KnowledgeGraph({ data }: KnowledgeGraphProps) {
         {rounds.map((round) => (
           <div key={round}>
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-              Round {round}
+              {t("graph.round", { round })}
             </h3>
             <div className="space-y-3">
               {nodesByRound[round].map((node) => {
@@ -137,7 +140,7 @@ export default function KnowledgeGraph({ data }: KnowledgeGraphProps) {
 
       {data.nodes.length === 0 && (
         <p className="text-gray-400 text-sm text-center py-8">
-          No nodes in the graph yet.
+          {t("graph.empty")}
         </p>
       )}
     </div>

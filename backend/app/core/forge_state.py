@@ -14,12 +14,16 @@ Design Decisions:
 
 from dataclasses import dataclass, field
 
-from app.core.domain_types import Phase, MAX_ROUNDS_PER_SESSION
+from app.core.domain_types import Locale, Phase, MAX_ROUNDS_PER_SESSION
 
 
 @dataclass
 class ForgeState:
     """Per-session enforcement state — pure dataclass, no IO."""
+
+    # === Locale (persists across rounds, set at session creation) ===
+    locale: Locale = Locale.EN
+    locale_confidence: float = 0.0
 
     # === Phase tracking ===
     current_phase: Phase = Phase.DECOMPOSE

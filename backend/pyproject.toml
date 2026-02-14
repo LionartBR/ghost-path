@@ -12,6 +12,7 @@ dependencies = [
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
     "anthropic>=0.39",
+    "langdetect>=1.0.9",
 ]
 
 [project.optional-dependencies]

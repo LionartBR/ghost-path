@@ -5,6 +5,7 @@ Invariants:
     - Web research is mandatory at every evidence-dependent step
     - Dialectical method (thesis -> antithesis -> synthesis) is core pattern
     - Human is in the loop at every phase transition
+    - Language rule (Rule #16) prepended via build_system_prompt(locale)
 
 Design Decisions:
     - Single constant over config file: prompt is code, not data — versioned with the app
@@ -13,9 +14,30 @@ Design Decisions:
     - Aggressive language (MUST/ALWAYS/NEVER in caps) removed per Anthropic's
       Claude 4.x best practices: Opus 4.6 responds to normal instructions
     - Few-shot examples added for critical outputs (dialectical, falsifiability)
+    - build_system_prompt(locale) prepends language instruction — different locales
+      produce different prompts, so Anthropic prompt caching only helps within a
+      single session (same locale), not across sessions with different locales.
+      Within a session, the prompt is identical every iteration — caching works normally.
 """
 
-AGENT_SYSTEM_PROMPT = """You are TRIZ, a Knowledge Creation Engine.
+from app.core.domain_types import Locale
+
+
+_LANGUAGE_INSTRUCTIONS: dict[Locale, str] = {
+    Locale.EN: "You MUST respond in English. All text output — analysis, summaries, explanations — must be in English.",
+    Locale.PT_BR: "Voce DEVE responder em Portugues Brasileiro. Todo texto — analises, resumos, explicacoes — deve ser em Portugues Brasileiro.",
+    Locale.ES: "DEBES responder en espanol. Todo el texto — analisis, resumenes, explicaciones — debe estar en espanol.",
+    Locale.FR: "Vous DEVEZ repondre en francais. Tout le texte — analyses, resumes, explications — doit etre en francais.",
+    Locale.DE: "Sie MUESSEN auf Deutsch antworten. Aller Text — Analysen, Zusammenfassungen, Erklarungen — muss auf Deutsch sein.",
+    Locale.ZH: "你必须用简体中文回答。所有文本——分析、摘要、解释——都必须使用简体中文。",
+    Locale.JA: "日本語で回答してください。すべてのテキスト（分析、要約、説明）は日本語でなければなりません。",
+    Locale.KO: "한국어로 답변해야 합니다. 모든 텍스트(분석, 요약, 설명)는 한국어여야 합니다.",
+    Locale.IT: "DEVI rispondere in italiano. Tutto il testo — analisi, riassunti, spiegazioni — deve essere in italiano.",
+    Locale.RU: "Вы ДОЛЖНЫ отвечать на русском языке. Весь текст — анализ, резюме, объяснения — должен быть на русском языке.",
+}
+
+
+_BASE_PROMPT = """You are TRIZ, a Knowledge Creation Engine.
 
 <mission>
 Create genuinely new knowledge by following the patterns that produced every \
@@ -280,3 +302,17 @@ When emitting text to the user via agent_text events:
 Every claim should make the user react: "I didn't know that was even possible."
 Show the reasoning chain — thesis -> antithesis -> synthesis. Be direct, no fluff.
 </output_guidance>"""
+
+
+def build_system_prompt(locale: Locale = Locale.EN) -> str:
+    """Build system prompt with language instruction for the given locale.
+
+    The language rule is prepended as an XML block so Claude follows it
+    throughout the session. Different locales produce different prompts.
+    """
+    instruction = _LANGUAGE_INSTRUCTIONS[locale]
+    return f"<language_rule>\n{instruction}\n</language_rule>\n\n{_BASE_PROMPT}"
+
+
+# Backward compat — existing imports still work
+AGENT_SYSTEM_PROMPT = build_system_prompt(Locale.EN)

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Claim, ClaimVerdict, UserInput, VerdictType } from "../types";
 import ClaimCard from "./ClaimCard";
 
@@ -26,7 +27,15 @@ const VERDICT_STYLES: Record<VerdictType, { active: string; inactive: string }> 
   },
 };
 
+const VERDICT_KEYS: Record<VerdictType, string> = {
+  accept: "verdicts.accept",
+  reject: "verdicts.reject",
+  qualify: "verdicts.qualify",
+  merge: "verdicts.merge",
+};
+
 export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
+  const { t } = useTranslation();
   const [verdicts, setVerdicts] = useState<Map<number, ClaimVerdict>>(new Map());
 
   const updateVerdict = (
@@ -72,11 +81,10 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
     <div className="space-y-5">
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-1">
-          Phase 4: Render Verdicts
+          {t("verdicts.title")}
         </h2>
         <p className="text-gray-500 text-sm">
-          Decide the fate of each claim. Accept, reject, qualify (true only if...), or
-          merge with another claim.
+          {t("verdicts.description")}
         </p>
       </div>
 
@@ -92,13 +100,13 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                   <button
                     key={v}
                     onClick={() => setVerdictType(i, v)}
-                    className={`py-2 px-3 rounded-md font-medium text-sm transition-colors capitalize ${
+                    className={`py-2 px-3 rounded-md font-medium text-sm transition-colors ${
                       currentVerdict === v
                         ? VERDICT_STYLES[v].active
                         : VERDICT_STYLES[v].inactive
                     }`}
                   >
-                    {v}
+                    {t(VERDICT_KEYS[v])}
                   </button>
                 ))}
               </div>
@@ -106,7 +114,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
               {currentVerdict === "reject" && (
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">
-                    Rejection reason
+                    {t("verdicts.rejectionReason")}
                   </label>
                   <input
                     type="text"
@@ -114,7 +122,6 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                     onChange={(e) =>
                       updateVerdict(i, "rejection_reason", e.target.value)
                     }
-                    placeholder="Why is this claim invalid..."
                     className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent placeholder-gray-400"
                   />
                 </div>
@@ -123,7 +130,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
               {currentVerdict === "qualify" && (
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">
-                    Qualification (true only if...)
+                    {t("verdicts.qualification")}
                   </label>
                   <input
                     type="text"
@@ -131,7 +138,6 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                     onChange={(e) =>
                       updateVerdict(i, "qualification", e.target.value)
                     }
-                    placeholder="This claim is true only if..."
                     className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder-gray-400"
                   />
                 </div>
@@ -140,7 +146,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
               {currentVerdict === "merge" && (
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">
-                    Merge with claim
+                    {t("verdicts.mergeWith")}
                   </label>
                   <select
                     value={verdicts.get(i)?.merge_with_claim_id || ""}
@@ -149,7 +155,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                     }
                     className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">Select a claim...</option>
+                    <option value="">{t("verdicts.selectClaim")}</option>
                     {claims.map((c, origIdx) =>
                       origIdx !== i ? (
                         <option key={origIdx} value={c.claim_id || `claim-${origIdx}`}>
@@ -169,7 +175,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
         onClick={handleSubmit}
         className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2.5 px-6 rounded-md transition-colors"
       >
-        Submit Verdicts
+        {t("verdicts.submit")}
       </button>
     </div>
   );

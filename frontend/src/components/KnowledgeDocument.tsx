@@ -1,4 +1,5 @@
 /* KnowledgeDocument — renders final knowledge artifact with download. */
+import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 
 interface KnowledgeDocumentProps {
@@ -8,6 +9,8 @@ interface KnowledgeDocumentProps {
 export default function KnowledgeDocument({
   markdown,
 }: KnowledgeDocumentProps) {
+  const { t } = useTranslation();
+
   const handleDownload = () => {
     const blob = new Blob([markdown], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
@@ -23,12 +26,12 @@ export default function KnowledgeDocument({
   return (
     <div className="w-full max-w-4xl mx-auto bg-white border border-gray-200 rounded-lg shadow-sm">
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Knowledge Document</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t("document.title")}</h2>
         <button
           onClick={handleDownload}
           className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium transition-colors"
         >
-          Download .md
+          {t("document.download")}
         </button>
       </div>
       <div className="p-8 prose prose-lg max-w-none">

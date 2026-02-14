@@ -16,6 +16,7 @@ export interface Session {
   status: SessionStatus;
   current_phase: number;
   current_round: number;
+  locale?: string;
   created_at: string;
   resolved_at: string | null;
   total_tokens_used: number;
@@ -34,8 +35,11 @@ export interface ClaimScores {
   significance: number | null;
 }
 
+export type ClaimType = "thesis" | "antithesis" | "synthesis" | "user_contributed" | "merged";
+
 export interface Claim {
   claim_text: string;
+  claim_type?: ClaimType;
   reasoning?: string;
   falsifiability_condition?: string;
   confidence?: ClaimConfidence;
