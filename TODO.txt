@@ -1,1 +1,2 @@
-- melhorar a velocidade das etapas pra não prender o usuário por muito tempo. 3 minutos é o budget total desde a primeira fase até o final
+- adicionar efeitos de card deslizando pro lado ao selecionar itens, pois isso dá um UX de agilidade
+- ao invés de deixar as opçoes hardcoded, permitir que o próprio modelo crie as opções para cada pergunta, o que faz sentido
