@@ -20,13 +20,11 @@ import { WebSearchCard } from "./WebSearchCard";
 interface AgentActivityProps {
   isStreaming: boolean;
   activityItems: ActivityItem[];
-  onDirective?: (type: "explore_more" | "skip_domain", query: string, domain: string) => void;
 }
 
 export const AgentActivity: React.FC<AgentActivityProps> = ({
   isStreaming,
   activityItems,
-  onDirective,
 }) => {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -164,9 +162,6 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
                   key={i}
                   query={item.query}
                   results={item.results}
-                  directiveSent={item.directive_sent}
-                  isStreaming={isStreaming}
-                  onDirective={onDirective ?? (() => {})}
                 />
               );
           }

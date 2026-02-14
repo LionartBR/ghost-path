@@ -38,7 +38,11 @@ export function HomePage() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadSessions();
+    let cancelled = false;
+    listSessions()
+      .then((data) => { if (!cancelled) setSessions(data.sessions); })
+      .catch((err) => console.error("Failed to load sessions:", err));
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -48,20 +52,10 @@ export function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  const loadSessions = async () => {
-    try {
-      const data = await listSessions();
-      setSessions(data.sessions);
-    } catch (err) {
-      console.error("Failed to load sessions:", err);
-    }
-  };
-
-  const handleSubmit = async (problem: string) => {
-    const session = await create(problem);
-    if (session) {
-      navigate(`/session/${session.id}`);
-    }
+  const handleSubmit = (problem: string) => {
+    void create(problem).then((session) => {
+      if (session) void navigate(`/session/${session.id}`);
+    });
   };
 
   const handleDeleteClick = (e: React.MouseEvent, sessionId: string) => {
@@ -70,7 +64,7 @@ export function HomePage() {
       setConfirmingId(null);
       const snapshot = sessions;
       setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-      deleteSession(sessionId).catch(() => setSessions(snapshot));
+      void deleteSession(sessionId).catch(() => setSessions(snapshot));
     } else {
       setConfirmingId(sessionId);
       setTimeout(() => {
@@ -153,7 +147,7 @@ export function HomePage() {
                 return (
                   <button
                     key={session.id}
-                    onClick={() => navigate(`/session/${session.id}`)}
+                    onClick={() => void navigate(`/session/${session.id}`)}
                     className="w-full text-left bg-white hover:bg-gray-50/80 border border-gray-200
                                rounded-xl p-4 transition-all group hover:shadow-sm"
                   >

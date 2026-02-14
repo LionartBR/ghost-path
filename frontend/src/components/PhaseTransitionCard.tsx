@@ -76,7 +76,7 @@ export const PhaseTransitionCard: React.FC<PhaseTransitionCardProps> = ({
   const { t } = useTranslation();
   const [stage, setStage] = useState<Stage>("entering");
   const dismissRef = useRef(onDismiss);
-  dismissRef.current = onDismiss;
+  useEffect(() => { dismissRef.current = onDismiss; });
 
   useEffect(() => {
     const timers = [

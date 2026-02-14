@@ -31,7 +31,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
   const toggleStar = (index: number) => {
     setStarredAnalogies((prev) => {
       const next = new Set(prev);
-      next.has(index) ? next.delete(index) : next.add(index);
+      if (next.has(index)) next.delete(index); else next.add(index);
       return next;
     });
   };

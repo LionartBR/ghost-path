@@ -164,7 +164,6 @@ export function SessionPage() {
             <AgentActivity
               isStreaming={stream.isStreaming}
               activityItems={stream.activityItems}
-              onDirective={stream.sendDirective}
             />
           </div>
 

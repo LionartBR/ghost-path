@@ -13,7 +13,7 @@ import ko from './locales/ko.json';
 import it from './locales/it.json';
 import ru from './locales/ru.json';
 
-i18n
+void i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({

@@ -1,13 +1,12 @@
-/**WebSearchCard — interactive web search result card with research directives.
+/**WebSearchCard — display-only web search result card.
  *
  * Invariants:
- *   - Upgrades from purple pill in-place (same activity item slot)
- *   - Buttons disabled when stream ends or directive already sent
- *   - Domain extracted heuristically from query for directive payload
+ *   - Shows query + result links in a compact collapsible card
+ *   - No interactive buttons — purely informational
  *
  * Design Decisions:
- *   - "Explore More" / "Skip" pattern mirrors user agency during passive streaming
- *   - Sent state locks buttons to prevent duplicate directives (ADR: idempotency)
+ *   - Read-only display of links being researched (ADR: user requested removal of explore/skip buttons)
+ *   - Collapsible to reduce visual noise when many searches occur
  */
 
 import React, { useState } from "react";
@@ -17,49 +16,38 @@ import type { WebSearchResult } from "../types";
 interface WebSearchCardProps {
   query: string;
   results: WebSearchResult[];
-  directiveSent: boolean;
-  isStreaming: boolean;
-  onDirective: (type: "explore_more" | "skip_domain", query: string, domain: string) => void;
-}
-
-function extractDomain(query: string): string {
-  const words = query.split(/\s+/).filter((w) => w.length > 3);
-  return words[words.length - 1] || query;
 }
 
 export const WebSearchCard: React.FC<WebSearchCardProps> = ({
   query,
   results,
-  directiveSent,
-  isStreaming,
-  onDirective,
 }) => {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
-  const domain = extractDomain(query);
-  const canAct = isStreaming && !directiveSent;
 
   return (
     <div className="bg-indigo-50/60 border border-indigo-200 rounded-lg p-3 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-indigo-400" />
-          <span className="text-xs font-semibold text-indigo-700 truncate max-w-[260px]">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-2 h-2 rounded-full bg-indigo-400 flex-shrink-0" />
+          <span className="text-xs font-semibold text-indigo-700 truncate">
             {query}
           </span>
         </div>
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="text-xs text-indigo-400 hover:text-indigo-600"
-        >
-          {expanded ? t("research.collapse") : t("research.expand")}
-        </button>
+        {results.length > 0 && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="text-xs text-indigo-400 hover:text-indigo-600 flex-shrink-0 ml-2"
+          >
+            {expanded ? t("research.collapse") : t("research.expand")}
+          </button>
+        )}
       </div>
 
       {/* Results */}
       {expanded && results.length > 0 && (
-        <ul className="space-y-1 mb-2.5">
+        <ul className="space-y-1 mt-2">
           {results.map((r, i) => (
             <li key={i} className="flex items-start gap-1.5">
               <span className="text-indigo-300 text-xs mt-0.5">-</span>
@@ -76,36 +64,6 @@ export const WebSearchCard: React.FC<WebSearchCardProps> = ({
           ))}
         </ul>
       )}
-
-      {/* Action buttons */}
-      <div className="flex gap-2">
-        <button
-          disabled={!canAct}
-          onClick={() => onDirective("explore_more", query, domain)}
-          className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
-            directiveSent
-              ? "bg-indigo-100 text-indigo-400 cursor-default"
-              : canAct
-                ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                : "bg-gray-100 text-gray-400 cursor-not-allowed"
-          }`}
-        >
-          {directiveSent ? t("research.sent") : t("research.exploreMore")}
-        </button>
-        <button
-          disabled={!canAct}
-          onClick={() => onDirective("skip_domain", query, domain)}
-          className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
-            directiveSent
-              ? "bg-gray-100 text-gray-400 cursor-default"
-              : canAct
-                ? "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                : "bg-gray-100 text-gray-400 cursor-not-allowed"
-          }`}
-        >
-          {directiveSent ? t("research.sent") : t("research.skip")}
-        </button>
-      </div>
     </div>
   );
 };

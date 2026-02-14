@@ -60,7 +60,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
     if (type === "confirm") {
       setConfirmedAssumptions((prev) => {
         const next = new Set(prev);
-        next.has(index) ? next.delete(index) : next.add(index);
+        if (next.has(index)) next.delete(index); else next.add(index);
         return next;
       });
       setRejectedAssumptions((prev) => {
@@ -71,7 +71,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
     } else {
       setRejectedAssumptions((prev) => {
         const next = new Set(prev);
-        next.has(index) ? next.delete(index) : next.add(index);
+        if (next.has(index)) next.delete(index); else next.add(index);
         return next;
       });
       setConfirmedAssumptions((prev) => {
@@ -89,7 +89,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
   const toggleReframing = (index: number) => {
     setSelectedReframings((prev) => {
       const next = new Set(prev);
-      next.has(index) ? next.delete(index) : next.add(index);
+      if (next.has(index)) next.delete(index); else next.add(index);
       return next;
     });
   };
