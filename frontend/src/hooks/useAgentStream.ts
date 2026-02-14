@@ -51,6 +51,11 @@ const initialState: AgentStreamState = {
 export function useAgentStream(sessionId: string | null) {
   const [state, setState] = useState<AgentStreamState>(initialState);
   const controllerRef = useRef<AbortController | null>(null);
+  /* Guard ref: prevents StrictMode from calling startStream() twice.
+     Refs persist across StrictMode's simulated unmount/remount cycle,
+     so the second effect invocation sees activeRef.current === true
+     and skips the duplicate SSE connection. */
+  const activeRef = useRef(false);
 
   const handleEvent = useCallback((event: SSEEvent) => {
     switch (event.type) {
@@ -156,6 +161,7 @@ export function useAgentStream(sessionId: string | null) {
         break;
 
       case "done": {
+        activeRef.current = false;
         const d = event.data as { error: boolean; awaiting_input: boolean };
         setState((s) => ({
           ...s,
@@ -168,7 +174,8 @@ export function useAgentStream(sessionId: string | null) {
   }, []);
 
   const startStream = useCallback(() => {
-    if (!sessionId) return;
+    if (!sessionId || activeRef.current) return;
+    activeRef.current = true;
     setState((s) => ({
       ...s,
       isStreaming: true,
@@ -177,6 +184,7 @@ export function useAgentStream(sessionId: string | null) {
       error: null,
     }));
     controllerRef.current = streamSession(sessionId, handleEvent, (err) => {
+      activeRef.current = false;
       setState((s) => ({ ...s, isStreaming: false, error: err.message }));
     });
   }, [sessionId, handleEvent]);
@@ -184,6 +192,7 @@ export function useAgentStream(sessionId: string | null) {
   const sendInput = useCallback(
     (input: UserInput) => {
       if (!sessionId) return;
+      activeRef.current = true;
       setState((s) => ({
         ...s,
         isStreaming: true,
@@ -200,6 +209,7 @@ export function useAgentStream(sessionId: string | null) {
       controllerRef.current = sendUserInput(
         sessionId, input, handleEvent,
         (err) => {
+          activeRef.current = false;
           setState((s) => ({ ...s, isStreaming: false, error: err.message }));
         },
       );
@@ -208,6 +218,7 @@ export function useAgentStream(sessionId: string | null) {
   );
 
   const abort = useCallback(async () => {
+    activeRef.current = false;
     controllerRef.current?.abort();
     if (sessionId) {
       try {
