@@ -130,8 +130,8 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
       </div>
 
       {/* -- Assumptions -- */}
-      <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5">
-        <h3 className="flex items-center gap-2.5 text-sm font-semibold text-blue-600 uppercase tracking-wide mb-4">
+      <div className="bg-white border border-gray-200/80 border-l-4 border-l-green-400 rounded-xl shadow-sm p-5">
+        <h3 className="flex items-center gap-2.5 text-sm font-semibold text-green-600 uppercase tracking-wide mb-4">
           <i className="bi bi-patch-question text-base" />
           {t("decompose.assumptions")}
         </h3>
@@ -142,8 +142,8 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
             <div className="flex items-center gap-1.5 mb-4">
               {data.assumptions.map((_, i) => {
                 const reviewed = isReviewed(i);
-                const dotColor = reviewed ? "bg-blue-500" : "bg-gray-300";
-                const ring = i === currentCard ? "ring-2 ring-blue-400 ring-offset-1" : "";
+                const dotColor = reviewed ? "bg-green-500" : "bg-gray-300";
+                const ring = i === currentCard ? "ring-2 ring-green-400 ring-offset-1" : "";
                 return (
                   <button
                     key={i}
@@ -164,7 +164,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                 className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
                   isFirstCard
                     ? "text-gray-300 cursor-not-allowed"
-                    : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                    : "text-gray-500 hover:bg-green-50 hover:text-green-600"
                 }`}
                 aria-label="Previous assumption"
               >
@@ -193,8 +193,8 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                           onClick={() => selectOption(currentCard, optIdx)}
                           className={`w-full px-4 py-2 rounded-md text-xs font-medium transition-all text-left ${
                             selected
-                              ? "bg-blue-500 text-white shadow-sm shadow-blue-200"
-                              : "bg-white border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600"
+                              ? "bg-green-500 text-white shadow-sm shadow-green-200"
+                              : "bg-white border border-gray-200 text-gray-600 hover:border-green-300 hover:text-green-600"
                           }`}
                         >
                           {option}
@@ -209,8 +209,8 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                       onClick={() => selectOption(currentCard, 0)}
                       className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all inline-flex items-center gap-1.5 ${
                         assumptionResponses.get(currentCard) === 0
-                          ? "bg-blue-500 text-white shadow-sm shadow-blue-200"
-                          : "bg-white border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600"
+                          ? "bg-green-500 text-white shadow-sm shadow-green-200"
+                          : "bg-white border border-gray-200 text-gray-600 hover:border-green-300 hover:text-green-600"
                       }`}
                     >
                       <i className="bi bi-check-lg" />
@@ -220,8 +220,8 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                       onClick={() => selectOption(currentCard, 1)}
                       className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all inline-flex items-center gap-1.5 ${
                         assumptionResponses.get(currentCard) === 1
-                          ? "bg-blue-400 text-white shadow-sm shadow-blue-200"
-                          : "bg-white border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600"
+                          ? "bg-green-400 text-white shadow-sm shadow-green-200"
+                          : "bg-white border border-gray-200 text-gray-600 hover:border-green-300 hover:text-green-600"
                       }`}
                     >
                       <i className="bi bi-x-lg" />
@@ -238,7 +238,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                 className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
                   isLastCard
                     ? "text-gray-300 cursor-not-allowed"
-                    : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                    : "text-gray-500 hover:bg-green-50 hover:text-green-600"
                 }`}
                 aria-label="Next assumption"
               >
@@ -253,7 +253,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
           value={newAssumption}
           onChange={(e) => setNewAssumption(e.target.value)}
           placeholder={t("decompose.addAssumption")}
-          className="mt-4 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+          className="mt-4 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
         />
       </div>
 
