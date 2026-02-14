@@ -47,6 +47,15 @@ from app.core.format_messages import (
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])
 
+# ADR: SSE headers prevent proxy/browser buffering of streamed events.
+# Without these, nginx (X-Accel-Buffering) and browsers (Cache-Control)
+# may batch small chunks before delivering them to the client.
+_SSE_HEADERS = {
+    "Cache-Control": "no-cache",
+    "X-Accel-Buffering": "no",
+    "Connection": "keep-alive",
+}
+
 
 def _get_or_restore_forge_state(
     session_id: UUID, session: SessionModel,
@@ -83,7 +92,9 @@ async def stream_session(
     async def event_generator():
         try:
             prefix = get_phase_prefix(forge_state.locale, session.problem)
-            message = build_initial_stream_message(prefix, session.problem)
+            message = build_initial_stream_message(
+                prefix, session.problem, locale=forge_state.locale,
+            )
             async for event in runner.run(session, message, forge_state):
                 yield _sse_line(event)
 
@@ -103,7 +114,9 @@ async def stream_session(
             return
 
     return StreamingResponse(
-        event_generator(), media_type="text/event-stream",
+        event_generator(),
+        media_type="text/event-stream",
+        headers=_SSE_HEADERS,
     )
 
 
@@ -139,7 +152,9 @@ async def send_user_input(
             return
 
     return StreamingResponse(
-        event_generator(), media_type="text/event-stream",
+        event_generator(),
+        media_type="text/event-stream",
+        headers=_SSE_HEADERS,
     )
 
 
@@ -191,6 +206,7 @@ def _format_user_input(
     return _format_user_input_pure(
         input_type=body.type,
         locale_prefix=prefix,
+        locale=state.locale,
         confirmed_assumptions=body.confirmed_assumptions,
         rejected_assumptions=body.rejected_assumptions,
         added_assumptions=body.added_assumptions,

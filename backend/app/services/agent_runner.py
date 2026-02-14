@@ -22,6 +22,7 @@ import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.tool_dispatch import ToolDispatch, PAUSE_TOOLS
+from app.core.domain_types import Locale
 from app.core.forge_state import ForgeState
 from app.services.tools_registry import ALL_TOOLS
 from app.services.system_prompt import build_system_prompt
@@ -185,13 +186,16 @@ class AgentRunner:
                     })
                     continue
 
-                # === LANGUAGE ENFORCEMENT (text-only responses only) ===
-                # Only enforce on text-only responses — tool calls contain
-                # brief working text, not user-facing output.
+                # === LANGUAGE ENFORCEMENT ===
+                # Text-only: retry without yielding (original behavior).
+                # Tool-interleaved: can't retry (tools must execute), so
+                # inject a language nudge alongside tool_results for the
+                # next iteration. ADR: retry would duplicate tool calls.
+                _lang_nudge = None
                 if (
-                    not has_tool_use
-                    and text_buffer
+                    text_buffer
                     and language_retries < self.MAX_LANGUAGE_RETRIES
+                    and forge_state.locale != Locale.EN
                 ):
                     full_text = "".join(text_buffer)
                     lang_error = check_response_language(
@@ -199,26 +203,38 @@ class AgentRunner:
                     )
                     if lang_error:
                         language_retries += 1
-                        logger.warning(
-                            "Language mismatch (retry %d/%d)",
-                            language_retries, self.MAX_LANGUAGE_RETRIES,
-                        )
-                        serialized = [
-                            b.model_dump() for b in assistant_content
-                        ]
-                        messages.append({
-                            "role": "assistant", "content": serialized,
-                        })
-                        messages.append({
-                            "role": "user",
-                            "content": lang_error["message"],
-                        })
-                        continue  # Retry WITHOUT yielding text
+                        if not has_tool_use:
+                            # Text-only: retry WITHOUT yielding
+                            logger.warning(
+                                "Language mismatch — retry %d/%d",
+                                language_retries, self.MAX_LANGUAGE_RETRIES,
+                            )
+                            serialized = [
+                                b.model_dump() for b in assistant_content
+                            ]
+                            messages.append({
+                                "role": "assistant", "content": serialized,
+                            })
+                            messages.append({
+                                "role": "user",
+                                "content": lang_error["message"],
+                            })
+                            continue
+                        else:
+                            # Tool-interleaved: nudge on next iteration
+                            logger.warning(
+                                "Language mismatch (tool-interleaved) — "
+                                "nudge %d/%d",
+                                language_retries, self.MAX_LANGUAGE_RETRIES,
+                            )
+                            _lang_nudge = lang_error["message"]
 
                 # Yield buffered text (passed check, has tool_use, or
                 # retries exhausted)
                 for text in text_buffer:
-                    yield {"type": "agent_text", "data": text}
+                    stripped = text.strip()
+                    if stripped:
+                        yield {"type": "agent_text", "data": stripped}
 
                 if not has_tool_use:
                     # Save message history + snapshot on normal completion
@@ -279,6 +295,11 @@ class AgentRunner:
                         ),
                     })
 
+                # Inject language nudge alongside tool results
+                if _lang_nudge:
+                    tool_results.append({
+                        "type": "text", "text": _lang_nudge,
+                    })
                 messages.append({"role": "user", "content": tool_results})
 
                 # -- Pause for user interaction --
