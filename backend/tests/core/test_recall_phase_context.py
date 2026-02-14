@@ -104,16 +104,17 @@ async def test_recall_error_phase_not_completed(db):
 
 
 @pytest.mark.asyncio
-async def test_recall_error_current_phase(db):
-    """Requesting current phase -> error (not yet completed)."""
+async def test_recall_current_phase_allowed(db):
+    """Requesting current phase is allowed — agent needs its own data."""
     state = ForgeState()
     state.current_phase = Phase.EXPLORE
+    state.cross_domain_analogies = [{"domain": "Physics"}]
     handler = _make_handler(state, db)
     result = await handler.recall_phase_context(
         FakeSession(), {"phase": "explore", "artifact": "analogies"},
     )
-    assert result["status"] == "error"
-    assert result["error_code"] == "PHASE_NOT_COMPLETED"
+    assert result["status"] == "ok"
+    assert result["data"][0]["domain"] == "Physics"
 
 
 @pytest.mark.asyncio
@@ -139,3 +140,64 @@ async def test_recall_error_artifact_not_found(db):
     )
     assert result["status"] == "error"
     assert result["error_code"] == "ARTIFACT_NOT_FOUND"
+
+
+# --- Round 2+ cyclic access tests -------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_recall_build_artifacts_in_round2_synthesize(db):
+    """Round 2+: agent loops back to SYNTHESIZE but BUILD data exists."""
+    state = ForgeState()
+    state.current_phase = Phase.SYNTHESIZE
+    state.current_round = 1  # second round
+    state.knowledge_graph_nodes = [{"id": "n1", "claim_text": "Round 1 claim"}]
+    handler = _make_handler(state, db)
+    result = await handler.recall_phase_context(
+        FakeSession(), {"phase": "build", "artifact": "graph_nodes"},
+    )
+    assert result["status"] == "ok"
+    assert result["data"][0]["id"] == "n1"
+
+
+@pytest.mark.asyncio
+async def test_recall_validate_artifacts_in_round2_synthesize(db):
+    """Round 2+: validate phase was completed in round 1."""
+    state = ForgeState()
+    state.current_phase = Phase.SYNTHESIZE
+    state.current_round = 1
+    state.current_round_claims = [{"claim_text": "Carried over"}]
+    handler = _make_handler(state, db)
+    result = await handler.recall_phase_context(
+        FakeSession(), {"phase": "validate", "artifact": "claims"},
+    )
+    assert result["status"] == "ok"
+
+
+@pytest.mark.asyncio
+async def test_recall_negative_knowledge_in_round2_synthesize(db):
+    """Round 2+: negative knowledge from BUILD accessible in SYNTHESIZE."""
+    state = ForgeState()
+    state.current_phase = Phase.SYNTHESIZE
+    state.current_round = 1
+    state.negative_knowledge = [{"claim_text": "Rejected in round 1"}]
+    handler = _make_handler(state, db)
+    result = await handler.recall_phase_context(
+        FakeSession(), {"phase": "build", "artifact": "negative_knowledge"},
+    )
+    assert result["status"] == "ok"
+    assert len(result["data"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_recall_crystallize_blocked_in_round2(db):
+    """Round 2+: crystallize never visited, still blocked."""
+    state = ForgeState()
+    state.current_phase = Phase.SYNTHESIZE
+    state.current_round = 1
+    handler = _make_handler(state, db)
+    result = await handler.recall_phase_context(
+        FakeSession(), {"phase": "crystallize", "artifact": "fundamentals"},
+    )
+    assert result["status"] == "error"
+    assert result["error_code"] == "PHASE_NOT_COMPLETED"

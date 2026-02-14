@@ -139,7 +139,18 @@ class CrossCuttingHandlers:
 
         current_idx = phase_order.index(self.state.current_phase)
         requested_idx = phase_order.index(requested)
-        if current_idx <= requested_idx:
+
+        # ADR: round 2+ cycles BUILD → SYNTHESIZE, so all phases through
+        # BUILD have been visited.  Only block crystallize (never visited
+        # until the very end) and true future phases in round 0.
+        if self.state.current_round > 0:
+            # Round 2+: every phase except CRYSTALLIZE has data
+            phase_accessible = requested != Phase.CRYSTALLIZE
+        else:
+            # Round 0: current phase and all earlier phases have data
+            phase_accessible = requested_idx <= current_idx
+
+        if not phase_accessible:
             return {
                 "status": "error",
                 "error_code": "PHASE_NOT_COMPLETED",
