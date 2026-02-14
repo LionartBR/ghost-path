@@ -1,7 +1,7 @@
 /* DecomposeReview — Phase 1 review UI with 3 distinct section containers.
 
 Invariants:
-    - All assumptions start pre-confirmed (user must explicitly reject)
+    - All assumptions start pending (user must explicitly confirm or reject)
     - At least 1 reframing must be selected before submit
     - Carousel allows free navigation (prev/next) through assumptions
     - Confirm/Reject auto-advances to next card after brief visual feedback
@@ -26,9 +26,7 @@ interface DecomposeReviewProps {
 export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit }) => {
   const { t } = useTranslation();
   const [fundamentalsOpen, setFundamentalsOpen] = useState(false);
-  const [confirmedAssumptions, setConfirmedAssumptions] = useState<Set<number>>(
-    () => new Set(data.assumptions.map((_, i) => i))
-  );
+  const [confirmedAssumptions, setConfirmedAssumptions] = useState<Set<number>>(new Set());
   const [rejectedAssumptions, setRejectedAssumptions] = useState<Set<number>>(new Set());
   const [selectedReframings, setSelectedReframings] = useState<Set<number>>(new Set());
   const [newAssumption, setNewAssumption] = useState("");
