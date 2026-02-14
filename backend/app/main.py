@@ -26,6 +26,7 @@ from app.infrastructure.observability import setup_logging
 from app.api.error_handlers import register_error_handlers
 from app.api.routes import (
     health, session_lifecycle, session_agent_stream, knowledge_graph,
+    research_directive,
 )
 
 logger = logging.getLogger(__name__)
@@ -64,6 +65,7 @@ app.include_router(health.router)
 app.include_router(session_lifecycle.router)
 app.include_router(session_agent_stream.router)
 app.include_router(knowledge_graph.router)
+app.include_router(research_directive.router)
 
 # Error handlers — domain, validation, catch-all (extracted for ExMA fan-out)
 register_error_handlers(app)

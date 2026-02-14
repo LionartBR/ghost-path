@@ -164,5 +164,12 @@
   "completion.stats.assumptions": "Assumptions",
   "completion.graph.title": "Knowledge Graph",
   "completion.graph.description": "{{nodes}} claims \u00b7 {{edges}} relationships",
-  "completion.document.title": "Knowledge Document"
+  "completion.document.title": "Knowledge Document",
+
+  "research.searching": "Searching...",
+  "research.exploreMore": "Explore More",
+  "research.skip": "Skip",
+  "research.sent": "Sent",
+  "research.collapse": "Collapse",
+  "research.expand": "Expand"
 }

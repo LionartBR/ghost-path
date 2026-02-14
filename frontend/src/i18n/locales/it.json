@@ -164,5 +164,12 @@
   "completion.stats.assumptions": "Presupposti",
   "completion.graph.title": "Grafo della conoscenza",
   "completion.graph.description": "{{nodes}} tesi · {{edges}} relazioni",
-  "completion.document.title": "Documento di conoscenza"
+  "completion.document.title": "Documento di conoscenza",
+
+  "research.searching": "Ricerca...",
+  "research.exploreMore": "Esplora di più",
+  "research.skip": "Salta",
+  "research.sent": "Inviato",
+  "research.collapse": "Comprimi",
+  "research.expand": "Espandi"
 }

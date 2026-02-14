@@ -164,5 +164,12 @@
   "completion.stats.assumptions": "Annahmen",
   "completion.graph.title": "Wissensgraph",
   "completion.graph.description": "{{nodes}} Thesen · {{edges}} Beziehungen",
-  "completion.document.title": "Wissensdokument"
+  "completion.document.title": "Wissensdokument",
+
+  "research.searching": "Suche...",
+  "research.exploreMore": "Mehr erkunden",
+  "research.skip": "Überspringen",
+  "research.sent": "Gesendet",
+  "research.collapse": "Einklappen",
+  "research.expand": "Ausklappen"
 }

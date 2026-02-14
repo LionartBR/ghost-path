@@ -164,5 +164,12 @@
   "completion.stats.assumptions": "Premissas",
   "completion.graph.title": "Grafo de Conhecimento",
   "completion.graph.description": "{{nodes}} afirmações · {{edges}} relações",
-  "completion.document.title": "Documento de Conhecimento"
+  "completion.document.title": "Documento de Conhecimento",
+
+  "research.searching": "Pesquisando...",
+  "research.exploreMore": "Explorar Mais",
+  "research.skip": "Pular",
+  "research.sent": "Enviado",
+  "research.collapse": "Recolher",
+  "research.expand": "Expandir"
 }

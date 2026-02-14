@@ -164,5 +164,12 @@
   "completion.stats.assumptions": "가정",
   "completion.graph.title": "지식 그래프",
   "completion.graph.description": "{{nodes}}개 주장 · {{edges}}개 관계",
-  "completion.document.title": "지식 문서"
+  "completion.document.title": "지식 문서",
+
+  "research.searching": "검색 중...",
+  "research.exploreMore": "더 탐색",
+  "research.skip": "건너뛰기",
+  "research.sent": "전송됨",
+  "research.collapse": "접기",
+  "research.expand": "펼치기"
 }

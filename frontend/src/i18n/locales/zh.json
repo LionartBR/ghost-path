@@ -164,5 +164,12 @@
   "completion.stats.assumptions": "假设",
   "completion.graph.title": "知识图谱",
   "completion.graph.description": "{{nodes}}个主张 · {{edges}}个关系",
-  "completion.document.title": "知识文档"
+  "completion.document.title": "知识文档",
+
+  "research.searching": "搜索中...",
+  "research.exploreMore": "深入探索",
+  "research.skip": "跳过",
+  "research.sent": "已发送",
+  "research.collapse": "收起",
+  "research.expand": "展开"
 }

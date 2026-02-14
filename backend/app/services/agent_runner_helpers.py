@@ -11,6 +11,8 @@ Design Decisions:
     - Prompt caching saves ~90% input tokens (ADR: Anthropic ephemeral cache_control)
 """
 
+from typing import Any
+
 from app.core.errors import ErrorSeverity
 
 
@@ -59,7 +61,7 @@ def unexpected_error_event() -> dict:
     }
 
 
-def get_context_usage(session: object) -> dict:
+def get_context_usage(session: Any) -> dict:
     max_t = 1_000_000
     used = session.total_tokens_used
     return {
@@ -126,7 +128,7 @@ def _handle_block_delta(delta, text_lstrip: bool):
 # -- web_search recording -----------------------------------------------------
 
 def record_web_searches(content_blocks: list, dispatch) -> list:
-    """Record web_search in ForgeState, return SSE events."""
+    """Record web_search in ForgeState, return SSE events with rich detail."""
     events = []
     last_query = "unknown query"
     for block in content_blocks:
@@ -138,9 +140,10 @@ def record_web_searches(content_blocks: list, dispatch) -> list:
         elif btype == "web_search_tool_result":
             n = _count_search_results(block)
             dispatch.record_web_search(last_query, f"{n} result(s)")
+            results = _extract_search_results(block)
             events.append({
-                "type": "tool_result",
-                "data": f"Web search returned {n} result(s)",
+                "type": "web_search_detail",
+                "data": {"query": last_query, "results": results},
             })
     return events
 
@@ -152,6 +155,25 @@ def _count_search_results(block) -> int:
         if (isinstance(r, dict) and r.get("type") == "web_search_result")
         or getattr(r, "type", None) == "web_search_result"
     )
+
+
+def _extract_search_results(block, max_results: int = 5) -> list[dict]:
+    """Extract top search result titles + URLs from web_search_tool_result block."""
+    content_list = getattr(block, "content", [])
+    results: list[dict[str, str]] = []
+    for r in content_list:
+        if len(results) >= max_results:
+            break
+        is_result = (
+            (isinstance(r, dict) and r.get("type") == "web_search_result")
+            or getattr(r, "type", None) == "web_search_result"
+        )
+        if not is_result:
+            continue
+        url = r.get("url", "") if isinstance(r, dict) else getattr(r, "url", "")
+        title = r.get("title", "") if isinstance(r, dict) else getattr(r, "title", "")
+        results.append({"url": url, "title": title})
+    return results
 
 
 # -- Prompt Caching (ADR: 90% input token savings) ----------------------------

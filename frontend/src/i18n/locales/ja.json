@@ -164,5 +164,12 @@
   "completion.stats.assumptions": "前提条件",
   "completion.graph.title": "知識グラフ",
   "completion.graph.description": "{{nodes}}件の主張 · {{edges}}件の関係",
-  "completion.document.title": "知識文書"
+  "completion.document.title": "知識文書",
+
+  "research.searching": "検索中...",
+  "research.exploreMore": "さらに探索",
+  "research.skip": "スキップ",
+  "research.sent": "送信済み",
+  "research.collapse": "折りたたむ",
+  "research.expand": "展開"
 }

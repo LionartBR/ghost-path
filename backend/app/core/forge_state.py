@@ -73,6 +73,9 @@ class ForgeState:
     awaiting_user_input: bool = False
     awaiting_input_type: str | None = None
 
+    # === Research directives (ephemeral — user steers agent between iterations) ===
+    research_directives: list[dict] = field(default_factory=list)
+
     # === Cancellation (transient — not persisted to snapshot) ===
     cancelled: bool = False
 
@@ -144,6 +147,22 @@ class ForgeState:
         self.current_phase = phase
         self.web_searches_this_phase = []
 
+    def add_research_directive(
+        self, directive_type: str, query: str, domain: str,
+    ) -> None:
+        """Queue a user research directive for injection between agent iterations."""
+        self.research_directives.append({
+            "directive_type": directive_type,
+            "query": query,
+            "domain": domain,
+        })
+
+    def consume_research_directives(self) -> list[dict]:
+        """Return queued directives and clear the list. Atomic read-and-clear."""
+        directives = self.research_directives
+        self.research_directives = []
+        return directives
+
     def record_web_search(self, query: str, result_summary: str) -> None:
         """Record a web_search call for enforcement tracking."""
         self.web_searches_this_phase.append({
@@ -200,6 +219,8 @@ class ForgeState:
             # must re-emit the correct review event without re-running agent)
             "awaiting_user_input": self.awaiting_user_input,
             "awaiting_input_type": self.awaiting_input_type,
+            # Research directives (ephemeral, but persisted for crash recovery)
+            "research_directives": self.research_directives,
         }
 
     # Field mappings for snapshot deserialization (ADR: DRY over 60+ manual lines)
@@ -215,7 +236,7 @@ class ForgeState:
         "knowledge_graph_edges": [], "negative_knowledge": [],
         "gaps": [], "negative_knowledge_consulted": False,
         "previous_claims_referenced": False, "deep_dive_active": False,
-        "awaiting_user_input": False,
+        "awaiting_user_input": False, "research_directives": [],
     }
     _NULLABLE_FIELDS: ClassVar[tuple[str, ...]] = (
         "morphological_box", "deep_dive_target_claim_id",
@@ -245,12 +266,12 @@ class ForgeState:
             state.locale = Locale(locale_val)
 
         # Bulk restore: simple, nullable, and set fields
-        for field, default in cls._SIMPLE_FIELDS.items():
-            setattr(state, field, data.get(field, default))
-        for field in cls._NULLABLE_FIELDS:
-            setattr(state, field, data.get(field))
-        for field in cls._SET_FIELDS:
-            setattr(state, field, set(data.get(field, [])))
+        for key, default in cls._SIMPLE_FIELDS.items():
+            setattr(state, key, data.get(key, default))
+        for key in cls._NULLABLE_FIELDS:
+            setattr(state, key, data.get(key))
+        for key in cls._SET_FIELDS:
+            setattr(state, key, set(data.get(key, [])))
 
         return state
 

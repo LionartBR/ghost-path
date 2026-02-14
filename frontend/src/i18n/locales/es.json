@@ -164,5 +164,12 @@
   "completion.stats.assumptions": "Supuestos",
   "completion.graph.title": "Grafo de conocimiento",
   "completion.graph.description": "{{nodes}} afirmaciones · {{edges}} relaciones",
-  "completion.document.title": "Documento de conocimiento"
+  "completion.document.title": "Documento de conocimiento",
+
+  "research.searching": "Buscando...",
+  "research.exploreMore": "Explorar más",
+  "research.skip": "Omitir",
+  "research.sent": "Enviado",
+  "research.collapse": "Contraer",
+  "research.expand": "Expandir"
 }

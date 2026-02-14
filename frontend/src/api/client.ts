@@ -56,6 +56,21 @@ export async function cancelSession(sessionId: string): Promise<{ message: strin
   return res.json();
 }
 
+export async function sendResearchDirective(
+  sessionId: string,
+  directiveType: string,
+  query: string,
+  domain: string,
+): Promise<{ status: string }> {
+  const res = await fetch(`${API_BASE}/sessions/${sessionId}/research-directive`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ directive_type: directiveType, query, domain }),
+  });
+  if (!res.ok) throw new Error(`Failed to send directive: ${res.status}`);
+  return res.json();
+}
+
 function createSSEStream(
   url: string,
   options: RequestInit,

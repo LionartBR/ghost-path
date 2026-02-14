@@ -209,11 +209,11 @@ async def test_web_search_recorded_in_forge_state(
     assert len(state.web_searches_this_phase) == 1
     assert state.web_searches_this_phase[0]["query"] == "quantum computing 2026"
 
-    # SSE event for web search result
-    results = _events_of_type(events, "tool_result")
-    web_results = [r for r in results if isinstance(r["data"], str) and "Web search" in r["data"]]
-    assert len(web_results) == 1
-    assert "3 result(s)" in web_results[0]["data"]
+    # SSE event for web search result (web_search_detail with rich data)
+    detail = _events_of_type(events, "web_search_detail")
+    assert len(detail) == 1
+    assert detail[0]["data"]["query"] == "quantum computing 2026"
+    assert len(detail[0]["data"]["results"]) == 3
 
 
 async def test_pause_turn_serializes_and_continues_loop(
@@ -313,3 +313,94 @@ async def test_message_history_built_from_existing_plus_new(
         assert any(b.get("text") == "New message" for b in last_content)
     else:
         assert last_content == "New message"
+
+
+# ==============================================================================
+# Research Directives
+# ==============================================================================
+
+
+async def test_research_directives_injected_between_iterations(
+    test_db, seed_session, mock_dispatch,
+):
+    """Directives queued in ForgeState are appended to tool_results message."""
+    state = ForgeState()
+    # Pre-queue a directive (simulates user clicking "Explore More" during stream)
+    state.add_research_directive("explore_more", "biology TRIZ", "biology")
+    client = MockAnthropicClient([
+        tool_response("decompose_to_fundamentals", {"problem": "test"}),
+        text_response("Done."),
+    ])
+    runner = AgentRunner(test_db, client)
+
+    await _collect(runner, seed_session, "Decompose", state)
+
+    # Second API call should include directive in the user message
+    second_call_msgs = client.calls[1]["messages"]
+    last_user_msg = [m for m in second_call_msgs if m["role"] == "user"][-1]
+    content = last_user_msg["content"]
+    # Content is a list (tool_results + directive text)
+    directive_texts = [
+        b for b in content
+        if isinstance(b, dict) and b.get("type") == "text"
+        and "RESEARCH DIRECTOR" in b.get("text", "")
+    ]
+    assert len(directive_texts) == 1
+    assert "MORE depth on 'biology'" in directive_texts[0]["text"]
+    # Directive consumed — no longer in ForgeState
+    assert state.research_directives == []
+
+
+async def test_research_directives_not_injected_when_empty(
+    test_db, seed_session, mock_dispatch,
+):
+    """No directive text appended when ForgeState has no pending directives."""
+    state = ForgeState()
+    client = MockAnthropicClient([
+        tool_response("decompose_to_fundamentals", {"problem": "test"}),
+        text_response("Done."),
+    ])
+    runner = AgentRunner(test_db, client)
+
+    await _collect(runner, seed_session, "Decompose", state)
+
+    second_call_msgs = client.calls[1]["messages"]
+    last_user_msg = [m for m in second_call_msgs if m["role"] == "user"][-1]
+    content = last_user_msg["content"]
+    directive_texts = [
+        b for b in content
+        if isinstance(b, dict) and b.get("type") == "text"
+        and "RESEARCH DIRECTOR" in b.get("text", "")
+    ]
+    assert len(directive_texts) == 0
+
+
+async def test_format_directives_skip_domain(
+    test_db, seed_session, mock_dispatch,
+):
+    """Skip directive formatted correctly."""
+    runner = AgentRunner(test_db, MockAnthropicClient([]))
+    text = runner._format_directives([
+        {"directive_type": "skip_domain", "query": "skip", "domain": "cooking"},
+    ])
+    assert "SKIP 'cooking'" in text
+
+
+async def test_web_search_detail_event_emitted(
+    test_db, seed_session, mock_dispatch,
+):
+    """web_search response emits web_search_detail SSE with results."""
+    state = ForgeState()
+    client = MockAnthropicClient([
+        web_search_response("quantum computing 2026", n_results=3),
+        text_response("Research complete."),
+    ])
+    runner = AgentRunner(test_db, client)
+
+    events = await _collect(runner, seed_session, "Research", state)
+
+    detail_events = _events_of_type(events, "web_search_detail")
+    assert len(detail_events) == 1
+    assert detail_events[0]["data"]["query"] == "quantum computing 2026"
+    assert len(detail_events[0]["data"]["results"]) == 3
+    assert detail_events[0]["data"]["results"][0]["url"] == "https://example.com/0"

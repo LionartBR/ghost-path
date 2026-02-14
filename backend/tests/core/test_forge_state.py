@@ -324,3 +324,61 @@ def test_snapshot_restores_awaiting_defaults_when_missing():
     restored = ForgeState.from_snapshot(snapshot)
     assert restored.awaiting_user_input is False
     assert restored.awaiting_input_type is None
+
+
+# --- Research directives (user steers agent between iterations) ---------------
+
+def test_initial_research_directives_empty():
+    state = ForgeState()
+    assert state.research_directives == []
+
+
+def test_add_research_directive_appends():
+    state = ForgeState()
+    state.add_research_directive("explore_more", "TRIZ biology", "biology")
+    state.add_research_directive("skip_domain", "cooking analogies", "cooking")
+    assert len(state.research_directives) == 2
+    assert state.research_directives[0]["directive_type"] == "explore_more"
+    assert state.research_directives[1]["domain"] == "cooking"
+
+
+def test_consume_research_directives_returns_and_clears():
+    state = ForgeState()
+    state.add_research_directive("explore_more", "quantum computing", "physics")
+    state.add_research_directive("skip_domain", "skip this", "cooking")
+    consumed = state.consume_research_directives()
+    assert len(consumed) == 2
+    assert consumed[0]["query"] == "quantum computing"
+    assert state.research_directives == []
+
+
+def test_consume_research_directives_empty_returns_empty():
+    state = ForgeState()
+    consumed = state.consume_research_directives()
+    assert consumed == []
+    assert state.research_directives == []
+
+
+def test_research_directives_in_snapshot():
+    state = ForgeState()
+    state.add_research_directive("explore_more", "test query", "domain")
+    snapshot = state.to_snapshot()
+    assert snapshot["research_directives"] == [
+        {"directive_type": "explore_more", "query": "test query", "domain": "domain"},
+    ]
+
+
+def test_research_directives_restored_from_snapshot():
+    state = ForgeState()
+    state.add_research_directive("explore_more", "test query", "domain")
+    snapshot = state.to_snapshot()
+    restored = ForgeState.from_snapshot(snapshot)
+    assert len(restored.research_directives) == 1
+    assert restored.research_directives[0]["query"] == "test query"
+
+
+def test_research_directives_default_on_old_snapshot():
+    """Old snapshots without research_directives field default to empty list."""
+    snapshot = {"current_phase": "decompose", "current_round": 0}
+    restored = ForgeState.from_snapshot(snapshot)
+    assert restored.research_directives == []

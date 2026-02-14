@@ -164,5 +164,12 @@
   "completion.stats.assumptions": "Допущения",
   "completion.graph.title": "Граф знаний",
   "completion.graph.description": "{{nodes}} тезисов · {{edges}} связей",
-  "completion.document.title": "Документ знаний"
+  "completion.document.title": "Документ знаний",
+
+  "research.searching": "Поиск...",
+  "research.exploreMore": "Изучить глубже",
+  "research.skip": "Пропустить",
+  "research.sent": "Отправлено",
+  "research.collapse": "Свернуть",
+  "research.expand": "Развернуть"
 }

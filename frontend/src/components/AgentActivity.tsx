@@ -15,15 +15,18 @@ import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { ActivityItem } from "../types";
+import { WebSearchCard } from "./WebSearchCard";
 
 interface AgentActivityProps {
   isStreaming: boolean;
   activityItems: ActivityItem[];
+  onDirective?: (type: "explore_more" | "skip_domain", query: string, domain: string) => void;
 }
 
 export const AgentActivity: React.FC<AgentActivityProps> = ({
   isStreaming,
   activityItems,
+  onDirective,
 }) => {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -154,6 +157,17 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
                     <p className="text-xs text-gray-500 mt-0.5">{item.message}</p>
                   </div>
                 </div>
+              );
+            case "web_search":
+              return (
+                <WebSearchCard
+                  key={i}
+                  query={item.query}
+                  results={item.results}
+                  directiveSent={item.directive_sent}
+                  isStreaming={isStreaming}
+                  onDirective={onDirective ?? (() => {})}
+                />
               );
           }
         })}

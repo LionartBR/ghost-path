@@ -14,6 +14,7 @@ Design Decisions:
 import asyncio
 import json
 import logging
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -123,6 +124,13 @@ class AgentRunner:
             )
             for sse in events:
                 yield sse
+            # Inject research directives from user (explore_more / skip_domain)
+            directives = forge_state.consume_research_directives()
+            if directives:
+                tool_msgs.append({
+                    "type": "text",
+                    "text": self._format_directives(directives),
+                })
             messages.append({"role": "user", "content": tool_msgs})
 
             if pause:
@@ -241,7 +249,7 @@ class AgentRunner:
             logger.error("Failed to save state: %s", e)
 
     async def _execute_tool_safe(
-        self, dispatch: ToolDispatch, session: object,
+        self, dispatch: ToolDispatch, session: Any,
         tool_name: str, tool_input: dict,
     ) -> dict:
         """Execute tool with error boundary — never raises."""
@@ -259,7 +267,22 @@ class AgentRunner:
                 "message": f"Internal error executing {tool_name}",
             }
 
-    def _build_messages(self, session: object, user_message: str) -> list:
+    @staticmethod
+    def _format_directives(directives: list[dict]) -> str:
+        """Format research directives as natural language for agent context."""
+        parts = ["[RESEARCH DIRECTOR] The user has provided guidance:"]
+        for d in directives:
+            dtype = d.get("directive_type", "")
+            domain = d.get("domain", "")
+            if dtype == "explore_more":
+                parts.append(f"- User wants MORE depth on '{domain}'")
+            elif dtype == "skip_domain":
+                parts.append(f"- User wants to SKIP '{domain}'")
+            else:
+                parts.append(f"- User directive: {dtype} on '{domain}'")
+        return "\n".join(parts)
+
+    def _build_messages(self, session: Any, user_message: str) -> list:
         """Build message array from history + new user message."""
         messages = list(session.message_history or [])
         messages.append({"role": "user", "content": user_message})

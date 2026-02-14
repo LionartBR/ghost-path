@@ -164,5 +164,12 @@
   "completion.stats.assumptions": "Hypothèses",
   "completion.graph.title": "Graphe de connaissances",
   "completion.graph.description": "{{nodes}} thèses · {{edges}} relations",
-  "completion.document.title": "Document de connaissances"
+  "completion.document.title": "Document de connaissances",
+
+  "research.searching": "Recherche...",
+  "research.exploreMore": "Explorer plus",
+  "research.skip": "Passer",
+  "research.sent": "Envoyé",
+  "research.collapse": "Réduire",
+  "research.expand": "Développer"
 }

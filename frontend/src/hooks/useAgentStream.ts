@@ -1,7 +1,7 @@
 /* useAgentStream — SSE consumer for TRIZ's 6-phase pipeline. */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { streamSession, sendUserInput, cancelSession } from "../api/client";
+import { streamSession, sendUserInput, cancelSession, sendResearchDirective } from "../api/client";
 import type {
   SSEEvent,
   Claim,
@@ -15,6 +15,7 @@ import type {
   ActivityItem,
   Phase,
   PhaseTransition,
+  WebSearchResult,
 } from "../types";
 
 /* ADR: derive next phase from user input type — avoids needing
@@ -128,6 +129,35 @@ export function useAgentStream(sessionId: string | null) {
       case "tool_result":
         // Display only — no state change needed
         break;
+
+      case "web_search_detail": {
+        const detail = event.data as { query: string; results: WebSearchResult[] };
+        setState((s) => {
+          const items = [...s.activityItems];
+          // Find matching tool_call pill (web_search with same query) and upgrade in-place
+          for (let i = items.length - 1; i >= 0; i--) {
+            const it = items[i];
+            if (it.kind === "tool_call" && it.tool === "web_search" && it.input_preview === detail.query) {
+              items[i] = {
+                kind: "web_search",
+                query: detail.query,
+                results: detail.results,
+                directive_sent: false,
+              };
+              return { ...s, activityItems: items };
+            }
+          }
+          // No matching pill found — append as new card
+          items.push({
+            kind: "web_search",
+            query: detail.query,
+            results: detail.results,
+            directive_sent: false,
+          });
+          return { ...s, activityItems: items };
+        });
+        break;
+      }
 
       case "review_decompose":
         setState((s) => ({
@@ -322,5 +352,24 @@ export function useAgentStream(sessionId: string | null) {
     setState((s) => ({ ...s, phaseTransition: null }));
   }, []);
 
-  return { ...state, startStream, sendInput, abort, dismissTransition };
+  const sendDirective = useCallback(
+    (directiveType: "explore_more" | "skip_domain", query: string, domain: string) => {
+      if (!sessionId) return;
+      sendResearchDirective(sessionId, directiveType, query, domain).catch(
+        (err) => console.error("Failed to send directive:", err),
+      );
+      // Mark matching web_search item as directive_sent
+      setState((s) => {
+        const items = s.activityItems.map((it) =>
+          it.kind === "web_search" && it.query === query
+            ? { ...it, directive_sent: true }
+            : it,
+        );
+        return { ...s, activityItems: items };
+      });
+    },
+    [sessionId],
+  );
+
+  return { ...state, startStream, sendInput, abort, dismissTransition, sendDirective };
 }

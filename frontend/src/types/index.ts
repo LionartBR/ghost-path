@@ -202,17 +202,26 @@ export interface CompletionData {
   problem: string;
 }
 
+// --- Web Search Results ---
+
+export interface WebSearchResult {
+  url: string;
+  title: string;
+}
+
 // --- Agent Activity (chronological log) ---
 
 export type ActivityItem =
   | { kind: "text"; text: string }
   | { kind: "tool_call"; tool: string; input_preview: string }
-  | { kind: "tool_error"; tool: string; error_code: string; message: string };
+  | { kind: "tool_error"; tool: string; error_code: string; message: string }
+  | { kind: "web_search"; query: string; results: WebSearchResult[]; directive_sent: boolean };
 
 // --- SSE Events ---
 
 export type SSEEventType =
   | "agent_text" | "tool_call" | "tool_error" | "tool_result"
+  | "web_search_detail"
   | "review_decompose" | "review_explore" | "review_claims"
   | "review_verdicts" | "review_build"
   | "knowledge_document" | "phase_change"
