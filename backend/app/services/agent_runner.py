@@ -116,7 +116,7 @@ class AgentRunner:
                             yield _done_event(error=False)
                             return
 
-                        response = stream.get_final_message()
+                        response = await stream.get_final_message()
 
                 except TrizError as e:
                     logger.error(
