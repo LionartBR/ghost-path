@@ -177,7 +177,7 @@ export type SSEEventType =
   | "review_decompose" | "review_explore" | "review_claims"
   | "review_verdicts" | "review_build"
   | "knowledge_document" | "phase_change"
-  | "context_usage" | "done" | "error";
+  | "context_usage" | "done" | "error" | "heartbeat";
 
 export interface SSEEvent {
   type: SSEEventType;
