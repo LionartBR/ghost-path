@@ -146,5 +146,23 @@
   "transition.toValidate": "Behauptungen geschmiedet. Jede stellt sich nun ihrem härtesten Kritiker — was den Zerstörungsversuch überlebt, ist echtes Wissen.",
   "transition.toBuild": "Überlebende treten hervor. Validierte Behauptungen werden zu einem Wissensgraphen verwoben — jeder Knoten hat sich im dialektischen Feuer bewährt.",
   "transition.toCrystallize": "Die Schmiede ist beendet. Alles wird zu einem finalen Wissensdokument destilliert — kristallisiertes Wissen aus dem dialektischen Prozess.",
-  "transition.toSynthesizeReturn": "Bewaffnet mit dem, was wir gelernt und verworfen haben, beginnt eine neue Runde dialektischer Schöpfung."
+  "transition.toSynthesizeReturn": "Bewaffnet mit dem, was wir gelernt und verworfen haben, beginnt eine neue Runde dialektischer Schöpfung.",
+
+  "completion.hero.title": "Untersuchung abgeschlossen",
+  "completion.hero.duration": "Dauer",
+  "completion.hero.rounds": "Runden",
+  "completion.durationUnknown": "—",
+  "completion.durationHours": "{{hours}}h {{minutes}}m",
+  "completion.durationMinutes": "{{minutes}} Min.",
+  "completion.stats.claimsValidated": "Validiert",
+  "completion.stats.claimsRejected": "Abgelehnt",
+  "completion.stats.claimsQualified": "Qualifiziert",
+  "completion.stats.evidenceCollected": "Belege",
+  "completion.stats.analogiesUsed": "Analogien",
+  "completion.stats.contradictions": "Widersprüche",
+  "completion.stats.fundamentals": "Grundlagen",
+  "completion.stats.assumptions": "Annahmen",
+  "completion.graph.title": "Wissensgraph",
+  "completion.graph.description": "{{nodes}} Thesen · {{edges}} Beziehungen",
+  "completion.document.title": "Wissensdokument"
 }

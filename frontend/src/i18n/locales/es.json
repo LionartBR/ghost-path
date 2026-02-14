@@ -146,5 +146,23 @@
   "transition.toValidate": "Afirmaciones forjadas. Ahora cada una enfrenta a su crítico más duro — lo que sobreviva al intento de destrucción es conocimiento real.",
   "transition.toBuild": "Los supervivientes emergen. Tejiendo afirmaciones validadas en un grafo de conocimiento — cada nodo ganó su lugar en el fuego dialéctico.",
   "transition.toCrystallize": "La forja ha terminado. Destilando todo en un Documento de Conocimiento final — conocimiento cristalizado del proceso dialéctico.",
-  "transition.toSynthesizeReturn": "Armados con lo aprendido y lo rechazado, comienza una nueva ronda de creación dialéctica."
+  "transition.toSynthesizeReturn": "Armados con lo aprendido y lo rechazado, comienza una nueva ronda de creación dialéctica.",
+
+  "completion.hero.title": "Investigación completada",
+  "completion.hero.duration": "Duración",
+  "completion.hero.rounds": "Rondas",
+  "completion.durationUnknown": "—",
+  "completion.durationHours": "{{hours}}h {{minutes}}m",
+  "completion.durationMinutes": "{{minutes}} min",
+  "completion.stats.claimsValidated": "Validadas",
+  "completion.stats.claimsRejected": "Rechazadas",
+  "completion.stats.claimsQualified": "Calificadas",
+  "completion.stats.evidenceCollected": "Evidencias",
+  "completion.stats.analogiesUsed": "Analogías",
+  "completion.stats.contradictions": "Contradicciones",
+  "completion.stats.fundamentals": "Fundamentos",
+  "completion.stats.assumptions": "Supuestos",
+  "completion.graph.title": "Grafo de conocimiento",
+  "completion.graph.description": "{{nodes}} afirmaciones · {{edges}} relaciones",
+  "completion.document.title": "Documento de conocimiento"
 }

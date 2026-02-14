@@ -146,5 +146,23 @@
   "transition.toValidate": "Affermazioni forgiate. Ognuna affronta il suo critico più duro — ciò che sopravvive al tentativo di distruzione è vera conoscenza.",
   "transition.toBuild": "I sopravvissuti emergono. Tessiamo le affermazioni validate in un grafo della conoscenza — ogni nodo ha guadagnato il suo posto nel fuoco dialettico.",
   "transition.toCrystallize": "La forgia è finita. Distilliamo tutto in un Documento di Conoscenza finale — conoscenza cristallizzata dal processo dialettico.",
-  "transition.toSynthesizeReturn": "Armati di ciò che abbiamo imparato e rifiutato, un nuovo ciclo di creazione dialettica ha inizio."
+  "transition.toSynthesizeReturn": "Armati di ciò che abbiamo imparato e rifiutato, un nuovo ciclo di creazione dialettica ha inizio.",
+
+  "completion.hero.title": "Indagine completata",
+  "completion.hero.duration": "Durata",
+  "completion.hero.rounds": "Turni",
+  "completion.durationUnknown": "—",
+  "completion.durationHours": "{{hours}}h {{minutes}}m",
+  "completion.durationMinutes": "{{minutes}} min",
+  "completion.stats.claimsValidated": "Validate",
+  "completion.stats.claimsRejected": "Rifiutate",
+  "completion.stats.claimsQualified": "Qualificate",
+  "completion.stats.evidenceCollected": "Evidenze",
+  "completion.stats.analogiesUsed": "Analogie",
+  "completion.stats.contradictions": "Contraddizioni",
+  "completion.stats.fundamentals": "Fondamenti",
+  "completion.stats.assumptions": "Presupposti",
+  "completion.graph.title": "Grafo della conoscenza",
+  "completion.graph.description": "{{nodes}} tesi · {{edges}} relazioni",
+  "completion.document.title": "Documento di conoscenza"
 }

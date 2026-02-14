@@ -163,6 +163,15 @@ body {
   animation: slide-in-left 0.25s ease-out;
 }
 
+/* Stat card staggered count-up animation */
+@keyframes stat-count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-stat-count-up {
+  animation: stat-count-up 0.4s ease-out forwards;
+}
+
 /* Agent markdown — scoped overrides so ReactMarkdown inherits panel context */
 .agent-markdown > *:first-child {
   margin-top: 0;

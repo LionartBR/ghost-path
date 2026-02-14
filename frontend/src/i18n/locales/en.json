@@ -146,5 +146,23 @@
   "transition.toValidate": "Claims are forged. Now every one faces its toughest critic — what survives attempted destruction is real knowledge.",
   "transition.toBuild": "Survivors emerge. Weaving validated claims into a knowledge graph — each node earned its place through dialectical fire.",
   "transition.toCrystallize": "The forge is done. Distilling everything into a final Knowledge Document — crystallized knowledge from the dialectical process.",
-  "transition.toSynthesizeReturn": "Armed with what we learned and what we rejected, a new round of dialectical creation begins."
+  "transition.toSynthesizeReturn": "Armed with what we learned and what we rejected, a new round of dialectical creation begins.",
+
+  "completion.hero.title": "Investigation Complete",
+  "completion.hero.duration": "Duration",
+  "completion.hero.rounds": "Rounds",
+  "completion.durationUnknown": "\u2014",
+  "completion.durationHours": "{{hours}}h {{minutes}}m",
+  "completion.durationMinutes": "{{minutes}} min",
+  "completion.stats.claimsValidated": "Validated",
+  "completion.stats.claimsRejected": "Rejected",
+  "completion.stats.claimsQualified": "Qualified",
+  "completion.stats.evidenceCollected": "Evidence",
+  "completion.stats.analogiesUsed": "Analogies",
+  "completion.stats.contradictions": "Contradictions",
+  "completion.stats.fundamentals": "Fundamentals",
+  "completion.stats.assumptions": "Assumptions",
+  "completion.graph.title": "Knowledge Graph",
+  "completion.graph.description": "{{nodes}} claims \u00b7 {{edges}} relationships",
+  "completion.document.title": "Knowledge Document"
 }

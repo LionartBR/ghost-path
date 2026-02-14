@@ -146,5 +146,23 @@
   "transition.toValidate": "主张已锻造完成。现在每个主张都将面对最严苛的批评者——在破坏尝试中幸存的才是真正的知识。",
   "transition.toBuild": "幸存者浮现。将验证过的主张编织成知识图谱——每个节点都在辩证的烈火中赢得了自己的位置。",
   "transition.toCrystallize": "锻造已完成。将一切蒸馏为最终的知识文档——从辩证过程中结晶的知识。",
-  "transition.toSynthesizeReturn": "带着我们所学和所否定的，新一轮辩证创造开始了。"
+  "transition.toSynthesizeReturn": "带着我们所学和所否定的，新一轮辩证创造开始了。",
+
+  "completion.hero.title": "调查完成",
+  "completion.hero.duration": "持续时间",
+  "completion.hero.rounds": "轮次",
+  "completion.durationUnknown": "—",
+  "completion.durationHours": "{{hours}}小时{{minutes}}分钟",
+  "completion.durationMinutes": "{{minutes}}分钟",
+  "completion.stats.claimsValidated": "已验证",
+  "completion.stats.claimsRejected": "已拒绝",
+  "completion.stats.claimsQualified": "有条件",
+  "completion.stats.evidenceCollected": "证据",
+  "completion.stats.analogiesUsed": "类比",
+  "completion.stats.contradictions": "矛盾",
+  "completion.stats.fundamentals": "基本要素",
+  "completion.stats.assumptions": "假设",
+  "completion.graph.title": "知识图谱",
+  "completion.graph.description": "{{nodes}}个主张 · {{edges}}个关系",
+  "completion.document.title": "知识文档"
 }

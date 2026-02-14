@@ -146,5 +146,23 @@
   "transition.toValidate": "Утверждения выкованы. Теперь каждое из них встречает жесточайшего критика — то, что выживет, станет настоящим знанием.",
   "transition.toBuild": "Выжившие появляются. Плетём из проверенных утверждений граф знаний — каждый узел заслужил своё место в диалектическом огне.",
   "transition.toCrystallize": "Ковка завершена. Дистиллируем всё в итоговый Документ Знаний — кристаллизованное знание из диалектического процесса.",
-  "transition.toSynthesizeReturn": "Вооружённые тем, что мы узнали и отвергли, начинается новый раунд диалектического творчества."
+  "transition.toSynthesizeReturn": "Вооружённые тем, что мы узнали и отвергли, начинается новый раунд диалектического творчества.",
+
+  "completion.hero.title": "Исследование завершено",
+  "completion.hero.duration": "Длительность",
+  "completion.hero.rounds": "Раундов",
+  "completion.durationUnknown": "—",
+  "completion.durationHours": "{{hours}}ч {{minutes}}м",
+  "completion.durationMinutes": "{{minutes}} мин",
+  "completion.stats.claimsValidated": "Подтверждено",
+  "completion.stats.claimsRejected": "Отклонено",
+  "completion.stats.claimsQualified": "Уточнено",
+  "completion.stats.evidenceCollected": "Доказательства",
+  "completion.stats.analogiesUsed": "Аналогии",
+  "completion.stats.contradictions": "Противоречия",
+  "completion.stats.fundamentals": "Основы",
+  "completion.stats.assumptions": "Допущения",
+  "completion.graph.title": "Граф знаний",
+  "completion.graph.description": "{{nodes}} тезисов · {{edges}} связей",
+  "completion.document.title": "Документ знаний"
 }

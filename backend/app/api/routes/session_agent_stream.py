@@ -53,7 +53,7 @@ async def stream_session(
         try:
             # Reconnect: re-emit review event without re-running agent
             if forge_state.awaiting_user_input:
-                review = build_resume_review_event(forge_state)
+                review = build_resume_review_event(forge_state, session)
                 if review:
                     yield sse_line(review)
                 yield sse_line(done_event(awaiting_input=True))
@@ -64,7 +64,7 @@ async def stream_session(
             async for event in runner.run(session, message, forge_state):
                 yield sse_line(event)
 
-            review = build_resume_review_event(forge_state)
+            review = build_resume_review_event(forge_state, session)
             if review:
                 forge_state.awaiting_user_input = True
                 patch_snapshot_awaiting(session)
@@ -108,7 +108,7 @@ async def send_user_input(
             async for event in runner.run(session, message, forge_state):
                 yield sse_line(event)
 
-            review = build_review_event(forge_state)
+            review = build_review_event(forge_state, session)
             if review:
                 forge_state.awaiting_user_input = True
                 patch_snapshot_awaiting(session)

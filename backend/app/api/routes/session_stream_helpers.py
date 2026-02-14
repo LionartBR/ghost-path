@@ -16,6 +16,7 @@ Design Decisions:
 import json
 import logging
 import uuid as uuid_mod
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -168,7 +169,9 @@ def build_stream_message(session, forge_state: ForgeState) -> str:
 
 # -- Review event builders -----------------------------------------------------
 
-def build_resume_review_event(state: ForgeState) -> dict | None:
+def build_resume_review_event(
+    state: ForgeState, session=None,
+) -> dict | None:
     """Build review event covering ALL phases (including DECOMPOSE).
 
     Extends build_review_event (which skips DECOMPOSE) so reconnect
@@ -183,10 +186,10 @@ def build_resume_review_event(state: ForgeState) -> dict | None:
                 "reframings": state.reframings,
             },
         }
-    return build_review_event(state)
+    return build_review_event(state, session)
 
 
-def build_review_event(state: ForgeState) -> dict | None:
+def build_review_event(state: ForgeState, session=None) -> dict | None:
     """Build the appropriate review SSE event based on current phase."""
     event = None
     match state.current_phase:
@@ -226,9 +229,32 @@ def build_review_event(state: ForgeState) -> dict | None:
             }
         case Phase.CRYSTALLIZE:
             if state.knowledge_document_markdown:
+                from app.core.session_stats import compute_session_stats
+                stats = compute_session_stats(state)
+                if session:
+                    stats["total_tokens_used"] = getattr(
+                        session, "total_tokens_used", 0,
+                    )
+                    created = getattr(session, "created_at", None)
+                    resolved = getattr(session, "resolved_at", None)
+                    if created and resolved:
+                        stats["duration_seconds"] = int(
+                            (resolved - created).total_seconds(),
+                        )
                 event = {
                     "type": "knowledge_document",
-                    "data": state.knowledge_document_markdown,
+                    "data": {
+                        "markdown": state.knowledge_document_markdown,
+                        "stats": stats,
+                        "graph": {
+                            "nodes": state.knowledge_graph_nodes,
+                            "edges": state.knowledge_graph_edges,
+                        },
+                        "problem": (
+                            getattr(session, "problem", "")
+                            if session else ""
+                        ),
+                    },
                 }
     return event
 
@@ -324,6 +350,7 @@ async def _apply_build_decision(
         state.deep_dive_active = True
         state.deep_dive_target_claim_id = body.deep_dive_claim_id
     elif body.decision == "resolve":
+        session.resolved_at = datetime.now(timezone.utc)
         state.transition_to(Phase.CRYSTALLIZE)
         session.message_history = []
         await sync_state_to_db(session, state, db)

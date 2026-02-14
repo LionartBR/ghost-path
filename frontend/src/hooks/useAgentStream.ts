@@ -6,6 +6,7 @@ import type {
   SSEEvent,
   Claim,
   ClaimFeedback,
+  CompletionData,
   DecomposeReviewData,
   ExploreReviewData,
   BuildReviewData,
@@ -47,6 +48,7 @@ interface AgentStreamState {
   verdictsReview: Claim[] | null;
   buildReview: BuildReviewData | null;
   knowledgeDocument: string | null;
+  completionData: CompletionData | null;
 
   contextUsage: ContextUsage | null;
   awaitingInput: boolean;
@@ -65,6 +67,7 @@ const initialState: AgentStreamState = {
   verdictsReview: null,
   buildReview: null,
   knowledgeDocument: null,
+  completionData: null,
   contextUsage: null,
   awaitingInput: false,
   error: null,
@@ -179,14 +182,17 @@ export function useAgentStream(sessionId: string | null) {
         }));
         break;
 
-      case "knowledge_document":
+      case "knowledge_document": {
+        const doc = event.data as CompletionData;
         setState((s) => ({
           ...s,
-          knowledgeDocument: (event.data as { markdown: string }).markdown,
+          knowledgeDocument: doc.markdown,
+          completionData: doc,
           currentPhase: "crystallize",
           phaseTransition: null,
         }));
         break;
+      }
 
       case "context_usage":
         setState((s) => ({
@@ -256,6 +262,7 @@ export function useAgentStream(sessionId: string | null) {
         claimsReview: null,
         verdictsReview: null,
         buildReview: null,
+        completionData: null,
         awaitingInput: false,
         activityItems: [],
         toolErrors: [],

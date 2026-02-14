@@ -146,5 +146,23 @@
   "transition.toValidate": "주장이 단조되었습니다. 이제 가장 가혹한 비평가와 마주합니다 — 파괴 시도에서 살아남은 것이 진정한 지식입니다.",
   "transition.toBuild": "생존자가 나타납니다. 검증된 주장을 지식 그래프로 엮어갑니다 — 각 노드는 변증법의 불로 자리를 얻었습니다.",
   "transition.toCrystallize": "단조가 끝났습니다. 모든 것을 최종 지식 문서로 증류합니다 — 변증법 과정에서 결정화된 지식.",
-  "transition.toSynthesizeReturn": "배운 것과 거부한 것을 무장하고, 새로운 변증법적 창조의 라운드가 시작됩니다."
+  "transition.toSynthesizeReturn": "배운 것과 거부한 것을 무장하고, 새로운 변증법적 창조의 라운드가 시작됩니다.",
+
+  "completion.hero.title": "조사 완료",
+  "completion.hero.duration": "소요 시간",
+  "completion.hero.rounds": "라운드",
+  "completion.durationUnknown": "—",
+  "completion.durationHours": "{{hours}}시간 {{minutes}}분",
+  "completion.durationMinutes": "{{minutes}}분",
+  "completion.stats.claimsValidated": "검증됨",
+  "completion.stats.claimsRejected": "기각됨",
+  "completion.stats.claimsQualified": "조건부",
+  "completion.stats.evidenceCollected": "증거",
+  "completion.stats.analogiesUsed": "유추",
+  "completion.stats.contradictions": "모순",
+  "completion.stats.fundamentals": "기본 요소",
+  "completion.stats.assumptions": "가정",
+  "completion.graph.title": "지식 그래프",
+  "completion.graph.description": "{{nodes}}개 주장 · {{edges}}개 관계",
+  "completion.document.title": "지식 문서"
 }

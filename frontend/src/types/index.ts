@@ -175,6 +175,33 @@ export interface ContextUsage {
   usage_percentage: number;
 }
 
+// --- Session Completion ---
+
+export interface SessionStats {
+  total_rounds: number;
+  claims_validated: number;
+  claims_rejected: number;
+  claims_qualified: number;
+  total_claims: number;
+  analogies_used: number;
+  contradictions_found: number;
+  evidence_collected: number;
+  fundamentals_identified: number;
+  assumptions_examined: number;
+  reframings_explored: number;
+  graph_nodes: number;
+  graph_edges: number;
+  total_tokens_used?: number;
+  duration_seconds?: number;
+}
+
+export interface CompletionData {
+  markdown: string;
+  stats: SessionStats;
+  graph: GraphData;
+  problem: string;
+}
+
 // --- Agent Activity (chronological log) ---
 
 export type ActivityItem =

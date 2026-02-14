@@ -13,7 +13,7 @@ import ClaimReview from "../components/ClaimReview";
 import ClaimVerdictReview from "../components/ClaimVerdictReview";
 import BuildDecision from "../components/BuildDecision";
 import KnowledgeGraph from "../components/KnowledgeGraph";
-import KnowledgeDocument from "../components/KnowledgeDocument";
+import SessionCompletion from "../components/SessionCompletion";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import { TrizMascot } from "../components/TrizMascot";
 import { PhaseTransitionCard } from "../components/PhaseTransitionCard";
@@ -45,7 +45,7 @@ export function SessionPage() {
     !stream.exploreReview &&
     !stream.verdictsReview &&
     !stream.buildReview &&
-    !stream.knowledgeDocument;
+    !stream.completionData;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-slate-50">
@@ -132,9 +132,9 @@ export function SessionPage() {
               <BuildDecision data={stream.buildReview} onSubmit={handleSubmit} />
             )}
 
-            {/* Phase 6: Knowledge Document */}
-            {stream.knowledgeDocument && (
-              <KnowledgeDocument markdown={stream.knowledgeDocument} />
+            {/* Phase 6: Session Completion */}
+            {stream.completionData && (
+              <SessionCompletion data={stream.completionData} />
             )}
 
             {/* Phase Transition Card — narrative interstitial between phases */}

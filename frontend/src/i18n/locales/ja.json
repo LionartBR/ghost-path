@@ -146,5 +146,23 @@
   "transition.toValidate": "主張が鍛造されました。今度は最も厳しい批判に直面します——破壊の試みを生き延びたものが真の知識です。",
   "transition.toBuild": "生存者が現れます。検証された主張を知識グラフに編み込みます——各ノードは弁証法の炎で己の場所を勝ち取りました。",
   "transition.toCrystallize": "鍛造は完了しました。全てを最終的な知識文書に蒸留します——弁証法プロセスから結晶化された知識。",
-  "transition.toSynthesizeReturn": "学んだことと却下したことを武器に、新たな弁証法的創造のラウンドが始まります。"
+  "transition.toSynthesizeReturn": "学んだことと却下したことを武器に、新たな弁証法的創造のラウンドが始まります。",
+
+  "completion.hero.title": "調査完了",
+  "completion.hero.duration": "所要時間",
+  "completion.hero.rounds": "ラウンド",
+  "completion.durationUnknown": "—",
+  "completion.durationHours": "{{hours}}時間{{minutes}}分",
+  "completion.durationMinutes": "{{minutes}}分",
+  "completion.stats.claimsValidated": "検証済み",
+  "completion.stats.claimsRejected": "却下",
+  "completion.stats.claimsQualified": "条件付き",
+  "completion.stats.evidenceCollected": "証拠",
+  "completion.stats.analogiesUsed": "類推",
+  "completion.stats.contradictions": "矛盾",
+  "completion.stats.fundamentals": "基本要素",
+  "completion.stats.assumptions": "前提条件",
+  "completion.graph.title": "知識グラフ",
+  "completion.graph.description": "{{nodes}}件の主張 · {{edges}}件の関係",
+  "completion.document.title": "知識文書"
 }
