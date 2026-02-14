@@ -50,7 +50,7 @@ export function SessionPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-slate-50">
       {/* Header */}
-      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200/80 py-3 sticky top-0 z-20 shadow-sm">
+      <header className="relative bg-white/95 backdrop-blur-sm border-b border-gray-200/80 py-3 sticky top-0 z-20 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
@@ -62,10 +62,10 @@ export function SessionPage() {
             <div className="h-4 w-px bg-gray-200" />
             <span className="text-xs text-gray-400 font-mono">{sessionId?.slice(0, 8)}</span>
           </div>
-          <div className="flex items-center gap-3">
-            <ContextMeter usage={stream.contextUsage} />
-            <LanguageSwitcher />
-          </div>
+          <ContextMeter usage={stream.contextUsage} />
+        </div>
+        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+          <LanguageSwitcher />
         </div>
       </header>
 
@@ -100,6 +100,18 @@ export function SessionPage() {
                     <span className="font-mono">{te.tool}</span>: {te.message}
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Phase header — visible as soon as phase starts, before review data arrives */}
+            {stream.currentPhase && ["decompose", "explore"].includes(stream.currentPhase) && (
+              <div className="bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 p-5">
+                <h2 className="text-base font-semibold text-gray-900 mb-1">
+                  {t(`${stream.currentPhase}.title`)}
+                </h2>
+                <p className="text-gray-500 text-sm">
+                  {t(`${stream.currentPhase}.description`)}
+                </p>
               </div>
             )}
 

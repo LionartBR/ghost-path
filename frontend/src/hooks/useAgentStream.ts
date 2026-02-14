@@ -282,6 +282,9 @@ export function useAgentStream(sessionId: string | null) {
       activityItems: [],
       toolErrors: [],
       error: null,
+      /* ADR: initial stream always starts at decompose — set it immediately
+         so SessionPage can render the phase header before any SSE arrives */
+      currentPhase: s.currentPhase ?? "decompose",
     }));
     controllerRef.current = streamSession(sessionId, handleEvent, (err) => {
       activeRef.current = false;
@@ -307,6 +310,9 @@ export function useAgentStream(sessionId: string | null) {
         pendingClear: true,
         toolErrors: [],
         error: null,
+        /* ADR: set currentPhase immediately so the phase header updates
+           before the agent responds — the review event will confirm later */
+        currentPhase: nextPhase ?? s.currentPhase,
         phaseTransition:
           nextPhase && s.currentPhase
             ? { from: s.currentPhase as Phase, to: nextPhase }
