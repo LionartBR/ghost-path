@@ -1,7 +1,7 @@
 /* useAgentStream — SSE consumer for TRIZ's 6-phase pipeline. */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { streamSession, sendUserInput, cancelSession, sendResearchDirective } from "../api/client";
+import { streamSession, sendUserInput, cancelSession } from "../api/client";
 import type {
   SSEEvent,
   Claim,
@@ -154,7 +154,6 @@ export function useAgentStream(sessionId: string | null) {
                 kind: "web_search",
                 query: detail.query,
                 results: detail.results,
-                directive_sent: false,
               };
               return { ...s, activityItems: items };
             }
@@ -164,7 +163,6 @@ export function useAgentStream(sessionId: string | null) {
             kind: "web_search",
             query: detail.query,
             results: detail.results,
-            directive_sent: false,
           });
           return { ...s, activityItems: items };
         });
@@ -364,24 +362,5 @@ export function useAgentStream(sessionId: string | null) {
     setState((s) => ({ ...s, phaseTransition: null }));
   }, []);
 
-  const sendDirective = useCallback(
-    (directiveType: "explore_more" | "skip_domain", query: string, domain: string) => {
-      if (!sessionId) return;
-      sendResearchDirective(sessionId, directiveType, query, domain).catch(
-        (err) => console.error("Failed to send directive:", err),
-      );
-      // Mark matching web_search item as directive_sent
-      setState((s) => {
-        const items = s.activityItems.map((it) =>
-          it.kind === "web_search" && it.query === query
-            ? { ...it, directive_sent: true }
-            : it,
-        );
-        return { ...s, activityItems: items };
-      });
-    },
-    [sessionId],
-  );
-
-  return { ...state, startStream, sendInput, abort, dismissTransition, sendDirective };
+  return { ...state, startStream, sendInput, abort, dismissTransition };
 }

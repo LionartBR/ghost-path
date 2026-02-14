@@ -215,7 +215,7 @@ export type ActivityItem =
   | { kind: "text"; text: string }
   | { kind: "tool_call"; tool: string; input_preview: string }
   | { kind: "tool_error"; tool: string; error_code: string; message: string }
-  | { kind: "web_search"; query: string; results: WebSearchResult[]; directive_sent: boolean };
+  | { kind: "web_search"; query: string; results: WebSearchResult[] };
 
 // --- SSE Events ---
 
