@@ -293,3 +293,34 @@ def test_cancelled_defaults_false_on_restore():
     snapshot = state.to_snapshot()
     restored = ForgeState.from_snapshot(snapshot)
     assert restored.cancelled is False
+
+
+# --- Awaiting flags persistence (session resume) -----------------------------
+
+def test_snapshot_includes_awaiting_user_input():
+    """awaiting_user_input must be persisted for session resume."""
+    state = ForgeState()
+    state.awaiting_user_input = True
+    state.awaiting_input_type = "decompose_review"
+    snapshot = state.to_snapshot()
+    assert snapshot["awaiting_user_input"] is True
+    assert snapshot["awaiting_input_type"] == "decompose_review"
+
+
+def test_snapshot_restores_awaiting_user_input():
+    """Restored state must have awaiting flags from snapshot."""
+    state = ForgeState()
+    state.awaiting_user_input = True
+    state.awaiting_input_type = "explore_review"
+    snapshot = state.to_snapshot()
+    restored = ForgeState.from_snapshot(snapshot)
+    assert restored.awaiting_user_input is True
+    assert restored.awaiting_input_type == "explore_review"
+
+
+def test_snapshot_restores_awaiting_defaults_when_missing():
+    """Old snapshots without awaiting fields should default gracefully."""
+    snapshot = {"current_phase": "decompose", "current_round": 0}
+    restored = ForgeState.from_snapshot(snapshot)
+    assert restored.awaiting_user_input is False
+    assert restored.awaiting_input_type is None

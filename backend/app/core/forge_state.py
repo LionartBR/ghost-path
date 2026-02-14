@@ -156,8 +156,6 @@ class ForgeState:
         """Serialize ForgeState to JSON-safe dict. Pure, no IO.
 
         Sets are converted to sorted lists; Enums to their .value strings.
-        Transient pause flags (awaiting_*) are excluded — they are
-        session-scoped and reset on reconnect.
         """
         return {
             "current_phase": self.current_phase.value,
@@ -197,6 +195,10 @@ class ForgeState:
             "deep_dive_target_claim_id": self.deep_dive_target_claim_id,
             # Phase 6
             "knowledge_document_markdown": self.knowledge_document_markdown,
+            # Pause state (persisted for session resume — ADR: reconnect
+            # must re-emit the correct review event without re-running agent)
+            "awaiting_user_input": self.awaiting_user_input,
+            "awaiting_input_type": self.awaiting_input_type,
         }
 
     @classmethod
@@ -265,6 +267,10 @@ class ForgeState:
 
         # Phase 6
         state.knowledge_document_markdown = data.get("knowledge_document_markdown")
+
+        # Pause state (restored for session resume)
+        state.awaiting_user_input = data.get("awaiting_user_input", False)
+        state.awaiting_input_type = data.get("awaiting_input_type")
 
         return state
 
