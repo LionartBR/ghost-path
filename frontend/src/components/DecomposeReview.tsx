@@ -196,13 +196,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
               {/* Card */}
               <div
                 key={currentCard}
-                className={`flex-1 p-5 rounded-lg border text-center ${animationClass} ${
-                  status === "confirmed"
-                    ? "bg-green-50 border-green-200"
-                    : status === "rejected"
-                      ? "bg-red-50 border-red-200"
-                      : "bg-gray-50 border-gray-200"
-                }`}
+                className={`flex-1 p-5 rounded-lg text-center ${animationClass}`}
               >
                 <p className="text-xs text-gray-400 font-medium mb-2">
                   {currentCard + 1} / {totalAssumptions}
