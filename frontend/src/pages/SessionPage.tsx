@@ -164,7 +164,7 @@ export function SessionPage() {
                 <p className="text-sm font-medium animate-shimmer">{t("agent.working")}</p>
                 <button
                   onClick={() => void stream.abort()}
-                  className="mt-5 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                  className="mt-5 px-4 py-2 text-sm font-medium text-red-500 bg-transparent border border-red-300 rounded-lg hover:bg-red-500 hover:text-white transition-colors"
                 >
                   {t("session.cancel")}
                 </button>
