@@ -112,16 +112,21 @@ class ToolDispatch:
                 "error_code": "UNKNOWN_TOOL",
                 "message": f"Tool '{tool_name}' does not exist.",
             }
-            await self._log_tool_call(tool_name, input_data, result)
+            self._log_tool_call(tool_name, input_data, result)
             return result
         result = await handler(session, input_data)
-        await self._log_tool_call(tool_name, input_data, result)
+        self._log_tool_call(tool_name, input_data, result)
         return result
 
-    async def _log_tool_call(
+    def _log_tool_call(
         self, tool_name: str, input_data: dict, result: dict,
     ) -> None:
-        """Log tool call to DB. Never crashes the agent loop."""
+        """Log tool call to DB. No flush — batched with next commit.
+
+        ADR: agent_runner commits at loop exit (_save_state). Flushing per-tool
+        added N round-trips to DB per iteration. SQLAlchemy unit-of-work
+        accumulates the adds and persists them on commit.
+        """
         if not self._session_id:
             return
         try:
@@ -134,6 +139,5 @@ class ToolDispatch:
                 tool_output=None if is_error else result,
                 error_code=result.get("error_code") if is_error else None,
             ))
-            await self._db.flush()
         except Exception as e:
             logger.warning(f"Failed to log tool call '{tool_name}': {e}")

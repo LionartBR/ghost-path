@@ -54,6 +54,8 @@ class AgentRunner:
 
         try:
             messages = self._build_messages(session, user_message)
+            ctx = ErrorContext(session_id=str(session.id))
+            dispatch = ToolDispatch(self.db, forge_state, session.id)
 
             while iteration < self.MAX_ITERATIONS:
                 iteration += 1
@@ -62,9 +64,6 @@ class AgentRunner:
                     yield {"type": "agent_text", "data": "Session cancelled."}
                     yield _done_event(error=False)
                     return
-
-                ctx = ErrorContext(session_id=str(session.id))
-                dispatch = ToolDispatch(self.db, forge_state, session.id)
 
                 # === STREAM: real-time SSE to frontend ===
                 try:
@@ -127,17 +126,11 @@ class AgentRunner:
                     yield _done_event(error=True)
                     return
 
-                # === POST-PROCESS: tokens, ForgeState, tools, history ===
-                try:
-                    tokens = (
-                        response.usage.input_tokens
-                        + response.usage.output_tokens
-                    )
-                    session.total_tokens_used += tokens
-                    session.forge_state_snapshot = forge_state.to_snapshot()
-                    await self.db.commit()
-                except Exception as e:
-                    logger.error("Failed to update token usage: %s", e)
+                # === POST-PROCESS: tokens, web_search, content serialization ===
+                session.total_tokens_used += (
+                    response.usage.input_tokens
+                    + response.usage.output_tokens
+                )
 
                 yield {
                     "type": "context_usage",
@@ -147,8 +140,12 @@ class AgentRunner:
                 for sse in _record_web_searches(response.content, dispatch):
                     yield sse
 
+                serialized = [
+                    b.model_dump(exclude_none=True)
+                    for b in response.content
+                ]
+
                 if response.stop_reason == "pause_turn":
-                    serialized = [b.model_dump(exclude_none=True) for b in response.content]
                     messages.append({"role": "assistant", "content": serialized})
                     continue
 
@@ -175,7 +172,6 @@ class AgentRunner:
                         if not has_tool_use:
                             logger.warning("Language retry %d/%d",
                                 language_retries, self.MAX_LANGUAGE_RETRIES)
-                            serialized = [b.model_dump(exclude_none=True) for b in response.content]
                             messages.append({"role": "assistant", "content": serialized})
                             messages.append({"role": "user", "content": lang_error["message"]})
                             continue
@@ -188,7 +184,6 @@ class AgentRunner:
                     yield _done_event(error=False)
                     return
 
-                serialized = [b.model_dump(exclude_none=True) for b in response.content]
                 messages.append({"role": "assistant", "content": serialized})
                 tool_results = []
                 should_pause = False

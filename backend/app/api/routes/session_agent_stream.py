@@ -1,7 +1,7 @@
 """Session Agent Stream — SSE streaming, user input processing, and document download.
 
 Invariants:
-    - Every SSE stream instantiates AgentRunner with fresh DB session and Anthropic client
+    - Every SSE stream instantiates AgentRunner with fresh DB session and shared Anthropic client
     - User input triggers phase-appropriate processing based on UserInput.type
     - Phase review events (review_decompose, review_explore, etc.) emitted by route, not agent
     - ForgeState synced to DB after every phase transition (observability + crash recovery)
@@ -161,7 +161,7 @@ async def stream_session(
             review = _build_resume_review_event(forge_state)
             if review:
                 forge_state.awaiting_user_input = True
-                session.forge_state_snapshot = forge_state.to_snapshot()
+                _patch_snapshot_awaiting(session)
                 try:
                     await db.commit()
                 except Exception as exc:
@@ -205,7 +205,7 @@ async def send_user_input(
             review = build_review_event(forge_state)
             if review:
                 forge_state.awaiting_user_input = True
-                session.forge_state_snapshot = forge_state.to_snapshot()
+                _patch_snapshot_awaiting(session)
                 try:
                     await db.commit()
                 except Exception as exc:
@@ -241,21 +241,50 @@ async def download_document(session_id: UUID):
 
 # -- Helpers -------------------------------------------------------------------
 
+_anthropic_client: ResilientAnthropicClient | None = None
+
+
+def _get_anthropic_client() -> ResilientAnthropicClient:
+    """Singleton Anthropic client — reused across all SSE streams.
+
+    ADR: AsyncAnthropic is stateless and connection-pool-safe. Creating a new
+    client per request wasted connection pool setup + TLS handshake. Singleton
+    amortizes this cost across the process lifetime.
+    """
+    global _anthropic_client
+    if _anthropic_client is None:
+        settings = get_settings()
+        _anthropic_client = ResilientAnthropicClient(
+            api_key=settings.anthropic_api_key,
+            max_retries=settings.anthropic_max_retries,
+            timeout_seconds=settings.anthropic_timeout_seconds,
+            enable_1m_context=settings.anthropic_context_1m,
+        )
+    return _anthropic_client
+
+
 def _create_runner(db: AsyncSession) -> AgentRunner:
-    """Create AgentRunner with fresh Anthropic client."""
-    settings = get_settings()
-    client = ResilientAnthropicClient(
-        api_key=settings.anthropic_api_key,
-        max_retries=settings.anthropic_max_retries,
-        timeout_seconds=settings.anthropic_timeout_seconds,
-        enable_1m_context=settings.anthropic_context_1m,
-    )
-    return AgentRunner(db, client)
+    """Create AgentRunner with shared Anthropic client."""
+    return AgentRunner(db, _get_anthropic_client())
 
 
 def _sse_line(event: dict) -> str:
     """Format event as SSE data line."""
     return f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+
+
+def _patch_snapshot_awaiting(session) -> None:
+    """Patch awaiting_user_input in existing snapshot — avoids full rebuild.
+
+    ADR: agent_runner already committed the full snapshot via _save_state.
+    Re-serializing 30+ ForgeState fields (including set→sorted-list conversions)
+    just to flip one boolean is wasteful. Dict spread copies only top-level keys.
+    """
+    if session.forge_state_snapshot:
+        session.forge_state_snapshot = {
+            **session.forge_state_snapshot,
+            "awaiting_user_input": True,
+        }
 
 
 def _format_user_input(
