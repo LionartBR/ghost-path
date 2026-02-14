@@ -168,6 +168,47 @@ def build_stream_message(session, forge_state: ForgeState) -> str:
 
 # -- Review event builders -----------------------------------------------------
 
+def _to_react_flow_graph(state: ForgeState) -> dict:
+    """Transform flat ForgeState nodes/edges into React Flow format.
+
+    ADR: knowledge_graph_nodes are stored as flat dicts in ForgeState,
+    but the frontend expects React Flow format with nested 'data' object.
+    The /graph endpoint does this via Pydantic schemas; SSE events need
+    the same transform inline.
+    """
+    nodes = []
+    for n in state.knowledge_graph_nodes:
+        scores = n.get("scores", {})
+        nodes.append({
+            "id": n.get("id", ""),
+            "type": n.get("status", "proposed"),
+            "data": {
+                "claim_text": n.get("claim_text", ""),
+                "confidence": n.get("confidence"),
+                "scores": {
+                    "novelty": scores.get("novelty"),
+                    "groundedness": scores.get("groundedness"),
+                    "falsifiability": scores.get("falsifiability"),
+                    "significance": scores.get("significance"),
+                },
+                "qualification": n.get("qualification"),
+                "rejection_reason": n.get("rejection_reason"),
+                "evidence_count": n.get("evidence_count", 0),
+                "round_created": n.get("round_created", 0),
+            },
+        })
+    edges = [
+        {
+            "id": f"edge-{i}",
+            "source": e.get("source", ""),
+            "target": e.get("target", ""),
+            "type": e.get("type", "supports"),
+        }
+        for i, e in enumerate(state.knowledge_graph_edges)
+    ]
+    return {"nodes": nodes, "edges": edges}
+
+
 def build_resume_review_event(
     state: ForgeState, session=None,
 ) -> dict | None:
@@ -216,10 +257,7 @@ def build_review_event(state: ForgeState, session=None) -> dict | None:
             event = {
                 "type": "review_build",
                 "data": {
-                    "graph": {
-                        "nodes": state.knowledge_graph_nodes,
-                        "edges": state.knowledge_graph_edges,
-                    },
+                    "graph": _to_react_flow_graph(state),
                     "gaps": state.gaps,
                     "negative_knowledge": state.negative_knowledge,
                     "round": state.current_round,
@@ -245,10 +283,7 @@ def build_review_event(state: ForgeState, session=None) -> dict | None:
                     "data": {
                         "markdown": state.knowledge_document_markdown,
                         "stats": stats,
-                        "graph": {
-                            "nodes": state.knowledge_graph_nodes,
-                            "edges": state.knowledge_graph_edges,
-                        },
+                        "graph": _to_react_flow_graph(state),
                         "problem": (
                             getattr(session, "problem", "")
                             if session else ""

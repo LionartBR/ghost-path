@@ -117,7 +117,7 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
                     <option value="">{t("build.selectClaim")}</option>
                     {data.graph.nodes.map((node) => (
                       <option key={node.id} value={node.id}>
-                        {node.data.claim_text.slice(0, 60)}...
+                        {(node.data?.claim_text ?? "").slice(0, 60)}...
                       </option>
                     ))}
                   </select>
