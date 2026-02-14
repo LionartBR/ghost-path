@@ -4,11 +4,11 @@ import type { Session, UserInput, SSEEvent, GraphData } from "../types";
 
 const API_BASE = "/api/v1";
 
-export async function createSession(problem: string): Promise<Session> {
+export async function createSession(problem: string, locale?: string): Promise<Session> {
   const res = await fetch(`${API_BASE}/sessions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ problem }),
+    body: JSON.stringify({ problem, locale }),
   });
   if (!res.ok) throw new Error(`Failed to create session: ${res.status}`);
   return res.json();

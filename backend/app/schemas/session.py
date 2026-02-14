@@ -18,6 +18,9 @@ from typing import Literal
 class SessionCreate(BaseModel):
     """Session creation — validates problem length and whitespace."""
     problem: str = Field(min_length=10, max_length=10_000)
+    locale: str | None = Field(
+        None, pattern=r"^(en|pt-BR|es|fr|de|zh|ja|ko|it|ru)$",
+    )
 
     @field_validator("problem")
     @classmethod
