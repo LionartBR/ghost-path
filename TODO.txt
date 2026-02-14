@@ -1,4 +1,4 @@
 - O contexto do modelo é zerado a cada nova etapa (critico) - deveria carregar o contexto das conversas/etapas anteriores.
 - Na fase de Explorar, as analogias são sempre parecidas em todos os problemas... por que?
 - melhorar a forma de output do modelo. Mais estruturado
-- quando eu clico em sessões recentes, deveriamos abri exatamente a mesma tela de antes com base no forge_state snapshot, mas nós vamos pra uma tela vazia, sem nada e esperamos o modelo trazer uma resposta que geralmente não tem nada a ver com a fase onde paramos
+- quando eu clico em sessões recentes, deveriamos abri exatamente a mesma tela de antes com base no forge_state snapshot no banco de dados, mas nós vamos pra uma tela vazia, sem nada e esperamos o modelo trazer uma resposta que geralmente não tem nada a ver com a fase onde paramos
