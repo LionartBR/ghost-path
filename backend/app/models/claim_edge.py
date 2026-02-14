@@ -28,13 +28,18 @@ class ClaimEdge(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
     )
     session_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=False,
+        UUID(as_uuid=True), ForeignKey("sessions.id", ondelete="CASCADE"),
+        nullable=False,
     )
     source_claim_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("knowledge_claims.id"), nullable=False,
+        UUID(as_uuid=True),
+        ForeignKey("knowledge_claims.id", ondelete="CASCADE"),
+        nullable=False,
     )
     target_claim_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("knowledge_claims.id"), nullable=False,
+        UUID(as_uuid=True),
+        ForeignKey("knowledge_claims.id", ondelete="CASCADE"),
+        nullable=False,
     )
     edge_type: Mapped[str] = mapped_column(
         String(20), nullable=False,

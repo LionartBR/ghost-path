@@ -159,17 +159,20 @@ async def _delete_session_in_background(session_id: UUID) -> None:
         logger.error(f"Cannot delete session {session_id}: database not initialized")
         return
 
-    async with db_manager.session() as db:
-        result = await db.execute(
-            select(SessionModel).where(SessionModel.id == session_id),
-        )
-        session = result.scalar_one_or_none()
-        if not session:
-            logger.warning(f"Session {session_id} already deleted (background cleanup)")
-            return
-        await db.delete(session)
-        await db.commit()
-        logger.info(f"Session {session_id} deleted in background")
+    try:
+        async with db_manager.session() as db:
+            result = await db.execute(
+                select(SessionModel).where(SessionModel.id == session_id),
+            )
+            session = result.scalar_one_or_none()
+            if not session:
+                logger.warning(f"Session {session_id} already deleted (background cleanup)")
+                return
+            await db.delete(session)
+            await db.commit()
+            logger.info(f"Session {session_id} deleted in background")
+    except Exception as e:
+        logger.error(f"Failed to delete session {session_id}: {e}", exc_info=True)
 
 
 @router.delete(
