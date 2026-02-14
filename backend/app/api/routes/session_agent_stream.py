@@ -65,16 +65,29 @@ def _get_or_restore_forge_state(
     """Return in-memory ForgeState or restore from DB snapshot.
 
     Lookup order: _forge_states dict → session.forge_state_snapshot → new default.
+    Always syncs locale from Session (DB is source of truth for locale).
     """
     if session_id in _forge_states:
-        return _forge_states[session_id]
-    if session.forge_state_snapshot:
+        state = _forge_states[session_id]
+    elif session.forge_state_snapshot:
         state = ForgeState.from_snapshot(session.forge_state_snapshot)
         _forge_states[session_id] = state
         logger.info("Restored ForgeState from DB snapshot (session=%s)", session_id)
-        return state
-    state = ForgeState()
-    _forge_states[session_id] = state
+    else:
+        state = ForgeState()
+        _forge_states[session_id] = state
+
+    # ADR: Session.locale (DB) is source of truth — ForgeState snapshot may
+    # have stale/default locale if saved before locale propagation was fixed.
+    if session.locale:
+        db_locale = Locale(session.locale)
+        if state.locale != db_locale:
+            logger.info(
+                "Synced ForgeState locale from DB: %s → %s (session=%s)",
+                state.locale.value, db_locale.value, session_id,
+            )
+            state.locale = db_locale
+            state.locale_confidence = session.locale_confidence or 1.0
     return state
 
 
