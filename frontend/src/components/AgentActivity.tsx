@@ -1,29 +1,15 @@
 import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-
-interface ToolCall {
-  tool: string;
-  input_preview: string;
-}
-
-interface ToolError {
-  tool: string;
-  error_code: string;
-  message: string;
-}
+import type { ActivityItem } from "../types";
 
 interface AgentActivityProps {
   isStreaming: boolean;
-  agentText: string[];
-  toolCalls: ToolCall[];
-  toolErrors: ToolError[];
+  activityItems: ActivityItem[];
 }
 
 export const AgentActivity: React.FC<AgentActivityProps> = ({
   isStreaming,
-  agentText,
-  toolCalls,
-  toolErrors,
+  activityItems,
 }) => {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -32,9 +18,9 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [agentText, toolCalls, toolErrors]);
+  }, [activityItems]);
 
-  const hasActivity = agentText.length > 0 || toolCalls.length > 0 || toolErrors.length > 0;
+  const hasActivity = activityItems.length > 0;
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm h-96 flex flex-col">
@@ -60,33 +46,38 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
           </div>
         )}
 
-        {agentText.map((text, i) => (
-          <div key={`text-${i}`} className="flex items-start gap-2.5 py-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0" />
-            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{text}</p>
-          </div>
-        ))}
-
-        {toolCalls.map((call, i) => (
-          <div key={`tool-${i}`} className="flex items-start gap-2.5 py-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <span className="text-xs font-mono text-purple-600 font-semibold">{call.tool}</span>
-              <p className="text-xs text-gray-400 mt-0.5 truncate">{call.input_preview}</p>
-            </div>
-          </div>
-        ))}
-
-        {toolErrors.map((error, i) => (
-          <div key={`error-${i}`} className="flex items-start gap-2.5 py-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <span className="text-xs font-mono text-red-600 font-semibold">{error.tool}</span>
-              <span className="text-xs text-red-500 ml-2 font-medium">{error.error_code}</span>
-              <p className="text-xs text-gray-500 mt-0.5">{error.message}</p>
-            </div>
-          </div>
-        ))}
+        {activityItems.map((item, i) => {
+          switch (item.kind) {
+            case "text":
+              return (
+                <div key={i} className="flex items-start gap-2.5 py-1.5 animate-fade-in">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0" />
+                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{item.text}</p>
+                </div>
+              );
+            case "tool_call":
+              return (
+                <div key={i} className="flex items-start gap-2.5 py-1.5 animate-fade-in">
+                  <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-mono text-purple-600 font-semibold">{item.tool}</span>
+                    <p className="text-xs text-gray-400 mt-0.5 truncate">{item.input_preview}</p>
+                  </div>
+                </div>
+              );
+            case "tool_error":
+              return (
+                <div key={i} className="flex items-start gap-2.5 py-1.5 animate-fade-in">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-mono text-red-600 font-semibold">{item.tool}</span>
+                    <span className="text-xs text-red-500 ml-2 font-medium">{item.error_code}</span>
+                    <p className="text-xs text-gray-500 mt-0.5">{item.message}</p>
+                  </div>
+                </div>
+              );
+          }
+        })}
       </div>
     </div>
   );

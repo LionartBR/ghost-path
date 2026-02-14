@@ -10,12 +10,12 @@ import type {
   BuildReviewData,
   ContextUsage,
   UserInput,
+  ActivityItem,
 } from "../types";
 
 interface AgentStreamState {
   isStreaming: boolean;
-  agentText: string[];
-  toolCalls: { tool: string; input_preview: string }[];
+  activityItems: ActivityItem[];
   toolErrors: { tool: string; error_code: string; message: string }[];
 
   // Phase review data
@@ -34,8 +34,7 @@ interface AgentStreamState {
 
 const initialState: AgentStreamState = {
   isStreaming: false,
-  agentText: [],
-  toolCalls: [],
+  activityItems: [],
   toolErrors: [],
   decomposeReview: null,
   exploreReview: null,
@@ -58,29 +57,28 @@ export function useAgentStream(sessionId: string | null) {
       case "agent_text":
         setState((s) => ({
           ...s,
-          agentText: [...s.agentText, event.data as string],
+          activityItems: [...s.activityItems, { kind: "text", text: event.data as string }],
         }));
         break;
 
-      case "tool_call":
+      case "tool_call": {
+        const tc = event.data as { tool: string; input_preview: string };
         setState((s) => ({
           ...s,
-          toolCalls: [
-            ...s.toolCalls,
-            event.data as { tool: string; input_preview: string },
-          ],
+          activityItems: [...s.activityItems, { kind: "tool_call", ...tc }],
         }));
         break;
+      }
 
-      case "tool_error":
+      case "tool_error": {
+        const te = event.data as { tool: string; error_code: string; message: string };
         setState((s) => ({
           ...s,
-          toolErrors: [
-            ...s.toolErrors,
-            event.data as { tool: string; error_code: string; message: string },
-          ],
+          toolErrors: [...s.toolErrors, te],
+          activityItems: [...s.activityItems, { kind: "tool_error", ...te }],
         }));
         break;
+      }
 
       case "tool_result":
         // Display only — no state change needed
@@ -174,8 +172,7 @@ export function useAgentStream(sessionId: string | null) {
     setState((s) => ({
       ...s,
       isStreaming: true,
-      agentText: [],
-      toolCalls: [],
+      activityItems: [],
       toolErrors: [],
       error: null,
     }));
@@ -196,8 +193,7 @@ export function useAgentStream(sessionId: string | null) {
         verdictsReview: null,
         buildReview: null,
         awaitingInput: false,
-        agentText: [],
-        toolCalls: [],
+        activityItems: [],
         toolErrors: [],
         error: null,
       }));

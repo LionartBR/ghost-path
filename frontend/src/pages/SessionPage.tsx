@@ -150,9 +150,7 @@ export function SessionPage() {
             {/* Agent Activity Log */}
             <AgentActivity
               isStreaming={stream.isStreaming}
-              agentText={stream.agentText}
-              toolCalls={stream.toolCalls}
-              toolErrors={stream.toolErrors}
+              activityItems={stream.activityItems}
             />
           </div>
 

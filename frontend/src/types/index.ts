@@ -170,6 +170,13 @@ export interface ContextUsage {
   usage_percentage: number;
 }
 
+// --- Agent Activity (chronological log) ---
+
+export type ActivityItem =
+  | { kind: "text"; text: string }
+  | { kind: "tool_call"; tool: string; input_preview: string }
+  | { kind: "tool_error"; tool: string; error_code: string; message: string };
+
 // --- SSE Events ---
 
 export type SSEEventType =
