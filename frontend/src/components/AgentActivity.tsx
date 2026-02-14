@@ -7,7 +7,7 @@
  *
  * Design Decisions:
  *   - ReactMarkdown reuses KnowledgeDocument styling scaled for activity panel (ADR: consistency)
- *   - Streaming cursor (blinking bar) only on the last text item while streaming
+ *   - Streaming state indicated by pulsing green dot in header
  */
 
 import React, { useEffect, useRef } from "react";
@@ -34,12 +34,6 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
   }, [activityItems]);
 
   const hasActivity = activityItems.length > 0;
-  const lastTextIndex = (() => {
-    for (let i = activityItems.length - 1; i >= 0; i--) {
-      if (activityItems[i].kind === "text") return i;
-    }
-    return -1;
-  })();
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm h-96 flex flex-col">
@@ -67,8 +61,7 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
 
         {activityItems.map((item, i) => {
           switch (item.kind) {
-            case "text": {
-              const showCursor = isStreaming && i === lastTextIndex;
+            case "text":
               return (
                 <div key={i} className="agent-markdown animate-fade-in">
                   <ReactMarkdown
@@ -133,12 +126,8 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
                   >
                     {item.text}
                   </ReactMarkdown>
-                  {showCursor && (
-                    <span className="inline-block w-0.5 h-4 bg-indigo-500 ml-0.5 animate-blink align-text-bottom" />
-                  )}
                 </div>
               );
-            }
             case "tool_call":
               return (
                 <div key={i} className="flex items-center gap-2 py-1 animate-fade-in">
