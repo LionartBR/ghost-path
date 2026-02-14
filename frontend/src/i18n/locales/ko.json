@@ -124,6 +124,8 @@
   "common.error": "오류",
 
   "sessions.recent": "최근 세션",
+  "sessions.delete": "세션 삭제",
+  "sessions.confirmDelete": "삭제?",
   "sessions.backToHome": "홈으로 돌아가기",
   "sessions.backToSession": "세션으로 돌아가기",
   "sessions.loadingDocument": "지식 문서 로딩 중...",

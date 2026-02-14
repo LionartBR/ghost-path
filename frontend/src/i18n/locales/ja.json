@@ -124,6 +124,8 @@
   "common.error": "エラー",
 
   "sessions.recent": "最近のセッション",
+  "sessions.delete": "セッションを削除",
+  "sessions.confirmDelete": "削除？",
   "sessions.backToHome": "ホームに戻る",
   "sessions.backToSession": "セッションに戻る",
   "sessions.loadingDocument": "知識ドキュメントを読み込み中...",
