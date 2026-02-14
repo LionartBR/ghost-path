@@ -47,7 +47,7 @@ def test_roundtrip_populated_state():
     # Phase 1
     state.fundamentals = ["f1", "f2"]
     state.state_of_art_researched = True
-    state.assumptions = [{"text": "a1", "source": "s1", "confirmed": True}]
+    state.assumptions = [{"text": "a1", "source": "s1", "options": ["Agree", "Nuance"], "selected_option": 0}]
     state.reframings = [{"text": "r1", "type": "scope_change", "selected": True}]
     state.user_added_assumptions = ["ua1"]
     state.user_added_reframings = ["ur1"]
@@ -100,7 +100,7 @@ def test_roundtrip_populated_state():
     # Phase 1
     assert restored.fundamentals == ["f1", "f2"]
     assert restored.state_of_art_researched is True
-    assert restored.assumptions == [{"text": "a1", "source": "s1", "confirmed": True}]
+    assert restored.assumptions == [{"text": "a1", "source": "s1", "options": ["Agree", "Nuance"], "selected_option": 0}]
     assert restored.reframings == [{"text": "r1", "type": "scope_change", "selected": True}]
     assert restored.user_added_assumptions == ["ua1"]
     assert restored.user_added_reframings == ["ur1"]

@@ -26,8 +26,7 @@ def _labels(locale: Locale) -> dict[str, str]:
         return _pt_br.LABELS_PT_BR
     return {
         "reviewed_decomposition": "The user reviewed the decomposition:",
-        "confirmed": "Confirmed assumptions: indices",
-        "rejected": "Rejected assumptions: indices",
+        "assumption_responses": "Assumption responses:",
         "added_assumptions": "Added assumptions:",
         "selected_reframings": "Selected reframings: indices",
         "added_reframings": "Added reframings:",
@@ -58,8 +57,7 @@ def format_user_input(
     *,
     locale: Locale = Locale.EN,
     forge_state: ForgeState | None = None,
-    confirmed_assumptions: list[int] | None = None,
-    rejected_assumptions: list[int] | None = None,
+    assumption_responses: list | None = None,
     added_assumptions: list[str] | None = None,
     selected_reframings: list[int] | None = None,
     added_reframings: list[str] | None = None,
@@ -84,7 +82,7 @@ def format_user_input(
         case "decompose_review":
             return _format_decompose_review(
                 locale_prefix, pt, lbl, forge_state,
-                confirmed_assumptions, rejected_assumptions,
+                assumption_responses,
                 added_assumptions, selected_reframings,
                 added_reframings, locale,
             )
@@ -119,14 +117,21 @@ def format_user_input(
 
 def _format_decompose_review(
     prefix, pt, lbl, forge_state,
-    confirmed, rejected, added, selected, added_ref, locale,
+    assumption_responses, added, selected, added_ref, locale,
 ):
     """Format decompose_review input."""
     parts = [prefix, f"\n{lbl['reviewed_decomposition']}"]
-    if confirmed:
-        parts.append(f"{lbl['confirmed']} {confirmed}")
-    if rejected:
-        parts.append(f"{lbl['rejected']} {rejected}")
+    if assumption_responses and forge_state:
+        parts.append(lbl['assumption_responses'])
+        for resp in assumption_responses:
+            idx = _attr_or_key(resp, "assumption_index", 0)
+            opt_idx = _attr_or_key(resp, "selected_option", 0)
+            if idx < len(forge_state.assumptions):
+                a = forge_state.assumptions[idx]
+                text = a.get("text", "")
+                options = a.get("options", [])
+                opt_text = options[opt_idx] if opt_idx < len(options) else f"option {opt_idx}"
+                parts.append(f"  [{idx}] '{text}' → User: '{opt_text}'")
     if added:
         parts.append(f"{lbl['added_assumptions']} {added}")
     if selected:
@@ -135,7 +140,7 @@ def _format_decompose_review(
         parts.append(f"{lbl['added_reframings']} {added_ref}")
     if forge_state:
         ctx = _build_phase1_context(
-            forge_state, locale, selected, confirmed,
+            forge_state, locale, selected, assumption_responses,
         )
         if ctx:
             parts.append(ctx)

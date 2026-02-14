@@ -43,6 +43,12 @@ class SessionResponse(BaseModel):
 
 # --- Claim feedback (Phase 3 review) -----------------------------------------
 
+class AssumptionResponse(BaseModel):
+    """Per-assumption user response during decompose_review."""
+    assumption_index: int = Field(ge=0)
+    selected_option: int = Field(ge=0)
+
+
 class ClaimFeedback(BaseModel):
     """Per-claim user feedback during claims_review."""
     claim_index: int = Field(ge=0)  # upper bound checked by check_claim_index_valid()
@@ -83,8 +89,7 @@ class UserInput(BaseModel):
     ]
 
     # type == "decompose_review"
-    confirmed_assumptions: list[int] | None = None
-    rejected_assumptions: list[int] | None = None
+    assumption_responses: list[AssumptionResponse] | None = None
     added_assumptions: list[str] | None = None
     selected_reframings: list[int] | None = None
     added_reframings: list[str] | None = None

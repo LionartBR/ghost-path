@@ -138,14 +138,16 @@ def test_selected_reframings_filters_correctly():
     assert len(state.selected_reframings) == 1
 
 
-def test_confirmed_assumptions_filters_correctly():
+def test_reviewed_assumptions_filters_correctly():
     state = ForgeState()
     state.assumptions = [
-        {"text": "A1", "confirmed": True},
-        {"text": "A2", "confirmed": False},
-        {"text": "A3", "confirmed": None},
+        {"text": "A1", "options": ["Yes", "No"], "selected_option": 0},
+        {"text": "A2", "options": ["Yes", "No"], "selected_option": 1},
+        {"text": "A3", "options": ["Yes", "No"], "selected_option": None},
     ]
-    assert len(state.confirmed_assumptions) == 1
+    assert len(state.reviewed_assumptions) == 2
+    # Backward-compat alias
+    assert len(state.confirmed_assumptions) == 2
 
 
 # --- Phase transition helpers -------------------------------------------------

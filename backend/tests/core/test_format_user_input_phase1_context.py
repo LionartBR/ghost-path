@@ -3,7 +3,7 @@
 Tests cover:
     - Fundamentals appear in Phase 2 start message
     - Selected reframings picked by user indices (not state.selected flag)
-    - Confirmed assumptions picked by user indices (not state.confirmed flag)
+    - Assumption responses inject option text into Phase 2 context
     - Backward compat: forge_state=None produces no injection
     - PT_BR locale uses Portuguese labels
     - Fundamentals capped at 5 to prevent context explosion
@@ -64,25 +64,35 @@ def test_decompose_review_injects_selected_reframings_by_index():
     assert "distributed systems" not in result
 
 
-def test_decompose_review_injects_confirmed_assumptions_by_index():
-    """Confirmed assumptions picked by user indices, not state.confirmed flag.
+def test_decompose_review_injects_assumption_responses_with_option_text():
+    """Assumption responses inject selected option text into Phase 2 context.
 
-    Same timing issue as reframings: confirmed is None at format time.
+    Same timing issue as reframings: selected_option is None at format time.
+    Uses raw response dicts (same shape as AssumptionResponse).
     """
     state = ForgeState()
     state.assumptions = [
-        {"text": "Users need real-time updates", "source": "interviews", "confirmed": None},
-        {"text": "Cost is the primary driver", "source": "market analysis", "confirmed": None},
-        {"text": "Mobile-first is required", "source": "analytics", "confirmed": None},
+        {"text": "Users need real-time updates", "source": "interviews",
+         "options": ["Valid", "Partially — depends on use case", "Challenge"], "selected_option": None},
+        {"text": "Cost is the primary driver", "source": "market analysis",
+         "options": ["Agree", "Only for SMBs", "Not the main factor"], "selected_option": None},
+        {"text": "Mobile-first is required", "source": "analytics",
+         "options": ["Yes", "Desktop-first for B2B", "Multi-platform"], "selected_option": None},
     ]
     prefix = get_phase_prefix(Locale.EN, EN_PROBLEM)
+    responses = [
+        {"assumption_index": 0, "selected_option": 1},
+        {"assumption_index": 2, "selected_option": 2},
+    ]
     result = format_user_input(
         "decompose_review", prefix, locale=Locale.EN,
         forge_state=state,
-        confirmed_assumptions=[0, 2],
+        assumption_responses=responses,
     )
     assert "real-time updates" in result
+    assert "depends on use case" in result
     assert "Mobile-first" in result
+    assert "Multi-platform" in result
     assert "primary driver" not in result
 
 

@@ -16,8 +16,7 @@ Design Decisions:
 
 LABELS_PT_BR: dict[str, str] = {
     "reviewed_decomposition": "O usuário revisou a decomposição:",
-    "confirmed": "Pressupostos confirmados: índices",
-    "rejected": "Pressupostos rejeitados: índices",
+    "assumption_responses": "Respostas aos pressupostos:",
     "added_assumptions": "Pressupostos adicionados:",
     "selected_reframings": "Reformulações selecionadas: índices",
     "added_reframings": "Reformulações adicionadas:",

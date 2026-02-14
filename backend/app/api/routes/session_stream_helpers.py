@@ -136,8 +136,7 @@ def format_user_input(body: UserInput, state: ForgeState, problem: str) -> str:
         locale_prefix=prefix,
         locale=state.locale,
         forge_state=state,
-        confirmed_assumptions=body.confirmed_assumptions,
-        rejected_assumptions=body.rejected_assumptions,
+        assumption_responses=body.assumption_responses,
         added_assumptions=body.added_assumptions,
         selected_reframings=body.selected_reframings,
         added_reframings=body.added_reframings,
@@ -304,14 +303,11 @@ def _apply_decompose(body: UserInput, state: ForgeState) -> None:
         state.user_added_reframings.extend(body.added_reframings)
     if body.added_assumptions:
         state.user_added_assumptions.extend(body.added_assumptions)
-    if body.confirmed_assumptions:
-        for idx in body.confirmed_assumptions:
+    if body.assumption_responses:
+        for resp in body.assumption_responses:
+            idx = resp.assumption_index
             if idx < len(state.assumptions):
-                state.assumptions[idx]["confirmed"] = True
-    if body.rejected_assumptions:
-        for idx in body.rejected_assumptions:
-            if idx < len(state.assumptions):
-                state.assumptions[idx]["confirmed"] = False
+                state.assumptions[idx]["selected_option"] = resp.selected_option
 
 
 async def _apply_verdicts(

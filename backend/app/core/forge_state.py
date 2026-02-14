@@ -107,9 +107,14 @@ class ForgeState:
         return [r for r in self.reframings if r.get("selected")]
 
     @property
+    def reviewed_assumptions(self) -> list[dict]:
+        """Assumptions where the user selected an option."""
+        return [a for a in self.assumptions if a.get("selected_option") is not None]
+
+    @property
     def confirmed_assumptions(self) -> list[dict]:
-        """Assumptions the user confirmed."""
-        return [a for a in self.assumptions if a.get("confirmed") is True]
+        """Backward-compat alias for reviewed_assumptions."""
+        return self.reviewed_assumptions
 
     @property
     def all_claims_have_antithesis(self) -> bool:

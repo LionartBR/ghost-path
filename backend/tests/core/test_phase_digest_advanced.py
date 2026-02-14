@@ -152,7 +152,7 @@ def test_crystallize_includes_all_sections():
     """All 10 section groups present in crystallize digest."""
     state = ForgeState()
     state.reframings = [{"text": "R1", "selected": True}]
-    state.assumptions = [{"text": "A1", "confirmed": True}]
+    state.assumptions = [{"text": "A1", "options": ["Agree", "Challenge"], "selected_option": 0}]
     state.morphological_box = {"parameters": [{"name": "P1", "values": []}]}
     state.cross_domain_analogies = [{"domain": "Bio"}]
     state.contradictions = [{"property_a": "X", "property_b": "Y"}]

@@ -25,7 +25,7 @@ def build_phase1_context(
     state: ForgeState,
     locale: Locale,
     selected_reframings: list[int] | None = None,
-    confirmed_assumptions: list[int] | None = None,
+    assumption_responses: list | None = None,
 ) -> str:
     """Compact Phase 1 summary for Phase 2 context injection.
 
@@ -50,14 +50,18 @@ def build_phase1_context(
                 if text:
                     parts.append(f"  - {text}")
 
-    if confirmed_assumptions and state.assumptions:
-        label = "Pressupostos confirmados:" if pt else "Confirmed assumptions:"
+    if assumption_responses and state.assumptions:
+        label = "Respostas aos pressupostos:" if pt else "Assumption responses:"
         parts.append(label)
-        for idx in confirmed_assumptions[:5]:
+        for resp in assumption_responses[:5]:
+            idx = resp.assumption_index if hasattr(resp, "assumption_index") else resp.get("assumption_index", 0)
+            opt_idx = resp.selected_option if hasattr(resp, "selected_option") else resp.get("selected_option", 0)
             if 0 <= idx < len(state.assumptions):
-                text = state.assumptions[idx].get("text", "")
-                if text:
-                    parts.append(f"  - {text}")
+                a = state.assumptions[idx]
+                text = a.get("text", "")
+                options = a.get("options", [])
+                opt_text = options[opt_idx] if opt_idx < len(options) else f"option {opt_idx}"
+                parts.append(f"  - {text} → {opt_text}")
 
     if not parts:
         return ""
@@ -305,8 +309,8 @@ def build_crystallize_context(
 def _cryst_problem_framing(state: ForgeState, pt: bool) -> str:
     """Sections 1-2: Reframings + assumptions."""
     sel_ref = state.selected_reframings
-    conf_assum = state.confirmed_assumptions
-    if not (sel_ref or conf_assum):
+    rev_assum = state.reviewed_assumptions
+    if not (sel_ref or rev_assum):
         return ""
     lines = ["\n[S1-2]"]
     if sel_ref:
@@ -314,11 +318,18 @@ def _cryst_problem_framing(state: ForgeState, pt: bool) -> str:
         lines.append(f"  {s}:")
         for r in sel_ref:
             lines.append(f"  - {r.get('text', '')[:120]}")
-    if conf_assum:
+    if rev_assum:
         s = "Pressupostos" if pt else "Assumptions"
         lines.append(f"  {s}:")
-        for a in conf_assum:
-            lines.append(f"  - {a.get('text', '')[:120]}")
+        for a in rev_assum:
+            text = a.get("text", "")[:120]
+            opt_idx = a.get("selected_option", 0)
+            options = a.get("options", [])
+            opt_text = options[opt_idx] if opt_idx < len(options) else ""
+            if opt_text:
+                lines.append(f"  - {text} → {opt_text}")
+            else:
+                lines.append(f"  - {text}")
     return "\n".join(lines)
 
 

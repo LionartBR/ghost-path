@@ -74,7 +74,8 @@ class DecomposeHandlers:
             self.state.assumptions.append({
                 "text": assumption.get("text", ""),
                 "source": assumption.get("source", ""),
-                "confirmed": None,  # awaiting user review
+                "options": assumption.get("options", []),
+                "selected_option": None,  # awaiting user review
             })
 
         return {

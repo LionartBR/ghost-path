@@ -1,10 +1,10 @@
 /* DecomposeReview — Phase 1 review UI with 3 distinct section containers.
 
 Invariants:
-    - All assumptions start pending (user must explicitly confirm or reject)
+    - All assumptions start pending (user must select a dynamic option)
     - At least 1 reframing must be selected before submit
     - Carousel allows free navigation (prev/next) through assumptions
-    - Confirm/Reject auto-advances to next card after brief visual feedback
+    - Option selection auto-advances to next card after brief visual feedback
 
 Design Decisions:
     - 3 independent containers: Fundamentals, Assumptions, Reframings (ADR: clear visual hierarchy)
@@ -12,6 +12,8 @@ Design Decisions:
     - Carousel over list: reduces cognitive load when 3+ assumptions (ADR: hackathon UX polish)
     - slideDirection state + key remount triggers CSS animation per direction
     - Auto-advance delay (300ms) lets user see the color feedback before slide
+    - Dynamic options from model replace hardcoded Confirm/Reject (ADR: richer downstream context)
+    - Fallback to Confirm/Reject if options array is empty (backward compat)
 */
 
 import React, { useState, useCallback, useRef } from "react";
@@ -26,8 +28,7 @@ interface DecomposeReviewProps {
 export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit }) => {
   const { t } = useTranslation();
   const [fundamentalsOpen, setFundamentalsOpen] = useState(false);
-  const [confirmedAssumptions, setConfirmedAssumptions] = useState<Set<number>>(new Set());
-  const [rejectedAssumptions, setRejectedAssumptions] = useState<Set<number>>(new Set());
+  const [assumptionResponses, setAssumptionResponses] = useState<Map<number, number>>(new Map());
   const [selectedReframings, setSelectedReframings] = useState<Set<number>>(new Set());
   const [newAssumption, setNewAssumption] = useState("");
   const [newReframing, setNewReframing] = useState("");
@@ -54,34 +55,20 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
     if (!isFirstCard) goToCard(currentCard - 1, "left");
   }, [currentCard, isFirstCard, goToCard]);
 
-  const toggleAssumption = useCallback((index: number, type: "confirm" | "reject") => {
+  const selectOption = useCallback((assumptionIndex: number, optionIndex: number) => {
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
 
-    if (type === "confirm") {
-      setConfirmedAssumptions((prev) => {
-        const next = new Set(prev);
-        if (next.has(index)) next.delete(index); else next.add(index);
-        return next;
-      });
-      setRejectedAssumptions((prev) => {
-        const next = new Set(prev);
-        next.delete(index);
-        return next;
-      });
-    } else {
-      setRejectedAssumptions((prev) => {
-        const next = new Set(prev);
-        if (next.has(index)) next.delete(index); else next.add(index);
-        return next;
-      });
-      setConfirmedAssumptions((prev) => {
-        const next = new Set(prev);
-        next.delete(index);
-        return next;
-      });
-    }
+    setAssumptionResponses((prev) => {
+      const next = new Map(prev);
+      if (next.get(assumptionIndex) === optionIndex) {
+        next.delete(assumptionIndex);
+      } else {
+        next.set(assumptionIndex, optionIndex);
+      }
+      return next;
+    });
 
-    if (index < totalAssumptions - 1) {
+    if (assumptionIndex < totalAssumptions - 1) {
       autoAdvanceTimer.current = setTimeout(() => goNext(), 300);
     }
   }, [totalAssumptions, goNext]);
@@ -97,8 +84,9 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
   const handleSubmit = () => {
     const input: UserInput = {
       type: "decompose_review",
-      confirmed_assumptions: Array.from(confirmedAssumptions),
-      rejected_assumptions: Array.from(rejectedAssumptions),
+      assumption_responses: Array.from(assumptionResponses.entries()).map(
+        ([idx, opt]) => ({ assumption_index: idx, selected_option: opt }),
+      ),
       selected_reframings: Array.from(selectedReframings),
       added_assumptions: newAssumption.trim() ? [newAssumption.trim()] : undefined,
       added_reframings: newReframing.trim() ? [newReframing.trim()] : undefined,
@@ -106,21 +94,16 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
     onSubmit(input);
   };
 
-  const cardStatus = (index: number): "confirmed" | "rejected" | "pending" => {
-    if (confirmedAssumptions.has(index)) return "confirmed";
-    if (rejectedAssumptions.has(index)) return "rejected";
-    return "pending";
-  };
+  const isReviewed = (index: number): boolean => assumptionResponses.has(index);
 
   const assumption = data.assumptions[currentCard];
-  const status = assumption ? cardStatus(currentCard) : "pending";
 
   const animationClass =
     slideDirection === "right" ? "animate-slide-in-right" : "animate-slide-in-left";
 
   return (
     <div className="space-y-4">
-      {/* ── Phase Header ── */}
+      {/* -- Phase Header -- */}
       <div className="bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-1">
           {t("decompose.title")}
@@ -130,7 +113,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
         </p>
       </div>
 
-      {/* ── Fundamentals ── */}
+      {/* -- Fundamentals -- */}
       <div className="bg-white border border-gray-200/80 border-l-4 border-l-indigo-400 rounded-xl shadow-sm p-5">
         <button
           onClick={() => setFundamentalsOpen(!fundamentalsOpen)}
@@ -156,7 +139,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
         )}
       </div>
 
-      {/* ── Assumptions ── */}
+      {/* -- Assumptions -- */}
       <div className="bg-white border border-gray-200/80 border-l-4 border-l-amber-400 rounded-xl shadow-sm p-5">
         <h3 className="flex items-center gap-2.5 text-sm font-semibold text-amber-600 uppercase tracking-wide mb-4">
           <i className="bi bi-patch-question text-base" />
@@ -168,13 +151,8 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
             {/* Progress dots */}
             <div className="flex items-center gap-1.5 mb-4">
               {data.assumptions.map((_, i) => {
-                const s = cardStatus(i);
-                const dotColor =
-                  s === "confirmed"
-                    ? "bg-green-500"
-                    : s === "rejected"
-                      ? "bg-red-500"
-                      : "bg-gray-300";
+                const reviewed = isReviewed(i);
+                const dotColor = reviewed ? "bg-green-500" : "bg-gray-300";
                 const ring = i === currentCard ? "ring-2 ring-amber-400 ring-offset-1" : "";
                 return (
                   <button
@@ -214,30 +192,53 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                 <p className="text-gray-700 text-sm leading-relaxed mb-4">
                   {assumption.text}
                 </p>
-                <div className="flex justify-center gap-3">
-                  <button
-                    onClick={() => toggleAssumption(currentCard, "confirm")}
-                    className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all inline-flex items-center gap-1.5 ${
-                      confirmedAssumptions.has(currentCard)
-                        ? "bg-green-500 text-white shadow-sm shadow-green-200"
-                        : "bg-white border border-gray-200 text-gray-600 hover:border-green-300 hover:text-green-600"
-                    }`}
-                  >
-                    <i className="bi bi-check-lg" />
-                    {t("decompose.confirm")}
-                  </button>
-                  <button
-                    onClick={() => toggleAssumption(currentCard, "reject")}
-                    className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all inline-flex items-center gap-1.5 ${
-                      rejectedAssumptions.has(currentCard)
-                        ? "bg-red-500 text-white shadow-sm shadow-red-200"
-                        : "bg-white border border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-600"
-                    }`}
-                  >
-                    <i className="bi bi-x-lg" />
-                    {t("decompose.reject")}
-                  </button>
-                </div>
+                {/* Dynamic option buttons */}
+                {assumption.options && assumption.options.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {assumption.options.map((option, optIdx) => {
+                      const selected = assumptionResponses.get(currentCard) === optIdx;
+                      return (
+                        <button
+                          key={optIdx}
+                          onClick={() => selectOption(currentCard, optIdx)}
+                          className={`w-full px-4 py-2 rounded-md text-xs font-medium transition-all text-left ${
+                            selected
+                              ? "bg-amber-500 text-white shadow-sm shadow-amber-200"
+                              : "bg-white border border-gray-200 text-gray-600 hover:border-amber-300 hover:text-amber-600"
+                          }`}
+                        >
+                          {option}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  /* Fallback: Confirm/Reject when no options provided */
+                  <div className="flex justify-center gap-3">
+                    <button
+                      onClick={() => selectOption(currentCard, 0)}
+                      className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all inline-flex items-center gap-1.5 ${
+                        assumptionResponses.get(currentCard) === 0
+                          ? "bg-green-500 text-white shadow-sm shadow-green-200"
+                          : "bg-white border border-gray-200 text-gray-600 hover:border-green-300 hover:text-green-600"
+                      }`}
+                    >
+                      <i className="bi bi-check-lg" />
+                      {t("decompose.confirm")}
+                    </button>
+                    <button
+                      onClick={() => selectOption(currentCard, 1)}
+                      className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all inline-flex items-center gap-1.5 ${
+                        assumptionResponses.get(currentCard) === 1
+                          ? "bg-red-500 text-white shadow-sm shadow-red-200"
+                          : "bg-white border border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-600"
+                      }`}
+                    >
+                      <i className="bi bi-x-lg" />
+                      {t("decompose.reject")}
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Next arrow */}
@@ -266,7 +267,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
         />
       </div>
 
-      {/* ── Reframings ── */}
+      {/* -- Reframings -- */}
       <div className="bg-white border border-gray-200/80 border-l-4 border-l-violet-400 rounded-xl shadow-sm p-5">
         <h3 className="flex items-center gap-2.5 text-sm font-semibold text-violet-600 uppercase tracking-wide mb-4">
           <i className="bi bi-shuffle text-base" />
@@ -307,15 +308,13 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
         />
       </div>
 
-      {/* ── Submit ── */}
+      {/* -- Submit -- */}
       <button
         onClick={handleSubmit}
         disabled={selectedReframings.size === 0}
         className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/50 transition-all inline-flex items-center justify-center gap-2"
       >
-        {selectedReframings.size > 0
-          ? t("decompose.submitReview")
-          : t("decompose.submitReview")}
+        {t("decompose.submitReview")}
       </button>
     </div>
   );

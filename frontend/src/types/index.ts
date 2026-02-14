@@ -69,7 +69,13 @@ export interface Evidence {
 export interface Assumption {
   text: string;
   source?: string;
-  confirmed: boolean | null;
+  options: string[];
+  selected_option: number | null;
+}
+
+export interface AssumptionResponse {
+  assumption_index: number;
+  selected_option: number;
 }
 
 export interface Reframing {
@@ -243,8 +249,7 @@ export type BuildDecision = "continue" | "deep_dive" | "resolve" | "add_insight"
 export interface UserInput {
   type: UserInputType;
   // decompose_review
-  confirmed_assumptions?: number[];
-  rejected_assumptions?: number[];
+  assumption_responses?: AssumptionResponse[];
   added_assumptions?: string[];
   selected_reframings?: number[];
   added_reframings?: string[];

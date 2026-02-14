@@ -102,9 +102,18 @@ Each assumption should cite its source (problem statement, current approaches, d
                             "source": {
                                 "type": "string",
                                 "description": "Where this assumption comes from (e.g., 'current market structure', 'problem statement', 'industry standard practice')"
+                            },
+                            "options": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "2-4 contextual response options for this assumption. "
+                                    "Each option represents a distinct stance (e.g., confirm, nuance, challenge). "
+                                    "Order from most agreeable to most challenging.",
+                                "minItems": 2,
+                                "maxItems": 4
                             }
                         },
-                        "required": ["text", "source"]
+                        "required": ["text", "source", "options"]
                     },
                     "description": "List of hidden assumptions with their sources",
                     "minItems": 1

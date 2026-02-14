@@ -29,9 +29,9 @@ def _decomposed_state() -> ForgeState:
     state.fundamentals = ["f1", "f2"]
     state.state_of_art_researched = True
     state.assumptions = [
-        {"text": "a1", "confirmed": True},
-        {"text": "a2", "confirmed": True},
-        {"text": "a3", "confirmed": None},
+        {"text": "a1", "options": ["Y", "N"], "selected_option": 0},
+        {"text": "a2", "options": ["Y", "N"], "selected_option": 0},
+        {"text": "a3", "options": ["Y", "N"], "selected_option": None},
     ]
     state.reframings = [
         {"text": "r1", "type": "scope_change", "selected": True},
@@ -74,7 +74,7 @@ def test_decompose_fails_with_fewer_than_3_assumptions():
     state = ForgeState()
     state.fundamentals = ["f1"]
     state.state_of_art_researched = True
-    state.assumptions = [{"text": "a1", "confirmed": True}]
+    state.assumptions = [{"text": "a1", "options": ["Y", "N"], "selected_option": 0}]
     error = check_decompose_complete(state)
     assert error is not None
     assert "assumptions" in error["message"].lower()
