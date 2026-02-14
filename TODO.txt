@@ -1,2 +1,0 @@
-- adicionar efeitos de card deslizando pro lado ao selecionar itens, pois isso dá um UX de agilidade
-Gostaria de, ao invés de deixar as opçoes hardcoded, permitir que o próprio modelo crie as opções para cada pergunta, o que faz mais sentido
