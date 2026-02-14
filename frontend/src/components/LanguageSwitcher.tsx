@@ -2,16 +2,16 @@ import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 const LANGUAGES = [
-  { code: "en", name: "English", flag: "EN" },
-  { code: "pt-BR", name: "Portugues", flag: "PT" },
-  { code: "es", name: "Espanol", flag: "ES" },
-  { code: "fr", name: "Francais", flag: "FR" },
-  { code: "de", name: "Deutsch", flag: "DE" },
-  { code: "zh", name: "\u7b80\u4f53\u4e2d\u6587", flag: "\u4e2d" },
-  { code: "ja", name: "\u65e5\u672c\u8a9e", flag: "\u65e5" },
-  { code: "ko", name: "\ud55c\uad6d\uc5b4", flag: "\ud55c" },
-  { code: "it", name: "Italiano", flag: "IT" },
-  { code: "ru", name: "\u0420\u0443\u0441\u0441\u043a\u0438\u0439", flag: "RU" },
+  { code: "en", name: "English", countryCode: "us" },
+  { code: "pt-BR", name: "Portugu\u00eas", countryCode: "br" },
+  { code: "es", name: "Espa\u00f1ol", countryCode: "es" },
+  { code: "fr", name: "Fran\u00e7ais", countryCode: "fr" },
+  { code: "de", name: "Deutsch", countryCode: "de" },
+  { code: "zh", name: "\u7b80\u4f53\u4e2d\u6587", countryCode: "cn" },
+  { code: "ja", name: "\u65e5\u672c\u8a9e", countryCode: "jp" },
+  { code: "ko", name: "\ud55c\uad6d\uc5b4", countryCode: "kr" },
+  { code: "it", name: "Italiano", countryCode: "it" },
+  { code: "ru", name: "\u0420\u0443\u0441\u0441\u043a\u0438\u0439", countryCode: "ru" },
 ];
 
 export default function LanguageSwitcher() {
@@ -42,7 +42,7 @@ export default function LanguageSwitcher() {
         onClick={() => setOpen(!open)}
         className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors"
       >
-        <span className="text-[10px] font-bold text-gray-400">{current.flag}</span>
+        <span className={`fi fi-${current.countryCode} text-sm rounded-sm`} />
         <span>{current.name}</span>
         <svg className={`w-3 h-3 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -61,7 +61,7 @@ export default function LanguageSwitcher() {
                   : "text-gray-700 hover:bg-gray-50"
               }`}
             >
-              <span className="text-[10px] font-bold text-gray-400 w-5 text-center">{lang.flag}</span>
+              <span className={`fi fi-${lang.countryCode} text-sm rounded-sm`} />
               <span>{lang.name}</span>
             </button>
           ))}
