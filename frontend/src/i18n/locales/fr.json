@@ -124,6 +124,8 @@
   "common.error": "Erreur",
 
   "sessions.recent": "Sessions récentes",
+  "sessions.delete": "Supprimer la session",
+  "sessions.confirmDelete": "Supprimer ?",
   "sessions.backToHome": "Retour à l'accueil",
   "sessions.backToSession": "Retour à la session",
   "sessions.loadingDocument": "Chargement du document de connaissances...",

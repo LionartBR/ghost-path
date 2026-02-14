@@ -14,7 +14,7 @@ Design Decisions:
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -147,17 +147,43 @@ async def get_session(
     }
 
 
+async def _delete_session_in_background(session_id: UUID) -> None:
+    """Background task: delete session and cascade all associated data.
+
+    Uses its own DB session — the request session is already closed when this runs.
+    ADR: fire-and-forget is acceptable for hackathon (no retry, no dead-letter queue).
+    """
+    from app.infrastructure.database import db_manager
+
+    if not db_manager:
+        logger.error(f"Cannot delete session {session_id}: database not initialized")
+        return
+
+    async with db_manager.session() as db:
+        result = await db.execute(
+            select(SessionModel).where(SessionModel.id == session_id),
+        )
+        session = result.scalar_one_or_none()
+        if not session:
+            logger.warning(f"Session {session_id} already deleted (background cleanup)")
+            return
+        await db.delete(session)
+        await db.commit()
+        logger.info(f"Session {session_id} deleted in background")
+
+
 @router.delete(
-    "/{session_id}", status_code=status.HTTP_204_NO_CONTENT,
+    "/{session_id}", status_code=status.HTTP_202_ACCEPTED,
 )
 async def delete_session(
-    session_id: UUID, db: AsyncSession = Depends(get_db),
+    session_id: UUID,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
 ):
-    """Delete a session and associated data."""
-    session = await get_session_or_404(session_id, db)
-    await db.delete(session)
-    await db.commit()
+    """Accept session deletion. ForgeState cleaned immediately, DB cascade runs in background."""
+    await get_session_or_404(session_id, db)
     _forge_states.pop(session_id, None)
+    background_tasks.add_task(_delete_session_in_background, session_id)
 
 
 @router.post("/{session_id}/cancel")
