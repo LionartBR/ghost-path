@@ -62,14 +62,6 @@ export function SessionPage() {
             <span className="text-xs text-gray-400 font-mono">{sessionId?.slice(0, 8)}</span>
           </div>
           <div className="flex items-center gap-3">
-            {stream.isStreaming && (
-              <button
-                onClick={() => stream.abort()}
-                className="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
-              >
-                {t("session.cancel")}
-              </button>
-            )}
             <LanguageSwitcher />
             <ContextMeter usage={stream.contextUsage} />
           </div>
@@ -147,6 +139,12 @@ export function SessionPage() {
                   <TrizMascot />
                 </div>
                 <p className="text-sm font-medium animate-shimmer">{t("agent.working")}</p>
+                <button
+                  onClick={() => stream.abort()}
+                  className="mt-5 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                >
+                  {t("session.cancel")}
+                </button>
               </div>
             )}
 
