@@ -49,6 +49,11 @@ export function SessionPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-slate-50">
+      {/* Language switcher */}
+      <div className="absolute top-5 right-5 z-30">
+        <LanguageSwitcher />
+      </div>
+
       {/* Header */}
       <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200/80 px-6 py-3 sticky top-0 z-20 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -63,7 +68,6 @@ export function SessionPage() {
             <span className="text-xs text-gray-400 font-mono">{sessionId?.slice(0, 8)}</span>
           </div>
           <div className="flex items-center gap-3">
-            <LanguageSwitcher />
             <ContextMeter usage={stream.contextUsage} />
           </div>
         </div>
