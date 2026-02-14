@@ -38,6 +38,7 @@
   "decompose.reject": "Rejeter",
   "decompose.addAssumption": "Ajouter une nouvelle hypothèse...",
   "decompose.addReframing": "Ajouter un nouveau recadrage...",
+  "decompose.edit": "modifier",
   "decompose.submitReview": "Soumettre la revue",
 
   "explore.title": "Phase 2 : Explorer",

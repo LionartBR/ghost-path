@@ -38,6 +38,7 @@
   "decompose.reject": "拒绝",
   "decompose.addAssumption": "添加新假设...",
   "decompose.addReframing": "添加新重构...",
+  "decompose.edit": "编辑",
   "decompose.submitReview": "提交审查",
 
   "explore.title": "阶段2：探索",

@@ -38,6 +38,7 @@
   "decompose.reject": "거부",
   "decompose.addAssumption": "새 가정 추가...",
   "decompose.addReframing": "새 재구성 추가...",
+  "decompose.edit": "편집",
   "decompose.submitReview": "검토 제출",
 
   "explore.title": "2단계: 탐색",

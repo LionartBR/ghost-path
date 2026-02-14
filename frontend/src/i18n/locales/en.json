@@ -38,6 +38,7 @@
   "decompose.reject": "Reject",
   "decompose.addAssumption": "Add new assumption...",
   "decompose.addReframing": "Add new reframing...",
+  "decompose.edit": "edit",
   "decompose.submitReview": "Submit Review",
 
   "explore.title": "Phase 2: Explore",
