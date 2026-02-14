@@ -27,7 +27,8 @@ class ToolCall(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
     )
     session_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=False,
+        UUID(as_uuid=True), ForeignKey("sessions.id", ondelete="CASCADE"),
+        nullable=False,
     )
     tool_name: Mapped[str] = mapped_column(String(50), nullable=False)
     tool_input: Mapped[dict | None] = mapped_column(JSON, nullable=True)
