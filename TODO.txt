@@ -1,3 +1,2 @@
 - O contexto do modelo é zerado a cada nova etapa (critico) - deveria carregar o contexto das conversas/etapas anteriores.
 - Na fase de Explorar, as analogias são sempre parecidas em todos os problemas... por quê? estamos forçando um pré-preparado de opções? As analogias deveriam sugerir naturalmente de vários aspectos diferentes e pesquisas; mas em toda sessão aparece uma analogia com sistema imunológico do corpo humano...
-- melhorar a forma de output do modelo. Mais estruturado com role, mission, rules, constraints, output_format, etc
