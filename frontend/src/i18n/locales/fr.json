@@ -29,6 +29,8 @@
   "problemInput.tryExample": "Essayer un exemple",
   "problemInput.minChars": "minimum {{count}} caractères",
 
+  "decompose.title": "Phase 1 : Décomposer",
+  "decompose.description": "Votre problème a été décomposé en ses éléments irréductibles. Examinez les fondamentaux, confirmez ou rejetez les hypothèses cachées identifiées et sélectionnez au moins une reformulation alternative du problème pour guider l'exploration.",
   "decompose.fundamentals": "Fondamentaux",
   "decompose.assumptions": "Hypothèses",
   "decompose.reframings": "Recadrages",

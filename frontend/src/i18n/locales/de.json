@@ -29,6 +29,8 @@
   "problemInput.tryExample": "Beispiel ausprobieren",
   "problemInput.minChars": "mindestens {{count}} Zeichen",
 
+  "decompose.title": "Phase 1: Zerlegen",
+  "decompose.description": "Ihr Problem wurde in seine irreduziblen Elemente zerlegt. Überprüfen Sie die Grundlagen, bestätigen oder verwerfen Sie die identifizierten verborgenen Annahmen und wählen Sie mindestens eine alternative Problemformulierung, um die Erkundung zu leiten.",
   "decompose.fundamentals": "Grundlagen",
   "decompose.assumptions": "Annahmen",
   "decompose.reframings": "Neuformulierungen",

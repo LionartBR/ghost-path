@@ -29,6 +29,8 @@
   "problemInput.tryExample": "试试示例",
   "problemInput.minChars": "最少 {{count}} 个字符",
 
+  "decompose.title": "阶段1：分解",
+  "decompose.description": "您的问题已被分解为不可约的基本要素。请审查基本要素，确认或拒绝已识别的隐含假设，并选择至少一种替代性问题重构来指导探索。",
   "decompose.fundamentals": "基本要素",
   "decompose.assumptions": "假设",
   "decompose.reframings": "重构",

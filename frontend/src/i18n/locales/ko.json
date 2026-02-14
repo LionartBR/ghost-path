@@ -29,6 +29,8 @@
   "problemInput.tryExample": "예시 시도하기",
   "problemInput.minChars": "최소 {{count}}자",
 
+  "decompose.title": "1단계: 분해",
+  "decompose.description": "문제가 기본 요소로 분해되었습니다. 기본 요소를 검토하고, 식별된 숨겨진 가정을 확인하거나 거부하며, 탐색을 안내할 대안적 문제 재구성을 최소 하나 선택하세요.",
   "decompose.fundamentals": "기본 요소",
   "decompose.assumptions": "가정",
   "decompose.reframings": "재구성",

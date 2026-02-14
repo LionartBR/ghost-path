@@ -29,6 +29,8 @@
   "problemInput.tryExample": "Prova un esempio",
   "problemInput.minChars": "minimo {{count}} caratteri",
 
+  "decompose.title": "Fase 1: Scomporre",
+  "decompose.description": "Il tuo problema è stato scomposto nei suoi elementi irriducibili. Esamina i fondamenti, conferma o rifiuta le ipotesi nascoste identificate e seleziona almeno una riformulazione alternativa del problema per guidare l'esplorazione.",
   "decompose.fundamentals": "Fondamenti",
   "decompose.assumptions": "Assunzioni",
   "decompose.reframings": "Riformulazioni",

@@ -29,6 +29,8 @@
   "problemInput.tryExample": "例を試す",
   "problemInput.minChars": "最低{{count}}文字必要",
 
+  "decompose.title": "フェーズ1：分解",
+  "decompose.description": "問題が基本要素に分解されました。基本要素を確認し、特定された隠れた前提を承認または拒否し、探索の指針となる代替的な問題の再定義を少なくとも1つ選択してください。",
   "decompose.fundamentals": "基本要素",
   "decompose.assumptions": "前提",
   "decompose.reframings": "再定義",
