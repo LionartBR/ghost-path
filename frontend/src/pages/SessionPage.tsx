@@ -62,11 +62,9 @@ export function SessionPage() {
             <div className="h-4 w-px bg-gray-200" />
             <span className="text-xs text-gray-400 font-mono">{sessionId?.slice(0, 8)}</span>
           </div>
-          <div className="flex items-center justify-center">
-            <LanguageSwitcher />
-          </div>
           <div className="flex items-center gap-3">
             <ContextMeter usage={stream.contextUsage} />
+            <LanguageSwitcher />
           </div>
         </div>
       </header>

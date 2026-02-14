@@ -29,6 +29,8 @@
   "problemInput.tryExample": "Try an example",
   "problemInput.minChars": "minimum {{count}} characters",
 
+  "decompose.title": "Phase 1: Decompose",
+  "decompose.description": "Your problem has been broken into its irreducible elements. Review the fundamentals, confirm or reject the hidden assumptions identified, and select at least one alternative problem framing to guide exploration.",
   "decompose.fundamentals": "Fundamentals",
   "decompose.assumptions": "Assumptions",
   "decompose.reframings": "Reframings",

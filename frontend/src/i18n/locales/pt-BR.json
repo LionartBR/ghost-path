@@ -29,6 +29,8 @@
   "problemInput.tryExample": "Experimente um exemplo",
   "problemInput.minChars": "mínimo de {{count}} caracteres",
 
+  "decompose.title": "Fase 1: Decompor",
+  "decompose.description": "Seu problema foi decomposto em elementos irredutíveis. Revise os fundamentos, confirme ou rejeite os pressupostos ocultos identificados e selecione pelo menos uma reformulação alternativa do problema para guiar a exploração.",
   "decompose.fundamentals": "Fundamentos",
   "decompose.assumptions": "Pressupostos",
   "decompose.reframings": "Reformulações",
