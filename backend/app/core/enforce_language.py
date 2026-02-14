@@ -12,6 +12,7 @@ Design Decisions:
 
 from app.core.domain_types import Locale
 from app.core.detect_language import detect_locale
+from app.core.language_strings import format_retry_message
 
 
 def check_response_language(text: str, expected_locale: Locale) -> dict | None:
@@ -19,6 +20,8 @@ def check_response_language(text: str, expected_locale: Locale) -> dict | None:
 
     Returns error dict if language mismatch detected, None if OK.
     Skips check for short text or low-confidence detection.
+    Retry message is in the TARGET locale (not English) to reinforce
+    the desired output language.
     """
     if not text or len(text.strip()) < 50:
         return None
@@ -38,10 +41,7 @@ def check_response_language(text: str, expected_locale: Locale) -> dict | None:
     return {
         "status": "error",
         "error_code": "LANGUAGE_MISMATCH",
-        "message": (
-            f"Please respond in {expected_locale.value}. "
-            f"Your response was detected as {detected_locale.value} "
-            f"(confidence: {confidence:.0%}). "
-            f"Rewrite your response in {expected_locale.value}."
+        "message": format_retry_message(
+            expected_locale, detected_locale.value, confidence,
         ),
     }

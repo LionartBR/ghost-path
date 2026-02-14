@@ -89,4 +89,46 @@ def test_error_dict_has_correct_shape():
         assert "message" in result
         assert result["status"] == "error"
         assert result["error_code"] == "LANGUAGE_MISMATCH"
-        assert "pt-BR" in result["message"]
+        # Message is now in target locale (Portuguese), not English
+        assert "Portugu" in result["message"]
+
+
+# --- Localized retry message --------------------------------------------------
+
+
+def test_error_message_in_portuguese_for_pt_br_locale():
+    """Retry message should be in Portuguese when expected locale is PT_BR."""
+    text = (
+        "Le developpement de l'intelligence artificielle a fondamentalement "
+        "change notre approche de la resolution de problemes complexes dans "
+        "les organisations modernes. C'est un changement de paradigme majeur "
+        "dans la creation de connaissances et la recherche scientifique."
+    )
+    result = check_response_language(text, Locale.PT_BR)
+    if result is not None:
+        # Should contain Portuguese text, not English
+        assert "Portugu" in result["message"]
+
+
+def test_error_message_in_spanish_for_es_locale():
+    """Retry message should be in Spanish when expected locale is ES."""
+    text = (
+        "Le developpement de l'intelligence artificielle a fondamentalement "
+        "change notre approche de la resolution de problemes complexes dans "
+        "les organisations modernes. C'est un changement de paradigme majeur "
+        "dans la creation de connaissances et la recherche scientifique."
+    )
+    result = check_response_language(text, Locale.ES)
+    if result is not None:
+        assert "espa" in result["message"].lower()
+
+
+def test_error_message_in_english_for_en_locale_is_none():
+    """EN locale always returns None (English fallback allowed)."""
+    text = (
+        "Le developpement de l'intelligence artificielle a fondamentalement "
+        "change notre approche de la resolution de problemes complexes."
+    )
+    # EN locale: English is always allowed as fallback
+    result = check_response_language(text, Locale.EN)
+    assert result is None

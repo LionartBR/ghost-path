@@ -38,6 +38,11 @@ from app.api.routes.session_lifecycle import (
     _forge_states, get_session_or_404,
 )
 from app.models.session import Session as SessionModel
+from app.core.language_strings import get_phase_prefix
+from app.core.format_messages import (
+    format_user_input as _format_user_input_pure,
+    build_initial_stream_message,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])
@@ -73,15 +78,8 @@ async def stream_session(
 
     async def event_generator():
         try:
-            message = (
-                f'The user has submitted the following problem:\n\n'
-                f'"{session.problem}"\n\n'
-                f'Begin Phase 1 (DECOMPOSE). Use web_search to research the domain, '
-                f'then call decompose_to_fundamentals, map_state_of_art, '
-                f'extract_assumptions, and reframe_problem (>= 3 reframings). '
-                f'When you are done with all decompose tools, output a summary '
-                f'of your findings for the user to review.'
-            )
+            prefix = get_phase_prefix(forge_state.locale, session.problem)
+            message = build_initial_stream_message(prefix, session.problem)
             async for event in runner.run(session, message, forge_state):
                 yield _sse_line(event)
 
@@ -116,7 +114,7 @@ async def send_user_input(
     forge_state = _get_or_restore_forge_state(session_id, session)
     runner = _create_runner(db)
 
-    message = _format_user_input(body, forge_state)
+    message = _format_user_input(body, forge_state, session.problem)
     await _apply_user_input(body, forge_state, session, db)
 
     async def event_generator():
@@ -173,111 +171,33 @@ def _sse_line(event: dict) -> str:
     return f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
 
-def _format_user_input(body: UserInput, state: ForgeState) -> str:
-    """Convert UserInput to a message string for the agent."""
-    match body.type:
-        case "decompose_review":
-            parts = ["The user reviewed the decomposition:"]
-            if body.confirmed_assumptions:
-                parts.append(f"Confirmed assumptions: indices {body.confirmed_assumptions}")
-            if body.rejected_assumptions:
-                parts.append(f"Rejected assumptions: indices {body.rejected_assumptions}")
-            if body.added_assumptions:
-                parts.append(f"Added assumptions: {body.added_assumptions}")
-            if body.selected_reframings:
-                parts.append(f"Selected reframings: indices {body.selected_reframings}")
-            if body.added_reframings:
-                parts.append(f"Added reframings: {body.added_reframings}")
-            parts.append(
-                "Proceed to Phase 2 (EXPLORE). Build a morphological box, "
-                "search >= 2 distant domains for analogies (use web_search first), "
-                "identify contradictions, and map the adjacent possible."
-            )
-            return "\n".join(parts)
+def _format_user_input(
+    body: UserInput, state: ForgeState, problem: str,
+) -> str:
+    """Delegate to pure core function with locale prefix.
 
-        case "explore_review":
-            parts = ["The user reviewed the exploration:"]
-            if body.starred_analogies:
-                parts.append(f"Starred analogies: indices {body.starred_analogies}")
-            if body.suggested_domains:
-                parts.append(f"Suggested domains to search: {body.suggested_domains}")
-            if body.added_contradictions:
-                parts.append(f"Added contradictions: {body.added_contradictions}")
-            parts.append(
-                "Proceed to Phase 3 (SYNTHESIZE). For each promising direction, "
-                "state a thesis (with evidence), find antithesis (use web_search), "
-                "then create a synthesis claim. Generate up to 3 claims this round."
-            )
-            return "\n".join(parts)
-
-        case "claims_review":
-            parts = ["The user reviewed the claims:"]
-            if body.claim_feedback:
-                for fb in body.claim_feedback:
-                    parts.append(f"Claim #{fb.claim_index}:")
-                    parts.append(f"  Evidence valid: {fb.evidence_valid}")
-                    if fb.counter_example:
-                        parts.append(f"  Counter-example: {fb.counter_example}")
-                    if fb.synthesis_ignores:
-                        parts.append(f"  Missing factor: {fb.synthesis_ignores}")
-                    if fb.additional_evidence:
-                        parts.append(f"  Additional evidence: {fb.additional_evidence}")
-            parts.append(
-                "Proceed to Phase 4 (VALIDATE). For each claim, attempt falsification "
-                "(use web_search to disprove), check novelty (use web_search), "
-                "then score each claim."
-            )
-            return "\n".join(parts)
-
-        case "verdicts":
-            parts = ["The user rendered verdicts on the claims:"]
-            if body.verdicts:
-                for v in body.verdicts:
-                    parts.append(f"Claim #{v.claim_index}: {v.verdict}")
-                    if v.rejection_reason:
-                        parts.append(f"  Reason: {v.rejection_reason}")
-                    if v.qualification:
-                        parts.append(f"  Qualification: {v.qualification}")
-                    if v.merge_with_claim_id:
-                        parts.append(f"  Merge with: {v.merge_with_claim_id}")
-            parts.append(
-                "Proceed to Phase 5 (BUILD). Add accepted/qualified claims to "
-                "the knowledge graph, analyze gaps, and present the build review."
-            )
-            return "\n".join(parts)
-
-        case "build_decision":
-            if body.decision == "continue":
-                return (
-                    "The user wants to continue with another round. "
-                    "Go back to Phase 3 (SYNTHESIZE). Remember: call "
-                    "get_negative_knowledge first (Rule #10), and reference "
-                    "at least one previous claim (Rule #9)."
-                )
-            elif body.decision == "deep_dive":
-                return (
-                    f"The user wants to deep-dive into claim {body.deep_dive_claim_id}. "
-                    f"Do a focused EXPLORE -> SYNTHESIZE -> VALIDATE cycle "
-                    f"scoped to this claim only."
-                )
-            elif body.decision == "resolve":
-                return (
-                    "The user is satisfied with the knowledge graph. "
-                    "Proceed to Phase 6 (CRYSTALLIZE). Generate the final "
-                    "Knowledge Document with all 10 sections using "
-                    "generate_knowledge_document."
-                )
-            elif body.decision == "add_insight":
-                return (
-                    f'The user wants to add their own insight:\n'
-                    f'"{body.user_insight}"\n'
-                    f'Evidence URLs: {body.user_evidence_urls or []}\n'
-                    f'Call submit_user_insight to add this to the knowledge graph, '
-                    f'then present the updated build review.'
-                )
-            return "Unknown build decision."
-
-    return "Unknown user input type."
+    Thin shell wrapper — builds locale prefix, then delegates to
+    format_user_input in core/format_messages.py (pure, no IO).
+    """
+    prefix = get_phase_prefix(state.locale, problem)
+    return _format_user_input_pure(
+        input_type=body.type,
+        locale_prefix=prefix,
+        confirmed_assumptions=body.confirmed_assumptions,
+        rejected_assumptions=body.rejected_assumptions,
+        added_assumptions=body.added_assumptions,
+        selected_reframings=body.selected_reframings,
+        added_reframings=body.added_reframings,
+        starred_analogies=body.starred_analogies,
+        suggested_domains=body.suggested_domains,
+        added_contradictions=body.added_contradictions,
+        claim_feedback=body.claim_feedback,
+        verdicts=body.verdicts,
+        decision=body.decision,
+        deep_dive_claim_id=body.deep_dive_claim_id,
+        user_insight=body.user_insight,
+        user_evidence_urls=body.user_evidence_urls,
+    )
 
 
 async def _apply_user_input(

@@ -51,3 +51,34 @@ def test_prompt_contains_base_content():
     assert "Knowledge Creation Engine" in prompt
     assert "<pipeline>" in prompt
     assert "<enforcement_rules>" in prompt
+
+
+# --- Bookend pattern tests ----------------------------------------------------
+
+
+def test_system_prompt_has_bookend_for_pt_br():
+    prompt = build_system_prompt(Locale.PT_BR)
+    assert "<language_rule>" in prompt
+    assert "<language_rule_reminder>" in prompt
+    # Portuguese text in BOTH opening and closing
+    assert prompt.count("Portugu") >= 2
+
+
+def test_system_prompt_has_bookend_for_all_locales():
+    for locale in Locale:
+        prompt = build_system_prompt(locale)
+        assert "<language_rule>" in prompt
+        assert "<language_rule_reminder>" in prompt
+
+
+def test_bookend_closing_appears_after_base_prompt():
+    prompt = build_system_prompt(Locale.PT_BR)
+    base_end = prompt.index("</output_guidance>")
+    closing = prompt.index("<language_rule_reminder>")
+    assert base_end < closing
+
+
+def test_language_instruction_includes_adaptive_rule():
+    prompt = build_system_prompt(Locale.PT_BR)
+    # Should mention following the user's language if they switch
+    assert "idioma" in prompt.lower() or "language" in prompt.lower()

@@ -21,19 +21,70 @@ Design Decisions:
 """
 
 from app.core.domain_types import Locale
+from app.core.language_strings import get_bookend_closing
 
 
 _LANGUAGE_INSTRUCTIONS: dict[Locale, str] = {
-    Locale.EN: "You MUST respond in English. All text output — analysis, summaries, explanations — must be in English.",
-    Locale.PT_BR: "Voce DEVE responder em Portugues Brasileiro. Todo texto — analises, resumos, explicacoes — deve ser em Portugues Brasileiro.",
-    Locale.ES: "DEBES responder en espanol. Todo el texto — analisis, resumenes, explicaciones — debe estar en espanol.",
-    Locale.FR: "Vous DEVEZ repondre en francais. Tout le texte — analyses, resumes, explications — doit etre en francais.",
-    Locale.DE: "Sie MUESSEN auf Deutsch antworten. Aller Text — Analysen, Zusammenfassungen, Erklarungen — muss auf Deutsch sein.",
-    Locale.ZH: "你必须用简体中文回答。所有文本——分析、摘要、解释——都必须使用简体中文。",
-    Locale.JA: "日本語で回答してください。すべてのテキスト（分析、要約、説明）は日本語でなければなりません。",
-    Locale.KO: "한국어로 답변해야 합니다. 모든 텍스트(분석, 요약, 설명)는 한국어여야 합니다.",
-    Locale.IT: "DEVI rispondere in italiano. Tutto il testo — analisi, riassunti, spiegazioni — deve essere in italiano.",
-    Locale.RU: "Вы ДОЛЖНЫ отвечать на русском языке. Весь текст — анализ, резюме, объяснения — должен быть на русском языке.",
+    Locale.EN: (
+        "You MUST respond in English. All text output — analysis, summaries, "
+        "explanations, findings — must be in English. Tool names and technical "
+        "parameters may remain in English. If the user communicates in a "
+        "different language, follow their language instead."
+    ),
+    Locale.PT_BR: (
+        "Voce DEVE responder em Portugues Brasileiro. Todo texto de saida — "
+        "analises, resumos, explicacoes, descobertas — deve ser em Portugues "
+        "Brasileiro. Nomes de ferramentas e parametros tecnicos podem permanecer "
+        "em ingles. Se o usuario se comunicar em outro idioma, acompanhe o "
+        "idioma dele."
+    ),
+    Locale.ES: (
+        "DEBES responder en espanol. Todo el texto de salida — analisis, "
+        "resumenes, explicaciones, hallazgos — debe estar en espanol. Los "
+        "nombres de herramientas y parametros tecnicos pueden permanecer en "
+        "ingles. Si el usuario se comunica en otro idioma, sigue su idioma."
+    ),
+    Locale.FR: (
+        "Vous DEVEZ repondre en francais. Tout le texte de sortie — analyses, "
+        "resumes, explications, decouvertes — doit etre en francais. Les noms "
+        "d'outils et parametres techniques peuvent rester en anglais. Si "
+        "l'utilisateur communique dans une autre langue, suivez sa langue."
+    ),
+    Locale.DE: (
+        "Sie MUESSEN auf Deutsch antworten. Aller Text — Analysen, "
+        "Zusammenfassungen, Erklarungen, Erkenntnisse — muss auf Deutsch sein. "
+        "Werkzeugnamen und technische Parameter koennen auf Englisch bleiben. "
+        "Wenn der Benutzer in einer anderen Sprache kommuniziert, folgen Sie "
+        "seiner Sprache."
+    ),
+    Locale.ZH: (
+        "你必须用简体中文回答。所有文本输出——分析、摘要、解释、发现——"
+        "都必须使用简体中文。工具名称和技术参数可以保留英文。"
+        "如果用户使用其他语言交流，请跟随用户的语言。"
+    ),
+    Locale.JA: (
+        "日本語で回答してください。すべてのテキスト出力（分析、要約、説明、"
+        "発見）は日本語でなければなりません。ツール名と技術パラメータは英語の"
+        "ままで構いません。ユーザーが別の言語で通信する場合は、その言語に"
+        "従ってください。"
+    ),
+    Locale.KO: (
+        "한국어로 답변해야 합니다. 모든 텍스트 출력(분석, 요약, 설명, 발견)은 "
+        "한국어여야 합니다. 도구 이름과 기술 매개변수는 영어로 유지할 수 있습니다. "
+        "사용자가 다른 언어로 소통하면 해당 언어를 따르세요."
+    ),
+    Locale.IT: (
+        "DEVI rispondere in italiano. Tutto il testo di output — analisi, "
+        "riassunti, spiegazioni, scoperte — deve essere in italiano. I nomi "
+        "degli strumenti e i parametri tecnici possono rimanere in inglese. "
+        "Se l'utente comunica in un'altra lingua, segui la sua lingua."
+    ),
+    Locale.RU: (
+        "Вы ДОЛЖНЫ отвечать на русском языке. Весь текстовый вывод — анализ, "
+        "резюме, объяснения, открытия — должен быть на русском языке. Названия "
+        "инструментов и технические параметры могут оставаться на английском. "
+        "Если пользователь общается на другом языке, следуйте его языку."
+    ),
 }
 
 
@@ -305,13 +356,19 @@ Show the reasoning chain — thesis -> antithesis -> synthesis. Be direct, no fl
 
 
 def build_system_prompt(locale: Locale = Locale.EN) -> str:
-    """Build system prompt with language instruction for the given locale.
+    """Build system prompt with language bookend for the given locale.
 
-    The language rule is prepended as an XML block so Claude follows it
-    throughout the session. Different locales produce different prompts.
+    Bookend pattern: language rule prepended (primacy) AND appended (recency)
+    as XML blocks so Claude follows it throughout the session. The closing
+    reminder reinforces the instruction after ~260 lines of English content.
     """
     instruction = _LANGUAGE_INSTRUCTIONS[locale]
-    return f"<language_rule>\n{instruction}\n</language_rule>\n\n{_BASE_PROMPT}"
+    closing = get_bookend_closing(locale)
+    return (
+        f"<language_rule>\n{instruction}\n</language_rule>\n\n"
+        f"{_BASE_PROMPT}\n\n"
+        f"<language_rule_reminder>\n{closing}\n</language_rule_reminder>"
+    )
 
 
 # Backward compat — existing imports still work
