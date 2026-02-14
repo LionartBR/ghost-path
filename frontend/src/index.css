@@ -39,15 +39,6 @@ body {
   animation: fade-in 0.2s ease-out;
 }
 
-/* Streaming cursor blink */
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-.animate-blink {
-  animation: blink 1s step-end infinite;
-}
 
 /* Agent markdown — scoped overrides so ReactMarkdown inherits panel context */
 .agent-markdown > *:first-child {
