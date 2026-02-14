@@ -1,0 +1,1 @@
+- o 'x' para excluir histórico de sessão não apaga de fato. Ele volta a aparecer ao atualizar a página
