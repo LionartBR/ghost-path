@@ -116,7 +116,7 @@ export default function ClaimCard({ claim, index, compact = false }: ClaimCardPr
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-1.5">
                     <div
-                      className={`${SCORE_COLORS[key] || "bg-indigo-500"} h-1.5 rounded-full transition-all duration-300`}
+                      className={`${SCORE_COLORS[key] || "bg-blue-500"} h-1.5 rounded-full transition-all duration-300`}
                       style={{ width: `${value * 100}%` }}
                     />
                   </div>

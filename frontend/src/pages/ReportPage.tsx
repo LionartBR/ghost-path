@@ -41,7 +41,7 @@ export function ReportPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin w-12 h-12 border-3 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4" />
+          <div className="animate-spin w-12 h-12 border-3 border-blue-500 border-t-transparent rounded-full mx-auto mb-4" />
           <p className="text-gray-500 text-sm">{t("sessions.loadingDocument")}</p>
         </div>
       </div>
@@ -51,12 +51,12 @@ export function ReportPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white border border-red-200/80 rounded-xl shadow-md shadow-gray-200/40 p-6 max-w-md">
+        <div className="bg-white border border-blue-200/80 rounded-xl shadow-md shadow-gray-200/40 p-6 max-w-md">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">{t("common.error")}</h2>
-          <p className="text-red-600 text-sm mb-4">{error}</p>
+          <p className="text-blue-600 text-sm mb-4">{error}</p>
           <button
             onClick={() => void navigate("/")}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors"
           >
             {t("sessions.backToHome")}
           </button>
@@ -71,7 +71,7 @@ export function ReportPage() {
         <div className="mb-6 flex items-center justify-between">
           <button
             onClick={() => void navigate(`/session/${sessionId}`)}
-            className="text-indigo-600 hover:text-indigo-500 flex items-center gap-2 text-sm font-medium"
+            className="text-blue-600 hover:text-blue-500 flex items-center gap-2 text-sm font-medium"
           >
             <svg
               className="w-4 h-4"

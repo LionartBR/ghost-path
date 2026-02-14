@@ -55,7 +55,7 @@ export function SessionPage() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => void navigate("/")}
-              className="text-gray-900 text-lg font-extrabold tracking-tight hover:text-indigo-600 transition-colors"
+              className="text-gray-900 text-lg font-extrabold tracking-tight hover:text-blue-600 transition-colors"
             >
               TRIZ
             </button>
@@ -83,7 +83,7 @@ export function SessionPage() {
           <div className={`space-y-5 ${showGraph ? "lg:col-span-2" : ""}`}>
             {/* Error */}
             {stream.error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
                 {stream.error}
               </div>
             )}
@@ -94,7 +94,7 @@ export function SessionPage() {
                 {stream.toolErrors.map((te, i) => (
                   <div
                     key={i}
-                    className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2"
+                    className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded px-3 py-2"
                   >
                     <span className="font-mono font-bold">[{te.error_code}]</span>{" "}
                     <span className="font-mono">{te.tool}</span>: {te.message}
@@ -164,7 +164,7 @@ export function SessionPage() {
                 <p className="text-sm font-medium animate-shimmer">{t("agent.working")}</p>
                 <button
                   onClick={() => void stream.abort()}
-                  className="mt-5 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                  className="mt-5 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
                 >
                   {t("session.cancel")}
                 </button>

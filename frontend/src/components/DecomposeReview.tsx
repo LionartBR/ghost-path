@@ -142,7 +142,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
             <div className="flex items-center gap-1.5 mb-4">
               {data.assumptions.map((_, i) => {
                 const reviewed = isReviewed(i);
-                const dotColor = reviewed ? "bg-green-500" : "bg-gray-300";
+                const dotColor = reviewed ? "bg-blue-500" : "bg-gray-300";
                 const ring = i === currentCard ? "ring-2 ring-blue-400 ring-offset-1" : "";
                 return (
                   <button

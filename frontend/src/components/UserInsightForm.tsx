@@ -55,7 +55,7 @@ export default function UserInsightForm({ onSubmit, onCancel }: UserInsightFormP
             onChange={(e) => setInsight(e.target.value)}
             placeholder={t("insight.placeholder")}
             rows={6}
-            className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none placeholder-gray-400"
+            className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none placeholder-gray-400"
           />
         </div>
 
@@ -66,7 +66,7 @@ export default function UserInsightForm({ onSubmit, onCancel }: UserInsightFormP
             </label>
             <button
               onClick={addUrlField}
-              className="text-indigo-600 hover:text-indigo-500 text-xs font-medium"
+              className="text-blue-600 hover:text-blue-500 text-xs font-medium"
             >
               {t("insight.addUrl")}
             </button>
@@ -79,12 +79,12 @@ export default function UserInsightForm({ onSubmit, onCancel }: UserInsightFormP
                   value={url}
                   onChange={(e) => updateUrl(i, e.target.value)}
                   placeholder={t("insight.urlPlaceholder")}
-                  className="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400"
+                  className="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
                 />
                 {urls.length > 1 && (
                   <button
                     onClick={() => removeUrlField(i)}
-                    className="bg-white border border-gray-200 hover:bg-red-50 hover:border-red-200 text-gray-500 hover:text-red-600 px-3 py-2 rounded-md text-xs font-medium transition-colors"
+                    className="bg-white border border-gray-200 hover:bg-blue-50 hover:border-blue-200 text-gray-500 hover:text-blue-600 px-3 py-2 rounded-md text-xs font-medium transition-colors"
                   >
                     {t("insight.remove")}
                   </button>
@@ -98,7 +98,7 @@ export default function UserInsightForm({ onSubmit, onCancel }: UserInsightFormP
       <div className="flex gap-3">
         <button
           onClick={handleSubmit}
-          className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-3 px-6 rounded-lg shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/50 transition-all"
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm py-3 px-6 rounded-lg shadow-md shadow-blue-200/50 hover:shadow-lg hover:shadow-blue-300/50 transition-all"
         >
           {t("insight.submit")}
         </button>

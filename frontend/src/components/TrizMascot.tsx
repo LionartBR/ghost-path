@@ -107,11 +107,11 @@ export function TrizMascot() {
     >
       <div className={bobClass}>
         <pre className="font-mono text-sm leading-tight select-none m-0">
-          <span className="text-indigo-600">{HEAD}</span>
+          <span className="text-blue-600">{HEAD}</span>
           {"\n"}
-          <span className="text-indigo-500">{BODY}</span>
+          <span className="text-blue-500">{BODY}</span>
           {"\n"}
-          <span className="text-indigo-300">{feet}</span>
+          <span className="text-blue-300">{feet}</span>
         </pre>
       </div>
     </div>

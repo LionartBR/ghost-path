@@ -33,8 +33,8 @@ export function ProblemInput({ onSubmit, loading, exampleProblem }: Props) {
           value={problem}
           onChange={(e) => setProblem(e.target.value)}
           className="w-full p-4 bg-gray-50/30 border border-gray-200 text-gray-900 rounded-xl
-                     text-sm resize-none focus:ring-2 focus:ring-indigo-400/50
-                     focus:border-indigo-300 placeholder-gray-400 transition-all
+                     text-sm resize-none focus:ring-2 focus:ring-blue-400/50
+                     focus:border-blue-300 placeholder-gray-400 transition-all
                      hover:border-gray-300"
           style={{ height: 136 }}
           placeholder={t("problemInput.placeholder")}
@@ -43,7 +43,7 @@ export function ProblemInput({ onSubmit, loading, exampleProblem }: Props) {
         <div className="flex items-center justify-between mt-1.5">
           <span
             className={`text-xs ${
-              isTooShort ? "text-amber-500" : "text-gray-400"
+              isTooShort ? "text-blue-500" : "text-gray-400"
             }`}
           >
             {charCount}/10000{isTooShort && ` — ${t("problemInput.minChars", { count: 10 })}`}
@@ -55,14 +55,14 @@ export function ProblemInput({ onSubmit, loading, exampleProblem }: Props) {
         <button
           type="button"
           onClick={() => setProblem(exampleProblem)}
-          className="w-full text-left px-4 py-3 bg-indigo-50/70 hover:bg-indigo-50
-                     rounded-xl text-sm transition-all group border border-indigo-100/60
-                     hover:border-indigo-200/80"
+          className="w-full text-left px-4 py-3 bg-blue-50/70 hover:bg-blue-50
+                     rounded-xl text-sm transition-all group border border-blue-100/60
+                     hover:border-blue-200/80"
         >
-          <span className="text-indigo-400 text-xs font-medium uppercase tracking-wide">
+          <span className="text-blue-400 text-xs font-medium uppercase tracking-wide">
             {t("problemInput.tryExample")}
           </span>
-          <p className="text-indigo-700 mt-1 leading-snug">
+          <p className="text-blue-700 mt-1 leading-snug">
             &ldquo;{exampleProblem}&rdquo;
           </p>
         </button>
@@ -71,9 +71,9 @@ export function ProblemInput({ onSubmit, loading, exampleProblem }: Props) {
       <button
         type="submit"
         disabled={loading || problem.trim().length < 10}
-        className="w-full py-3.5 bg-indigo-600 text-white font-semibold rounded-xl
-                   hover:bg-indigo-700 active:bg-indigo-800
-                   shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/50
+        className="w-full py-3.5 bg-blue-600 text-white font-semibold rounded-xl
+                   hover:bg-blue-700 active:bg-blue-800
+                   shadow-md shadow-blue-200/50 hover:shadow-lg hover:shadow-blue-300/50
                    disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none
                    disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
       >

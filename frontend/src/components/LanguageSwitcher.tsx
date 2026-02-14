@@ -57,7 +57,7 @@ export default function LanguageSwitcher() {
               onClick={() => handleSelect(lang.code)}
               className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2.5 transition-colors ${
                 lang.code === i18n.language
-                  ? "bg-indigo-50 text-indigo-700 font-medium"
+                  ? "bg-blue-50 text-blue-700 font-medium"
                   : "text-gray-700 hover:bg-gray-50"
               }`}
             >
