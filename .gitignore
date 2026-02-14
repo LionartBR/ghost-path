@@ -25,3 +25,4 @@ docker-compose.override.yml
 
 # Specs output
 /tmp/triz/
+.mcp.json
