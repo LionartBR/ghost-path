@@ -67,7 +67,9 @@ The tool maps patterns from one domain to another based on structural similarity
 - medium: different industry, similar constraints (supply chain → blood distribution)
 - far: completely different domain with no obvious surface similarity to the problem
 
-The further the semantic distance, the more non-obvious the insight. Focus on HOW the source domain solves analogous problems (mechanisms, principles, trade-offs), not what it looks like.""",
+The further the semantic distance, the more non-obvious the insight. Focus on HOW the source domain solves analogous problems (mechanisms, principles, trade-offs), not what it looks like.
+
+RESONANCE ASSESSMENT: You MUST generate a resonance_prompt (question probing the structural connection) and resonance_options (3-4 options from 'no connection' to 'deep structural match'). Option 0 must always be a 'no structural connection' variant. The user's selection tells Phase 3 WHY this analogy resonated, not just that it did.""",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -95,9 +97,22 @@ The further the semantic distance, the more non-obvious the insight. Focus on HO
                     },
                     "description": "Key findings from web_search about the source domain — mechanisms, patterns, or principles that will be mapped",
                     "minItems": 1
+                },
+                "resonance_prompt": {
+                    "type": "string",
+                    "description": "A question probing the structural connection between this analogy and the user's problem. Example: 'Do you see a parallel between ant colony pheromone coordination and your microservices routing challenge?'"
+                },
+                "resonance_options": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "3-4 options from 'no connection' to 'deep structural match'. Option 0 MUST be a 'no connection' variant. Example: ['No structural connection', 'Surface similarity only', 'Partial structural match — coordination mechanism applies', 'Deep structural match — pheromone trail ≈ service mesh routing']",
+                    "minItems": 3,
+                    "maxItems": 4
                 }
             },
-            "required": ["source_domain", "target_application", "analogy_description", "semantic_distance", "key_findings"]
+            "required": ["source_domain", "target_application", "analogy_description", "semantic_distance", "key_findings", "resonance_prompt", "resonance_options"]
         }
     },
     {

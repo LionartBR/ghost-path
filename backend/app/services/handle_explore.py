@@ -75,6 +75,10 @@ class ExploreHandlers:
             "description": analogy_description,
             "semantic_distance": semantic_distance,
             "starred": False,
+            "resonance_prompt": input_data.get("resonance_prompt"),
+            "resonance_options": input_data.get("resonance_options"),
+            "user_resonance": None,
+            "selected_resonance_option": None,
         }
         self.state.cross_domain_analogies.append(analogy_data)
         self.state.cross_domain_search_count += 1

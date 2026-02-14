@@ -140,6 +140,7 @@ def format_user_input(body: UserInput, state: ForgeState, problem: str) -> str:
         added_assumptions=body.added_assumptions,
         selected_reframings=body.selected_reframings,
         added_reframings=body.added_reframings,
+        analogy_responses=body.analogy_responses,
         starred_analogies=body.starred_analogies,
         suggested_domains=body.suggested_domains,
         added_contradictions=body.added_contradictions,
@@ -308,7 +309,19 @@ async def apply_user_input(
             session.message_history = []
             await sync_state_to_db(session, state, db)
         case "explore_review":
-            if body.starred_analogies:
+            if body.analogy_responses:
+                for resp in body.analogy_responses:
+                    idx = resp.analogy_index
+                    if idx < len(state.cross_domain_analogies):
+                        analogy = state.cross_domain_analogies[idx]
+                        if resp.selected_option > 0:
+                            analogy["starred"] = True
+                            options = analogy.get("resonance_options", [])
+                            opt_idx = resp.selected_option
+                            if opt_idx < len(options):
+                                analogy["user_resonance"] = options[opt_idx]
+                            analogy["selected_resonance_option"] = opt_idx
+            elif body.starred_analogies:
                 for idx in body.starred_analogies:
                     if idx < len(state.cross_domain_analogies):
                         state.cross_domain_analogies[idx]["starred"] = True

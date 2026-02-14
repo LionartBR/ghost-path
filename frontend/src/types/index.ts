@@ -103,6 +103,15 @@ export interface Analogy {
   description: string;
   semantic_distance?: string;
   starred: boolean;
+  resonance_prompt?: string;
+  resonance_options?: string[];
+  user_resonance?: string | null;
+  selected_resonance_option?: number | null;
+}
+
+export interface AnalogyResponse {
+  analogy_index: number;
+  selected_option: number;
 }
 
 export interface Contradiction {
@@ -254,6 +263,7 @@ export interface UserInput {
   selected_reframings?: number[];
   added_reframings?: string[];
   // explore_review
+  analogy_responses?: AnalogyResponse[];
   starred_analogies?: number[];
   suggested_domains?: string[];
   added_contradictions?: string[];

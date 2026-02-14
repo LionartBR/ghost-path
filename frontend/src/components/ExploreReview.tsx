@@ -1,18 +1,19 @@
-/* ExploreReview — Phase 2 review UI with 3 distinct section containers.
+/* ExploreReview — Phase 2 review UI with carousel for analogy resonance assessment.
 
 Invariants:
-    - At least 1 analogy must be starred before submit
+    - At least 1 analogy must resonate (selected_option > 0) before submit
+    - Carousel reuses DecomposeReview pattern: progress dots, prev/next, auto-advance
     - Morphological box and contradictions are collapsible (read-only context)
-    - User can suggest additional domains for analogy search
+    - Backward compat: falls back to simple star toggle when no resonance data
 
 Design Decisions:
-    - 3 independent containers: Morphological Box, Analogies, Contradictions (ADR: clear visual hierarchy)
-    - Each container has a Bootstrap Icon + colored left accent border for identity
-    - Star toggle uses bi-star / bi-star-fill for immediate visual feedback
-    - Semantic distance badge stays inline with analogy card
+    - Convention Option 0: agent always generates option 0 as "no structural connection"
+    - selected_option > 0 means the analogy resonated (replaces binary star toggle)
+    - Resonance text injected into Phase 3 context for richer thesis generation
+    - Carousel over grid: reduces cognitive load, matches DecomposeReview UX (ADR)
 */
 
-import React, { useState } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { ExploreReviewData, UserInput } from "../types";
 
@@ -25,8 +26,56 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
   const { t } = useTranslation();
   const [morphBoxOpen, setMorphBoxOpen] = useState(false);
   const [contradictionsOpen, setContradictionsOpen] = useState(false);
-  const [starredAnalogies, setStarredAnalogies] = useState<Set<number>>(new Set());
   const [newDomain, setNewDomain] = useState("");
+
+  // Resonance carousel state (mirrors DecomposeReview pattern)
+  const [analogyResponses, setAnalogyResponses] = useState<Map<number, number>>(new Map());
+  const [currentCard, setCurrentCard] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
+  const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Backward compat: star toggle for analogies without resonance data
+  const [starredAnalogies, setStarredAnalogies] = useState<Set<number>>(new Set());
+
+  const hasResonanceData = data.analogies.some(
+    (a) => a.resonance_prompt && a.resonance_options && a.resonance_options.length >= 3,
+  );
+
+  const totalAnalogies = data.analogies.length;
+  const isLastCard = currentCard >= totalAnalogies - 1;
+  const isFirstCard = currentCard <= 0;
+
+  const goToCard = useCallback((index: number, direction: "left" | "right") => {
+    if (index < 0 || index >= totalAnalogies) return;
+    setSlideDirection(direction);
+    setCurrentCard(index);
+  }, [totalAnalogies]);
+
+  const goNext = useCallback(() => {
+    if (!isLastCard) goToCard(currentCard + 1, "right");
+  }, [currentCard, isLastCard, goToCard]);
+
+  const goPrev = useCallback(() => {
+    if (!isFirstCard) goToCard(currentCard - 1, "left");
+  }, [currentCard, isFirstCard, goToCard]);
+
+  const selectOption = useCallback((analogyIndex: number, optionIndex: number) => {
+    if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+
+    setAnalogyResponses((prev) => {
+      const next = new Map(prev);
+      if (next.get(analogyIndex) === optionIndex) {
+        next.delete(analogyIndex);
+      } else {
+        next.set(analogyIndex, optionIndex);
+      }
+      return next;
+    });
+
+    if (analogyIndex < totalAnalogies - 1) {
+      autoAdvanceTimer.current = setTimeout(() => goNext(), 300);
+    }
+  }, [totalAnalogies, goNext]);
 
   const toggleStar = (index: number) => {
     setStarredAnalogies((prev) => {
@@ -36,13 +85,40 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
     });
   };
 
+  const resonatedCount = Array.from(analogyResponses.values()).filter((opt) => opt > 0).length;
+  const canSubmit = hasResonanceData ? resonatedCount > 0 : starredAnalogies.size > 0;
+
   const handleSubmit = () => {
-    const input: UserInput = {
-      type: "explore_review",
-      starred_analogies: Array.from(starredAnalogies),
-      suggested_domains: newDomain.trim() ? [newDomain.trim()] : undefined,
-    };
-    onSubmit(input);
+    if (hasResonanceData) {
+      const input: UserInput = {
+        type: "explore_review",
+        analogy_responses: Array.from(analogyResponses.entries()).map(
+          ([idx, opt]) => ({ analogy_index: idx, selected_option: opt }),
+        ),
+        suggested_domains: newDomain.trim() ? [newDomain.trim()] : undefined,
+      };
+      onSubmit(input);
+    } else {
+      const input: UserInput = {
+        type: "explore_review",
+        starred_analogies: Array.from(starredAnalogies),
+        suggested_domains: newDomain.trim() ? [newDomain.trim()] : undefined,
+      };
+      onSubmit(input);
+    }
+  };
+
+  const analogy = data.analogies[currentCard];
+  const animationClass =
+    slideDirection === "right" ? "animate-slide-in-right" : "animate-slide-in-left";
+
+  const distanceBadgeColor = (d?: string) => {
+    switch (d) {
+      case "far": return "bg-purple-50 text-purple-700 border-purple-200";
+      case "medium": return "bg-blue-50 text-blue-700 border-blue-200";
+      case "near": return "bg-gray-50 text-gray-600 border-gray-200";
+      default: return "bg-gray-50 text-gray-500 border-gray-200";
+    }
   };
 
   return (
@@ -54,40 +130,157 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
           <i className="bi bi-globe2 text-base" />
           {t("explore.analogies")}
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {data.analogies.map((analogy, i) => (
-            <div
-              key={i}
-              className={`p-4 rounded-lg border transition-all ${
-                starredAnalogies.has(i)
-                  ? "bg-blue-50 border-blue-300"
-                  : "bg-gray-50 border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <div className="flex justify-between items-start mb-2">
-                <h4 className="font-semibold text-gray-900 text-sm">{analogy.domain}</h4>
-                <button
-                  onClick={() => toggleStar(i)}
-                  className={`text-sm font-medium px-2 py-0.5 rounded transition-colors inline-flex items-center gap-1 ${
-                    starredAnalogies.has(i)
-                      ? "text-blue-600 bg-blue-100"
-                      : "text-gray-400 hover:text-gray-600"
-                  }`}
-                >
-                  <i className={`bi ${starredAnalogies.has(i) ? "bi-star-fill" : "bi-star"}`} />
-                  {starredAnalogies.has(i) ? t("explore.starred") : t("explore.star")}
-                </button>
-              </div>
-              <p className="text-gray-600 text-sm mb-2">{analogy.description}</p>
-              {analogy.semantic_distance && (
-                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-flex items-center gap-1">
-                  <i className="bi bi-rulers text-[10px]" />
-                  {analogy.semantic_distance}
-                </span>
-              )}
+
+        {hasResonanceData && totalAnalogies > 0 && analogy ? (
+          /* ── Carousel mode (with resonance data) ── */
+          <div className="flex flex-col items-center">
+            {/* Progress dots */}
+            <div className="flex items-center gap-1.5 mb-4">
+              {data.analogies.map((_, i) => {
+                const responded = analogyResponses.has(i);
+                const resonated = (analogyResponses.get(i) ?? 0) > 0;
+                const dotColor = resonated
+                  ? "bg-blue-500"
+                  : responded
+                    ? "bg-gray-400"
+                    : "bg-gray-300";
+                const ring = i === currentCard ? "ring-2 ring-blue-400 ring-offset-1" : "";
+                return (
+                  <button
+                    key={i}
+                    onClick={() => goToCard(i, i > currentCard ? "right" : "left")}
+                    className={`w-2.5 h-2.5 rounded-full transition-all ${dotColor} ${ring}`}
+                    aria-label={`Analogy ${i + 1}`}
+                  />
+                );
+              })}
             </div>
-          ))}
-        </div>
+
+            {/* Card + navigation */}
+            <div className="flex items-center gap-3 w-full max-w-lg">
+              {/* Prev arrow */}
+              <button
+                onClick={goPrev}
+                disabled={isFirstCard}
+                className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                  isFirstCard
+                    ? "text-gray-300 cursor-not-allowed"
+                    : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                }`}
+                aria-label="Previous analogy"
+              >
+                <i className="bi bi-chevron-left text-lg" />
+              </button>
+
+              {/* Card */}
+              <div
+                key={currentCard}
+                className={`flex-1 p-5 rounded-lg text-center ${animationClass}`}
+              >
+                <p className="text-xs text-gray-400 font-medium mb-2">
+                  {currentCard + 1} / {totalAnalogies}
+                </p>
+
+                {/* Domain + distance badge */}
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <h4 className="font-semibold text-gray-900 text-sm">{analogy.domain}</h4>
+                  {analogy.semantic_distance && (
+                    <span className={`text-xs px-2 py-0.5 rounded border inline-flex items-center gap-1 ${distanceBadgeColor(analogy.semantic_distance)}`}>
+                      <i className="bi bi-rulers text-[10px]" />
+                      {analogy.semantic_distance}
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-gray-600 text-sm leading-relaxed mb-3">
+                  {analogy.description}
+                </p>
+
+                {/* Resonance prompt */}
+                {analogy.resonance_prompt && (
+                  <p className="text-gray-500 text-sm italic mb-4">
+                    {analogy.resonance_prompt}
+                  </p>
+                )}
+
+                {/* Resonance option buttons */}
+                {analogy.resonance_options && analogy.resonance_options.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    {analogy.resonance_options.map((option, optIdx) => {
+                      const selected = analogyResponses.get(currentCard) === optIdx;
+                      return (
+                        <button
+                          key={optIdx}
+                          onClick={() => selectOption(currentCard, optIdx)}
+                          className={`w-full px-4 py-2 rounded-md text-xs font-medium transition-all text-left ${
+                            selected
+                              ? optIdx === 0
+                                ? "bg-gray-400 text-white shadow-sm shadow-gray-200"
+                                : "bg-blue-500 text-white shadow-sm shadow-blue-200"
+                              : "bg-white border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600"
+                          }`}
+                        >
+                          {option}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Next arrow */}
+              <button
+                onClick={goNext}
+                disabled={isLastCard}
+                className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                  isLastCard
+                    ? "text-gray-300 cursor-not-allowed"
+                    : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                }`}
+                aria-label="Next analogy"
+              >
+                <i className="bi bi-chevron-right text-lg" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* ── Grid mode (backward compat, no resonance data) ── */
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {data.analogies.map((a, i) => (
+              <div
+                key={i}
+                className={`p-4 rounded-lg border transition-all ${
+                  starredAnalogies.has(i)
+                    ? "bg-blue-50 border-blue-300"
+                    : "bg-gray-50 border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-semibold text-gray-900 text-sm">{a.domain}</h4>
+                  <button
+                    onClick={() => toggleStar(i)}
+                    className={`text-sm font-medium px-2 py-0.5 rounded transition-colors inline-flex items-center gap-1 ${
+                      starredAnalogies.has(i)
+                        ? "text-blue-600 bg-blue-100"
+                        : "text-gray-400 hover:text-gray-600"
+                    }`}
+                  >
+                    <i className={`bi ${starredAnalogies.has(i) ? "bi-star-fill" : "bi-star"}`} />
+                    {starredAnalogies.has(i) ? t("explore.starred") : t("explore.star")}
+                  </button>
+                </div>
+                <p className="text-gray-600 text-sm mb-2">{a.description}</p>
+                {a.semantic_distance && (
+                  <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-flex items-center gap-1">
+                    <i className="bi bi-rulers text-[10px]" />
+                    {a.semantic_distance}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         <input
           type="text"
           value={newDomain}
@@ -188,11 +381,11 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
       {/* ── Submit ── */}
       <button
         onClick={handleSubmit}
-        disabled={starredAnalogies.size === 0}
+        disabled={!canSubmit}
         className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg shadow-md shadow-blue-200/50 hover:shadow-lg hover:shadow-blue-300/50 transition-all inline-flex items-center justify-center gap-2"
       >
-        {starredAnalogies.size > 0
-          ? t("explore.submitReview", { count: starredAnalogies.size })
+        {canSubmit
+          ? t("explore.submitReview", { count: hasResonanceData ? resonatedCount : starredAnalogies.size })
           : t("explore.submitReviewNone")}
       </button>
     </div>

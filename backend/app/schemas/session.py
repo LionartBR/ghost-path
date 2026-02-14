@@ -49,6 +49,12 @@ class AssumptionResponse(BaseModel):
     selected_option: int = Field(ge=0)
 
 
+class AnalogyResponse(BaseModel):
+    """Per-analogy user resonance response during explore_review."""
+    analogy_index: int = Field(ge=0)
+    selected_option: int = Field(ge=0)
+
+
 class ClaimFeedback(BaseModel):
     """Per-claim user feedback during claims_review."""
     claim_index: int = Field(ge=0)  # upper bound checked by check_claim_index_valid()
@@ -95,7 +101,8 @@ class UserInput(BaseModel):
     added_reframings: list[str] | None = None
 
     # type == "explore_review"
-    starred_analogies: list[int] | None = None
+    analogy_responses: list[AnalogyResponse] | None = None
+    starred_analogies: list[int] | None = None  # backward compat
     suggested_domains: list[str] | None = None
     added_contradictions: list[str] | None = None
     added_parameters: list[dict] | None = None
@@ -125,11 +132,19 @@ class UserInput(BaseModel):
                 )
 
         elif self.type == "explore_review":
+            # ADR: analogy_responses (new) OR starred_analogies (backward compat)
+            has_resonance = (
+                self.analogy_responses
+                and any(r.selected_option > 0 for r in self.analogy_responses)
+            )
             has_starred = (
                 self.starred_analogies and len(self.starred_analogies) > 0
             )
-            if not has_starred:
-                raise ValueError("explore_review requires >= 1 starred analogy")
+            if not (has_resonance or has_starred):
+                raise ValueError(
+                    "explore_review requires >= 1 analogy with resonance "
+                    "(selected_option > 0) or >= 1 starred analogy",
+                )
 
         elif self.type == "claims_review":
             if not self.claim_feedback:

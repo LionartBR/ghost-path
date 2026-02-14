@@ -17,6 +17,15 @@ from app.core.forge_state import ForgeState
 from app.core import format_messages_pt_br as _pt_br
 
 
+def _resp_attr(obj, name: str, default=None):
+    """Get attribute or dict key — handles both Pydantic models and dicts."""
+    if hasattr(obj, name):
+        return getattr(obj, name)
+    if isinstance(obj, dict):
+        return obj.get(name, default)
+    return default
+
+
 # ---------------------------------------------------------------------------
 # Phase 1 context (DECOMPOSE -> EXPLORE)
 # ---------------------------------------------------------------------------
@@ -81,10 +90,15 @@ def build_phase2_context(
     state: ForgeState,
     locale: Locale,
     starred_analogies: list[int] | None = None,
+    *,
+    analogy_responses: list | None = None,
 ) -> str:
     """Phase 2 summary for Phase 3 context. Uses indices for starred analogies
     (not yet set in state at format time). Reads selected_reframings from state
     (already set by prior _apply_user_input).
+
+    ADR: analogy_responses (new) preferred over starred_analogies (legacy).
+    When present, includes user's resonance articulation for richer Phase 3 context.
     """
     pt = locale == Locale.PT_BR
     parts: list[str] = []
@@ -97,8 +111,32 @@ def build_phase2_context(
         for r in sel_reframings[:3]:
             parts.append(f"  - {r.get('text', '')[:120]}")
 
-    # Starred analogies by index (NOT yet set in state)
-    if starred_analogies and state.cross_domain_analogies:
+    # Analogy responses with resonance text (new path)
+    if analogy_responses and state.cross_domain_analogies:
+        label = (
+            "Respostas às analogias:" if pt
+            else "Analogy responses:"
+        )
+        parts.append(label)
+        for resp in analogy_responses:
+            idx = _resp_attr(resp, "analogy_index", 0)
+            opt_idx = _resp_attr(resp, "selected_option", 0)
+            if opt_idx == 0:
+                continue  # no structural connection — skip
+            if 0 <= idx < len(state.cross_domain_analogies):
+                a = state.cross_domain_analogies[idx]
+                domain = a.get("domain", "")
+                desc = a.get("description", "")[:80]
+                options = a.get("resonance_options", [])
+                opt_text = (
+                    options[opt_idx] if opt_idx < len(options)
+                    else f"option {opt_idx}"
+                )
+                parts.append(f"  - [{domain}] {desc}")
+                parts.append(f"    User resonance: '{opt_text}'")
+
+    # Starred analogies by index — backward compat (NOT yet set in state)
+    elif starred_analogies and state.cross_domain_analogies:
         label = "Analogias marcadas:" if pt else "Starred analogies:"
         parts.append(label)
         for idx in starred_analogies:

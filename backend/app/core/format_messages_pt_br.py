@@ -21,6 +21,7 @@ LABELS_PT_BR: dict[str, str] = {
     "selected_reframings": "Reformulações selecionadas: índices",
     "added_reframings": "Reformulações adicionadas:",
     "reviewed_exploration": "O usuário revisou a exploração:",
+    "analogy_responses": "Respostas às analogias:",
     "starred_analogies": "Analogias marcadas: índices",
     "suggested_domains": "Domínios sugeridos para busca:",
     "added_contradictions": "Contradições adicionadas:",

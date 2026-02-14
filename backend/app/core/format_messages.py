@@ -31,6 +31,7 @@ def _labels(locale: Locale) -> dict[str, str]:
         "selected_reframings": "Selected reframings: indices",
         "added_reframings": "Added reframings:",
         "reviewed_exploration": "The user reviewed the exploration:",
+        "analogy_responses": "Analogy responses:",
         "starred_analogies": "Starred analogies: indices",
         "suggested_domains": "Suggested domains to search:",
         "added_contradictions": "Added contradictions:",
@@ -61,6 +62,7 @@ def format_user_input(
     added_assumptions: list[str] | None = None,
     selected_reframings: list[int] | None = None,
     added_reframings: list[str] | None = None,
+    analogy_responses: list | None = None,
     starred_analogies: list[int] | None = None,
     suggested_domains: list[str] | None = None,
     added_contradictions: list[str] | None = None,
@@ -91,6 +93,7 @@ def format_user_input(
                 locale_prefix, pt, lbl, forge_state,
                 starred_analogies, suggested_domains,
                 added_contradictions, locale,
+                analogy_responses=analogy_responses,
             )
         case "claims_review":
             return _format_claims_review(
@@ -156,12 +159,14 @@ def _format_decompose_review(
 def _format_explore_review(
     prefix, pt, lbl, forge_state,
     starred, suggested, added_contradictions, locale,
+    *, analogy_responses=None,
 ):
     """Format explore_review input."""
     parts = [prefix, f"\n{lbl['reviewed_exploration']}"]
     if forge_state:
         ctx = _digest.build_phase2_context(
             forge_state, locale, starred,
+            analogy_responses=analogy_responses,
         )
         if ctx:
             parts.append(ctx)

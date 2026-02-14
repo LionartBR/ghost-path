@@ -171,6 +171,75 @@ def test_phase2_truncates_morph_params_to_5():
 
 
 # ---------------------------------------------------------------------------
+# Phase 2 — Analogy Resonance (new path)
+# ---------------------------------------------------------------------------
+
+def test_phase2_resonance_includes_option_text():
+    """analogy_responses with selected_option > 0 injects resonance text."""
+    state = ForgeState()
+    state.cross_domain_analogies = [
+        {
+            "domain": "Ant Colony",
+            "description": "Pheromone coordination",
+            "resonance_options": [
+                "No structural connection",
+                "Surface similarity",
+                "Deep structural match — pheromone trail ≈ routing",
+            ],
+        },
+    ]
+    responses = [{"analogy_index": 0, "selected_option": 2}]
+    result = build_phase2_context(
+        state, Locale.EN, analogy_responses=responses,
+    )
+    assert "Ant Colony" in result
+    assert "Deep structural match" in result
+    assert "User resonance:" in result
+
+
+def test_phase2_resonance_excludes_option_zero():
+    """analogy_responses with selected_option == 0 are skipped (no connection)."""
+    state = ForgeState()
+    state.cross_domain_analogies = [
+        {
+            "domain": "Music",
+            "description": "Harmonic patterns",
+            "resonance_options": ["No connection", "Partial", "Deep"],
+        },
+        {
+            "domain": "Biology",
+            "description": "Immune response",
+            "resonance_options": ["No connection", "Partial", "Deep"],
+        },
+    ]
+    responses = [
+        {"analogy_index": 0, "selected_option": 0},  # skipped
+        {"analogy_index": 1, "selected_option": 1},  # included
+    ]
+    result = build_phase2_context(
+        state, Locale.EN, analogy_responses=responses,
+    )
+    assert "Music" not in result
+    assert "Biology" in result
+    assert "Partial" in result
+
+
+def test_phase2_resonance_falls_back_to_starred():
+    """When analogy_responses is None, falls back to starred_analogies path."""
+    state = ForgeState()
+    state.cross_domain_analogies = [
+        {"domain": "Architecture", "description": "Load bearing", "starred": False},
+        {"domain": "Ecology", "description": "Ecosystem balance", "starred": False},
+    ]
+    result = build_phase2_context(
+        state, Locale.EN, starred_analogies=[1],
+    )
+    assert "Ecology" in result
+    assert "Architecture" not in result
+    assert "User resonance:" not in result
+
+
+# ---------------------------------------------------------------------------
 # Phase 3 (SYNTHESIZE -> VALIDATE)
 # ---------------------------------------------------------------------------
 
