@@ -190,7 +190,6 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
         disabled={starredAnalogies.size === 0}
         className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg shadow-md shadow-blue-200/50 hover:shadow-lg hover:shadow-blue-300/50 transition-all inline-flex items-center justify-center gap-2"
       >
-        <i className="bi bi-send" />
         {starredAnalogies.size > 0
           ? t("explore.submitReview", { count: starredAnalogies.size })
           : t("explore.submitReviewNone")}

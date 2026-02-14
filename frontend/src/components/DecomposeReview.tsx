@@ -309,7 +309,6 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
         disabled={selectedReframings.size === 0}
         className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/50 transition-all inline-flex items-center justify-center gap-2"
       >
-        <i className="bi bi-send" />
         {selectedReframings.size > 0
           ? t("decompose.submitReview")
           : t("decompose.submitReview")}
