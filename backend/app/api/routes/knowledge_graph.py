@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.database import get_db
 from app.schemas.graph import GraphData, GraphNode, GraphEdge, ClaimNodeData, ClaimScores
+from app.core.forge_state import ForgeState
 from app.api.routes.session_lifecycle import (
     _forge_states, get_session_or_404,
 )
@@ -30,8 +31,13 @@ async def get_knowledge_graph(
     session_id: UUID, db: AsyncSession = Depends(get_db),
 ):
     """Get current Knowledge Graph for React Flow rendering."""
-    await get_session_or_404(session_id, db)
+    session = await get_session_or_404(session_id, db)
+
+    # Try in-memory first, fall back to DB snapshot
     forge_state = _forge_states.get(session_id)
+    if not forge_state and session.forge_state_snapshot:
+        forge_state = ForgeState.from_snapshot(session.forge_state_snapshot)
+        _forge_states[session_id] = forge_state
 
     if not forge_state:
         return GraphData(nodes=[], edges=[])

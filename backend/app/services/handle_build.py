@@ -10,10 +10,13 @@ Design Decisions:
     - Also persisted to DB via ClaimEdge model for API retrieval
 """
 
+import uuid as uuid_mod
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.forge_state import ForgeState
 from app.core.enforce_claims import validate_graph_addition
+from app.models.claim_edge import ClaimEdge
 
 
 class BuildHandlers:
@@ -50,14 +53,29 @@ class BuildHandlers:
         }
         self.state.knowledge_graph_nodes.append(node)
 
-        # Add edges
+        # Add edges to ForgeState + persist to DB
         for edge in edges:
+            target_id = edge.get("target_claim_id", "")
+            edge_type = edge.get("edge_type", "supports")
             edge_data = {
                 "source": node["id"],
-                "target": edge.get("target_claim_id", ""),
-                "type": edge.get("edge_type", "supports"),
+                "target": target_id,
+                "type": edge_type,
             }
             self.state.knowledge_graph_edges.append(edge_data)
+
+            # Persist ClaimEdge to DB (never crashes)
+            source_id = claim_data.get("claim_id")
+            if source_id and target_id:
+                try:
+                    self.db.add(ClaimEdge(
+                        session_id=session.id,
+                        source_claim_id=uuid_mod.UUID(source_id),
+                        target_claim_id=uuid_mod.UUID(target_id),
+                        edge_type=edge_type,
+                    ))
+                except (ValueError, KeyError):
+                    pass  # Skip invalid UUIDs
 
         return {
             "status": "ok",

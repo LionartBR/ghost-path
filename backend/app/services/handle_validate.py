@@ -11,6 +11,9 @@ Design Decisions:
     - Scores update both ForgeState and DB claim records
 """
 
+import uuid as uuid_mod
+
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.forge_state import ForgeState
@@ -19,6 +22,7 @@ from app.core.enforce_claims import (
     check_claim_index_valid,
     validate_scoring_prerequisites,
 )
+from app.models.knowledge_claim import KnowledgeClaim
 
 
 class ValidateHandlers:
@@ -103,7 +107,7 @@ class ValidateHandlers:
         significance_score = input_data.get("significance_score", 0.0)
         reasoning = input_data.get("reasoning", "")
 
-        # Update claim in buffer
+        # Update claim in ForgeState buffer
         if claim_index < len(self.state.current_round_claims):
             claim = self.state.current_round_claims[claim_index]
             claim["scores"] = {
@@ -113,6 +117,14 @@ class ValidateHandlers:
                 "significance": significance_score,
             }
             claim["score_reasoning"] = reasoning
+
+            # Persist scores to DB (impureim: write after pure update)
+            claim_id = claim.get("claim_id")
+            if claim_id:
+                await self._update_claim_scores(
+                    claim_id, novelty_score, groundedness_score,
+                    falsifiability_score, significance_score,
+                )
 
         return {
             "status": "ok",
@@ -125,3 +137,23 @@ class ValidateHandlers:
             },
             "reasoning": reasoning,
         }
+
+    async def _update_claim_scores(
+        self, claim_id: str, novelty: float, groundedness: float,
+        falsifiability: float, significance: float,
+    ) -> None:
+        """Persist scores to KnowledgeClaim record. Never crashes."""
+        try:
+            result = await self.db.execute(
+                select(KnowledgeClaim).where(
+                    KnowledgeClaim.id == uuid_mod.UUID(claim_id),
+                ),
+            )
+            db_claim = result.scalar_one_or_none()
+            if db_claim:
+                db_claim.novelty_score = novelty
+                db_claim.groundedness_score = groundedness
+                db_claim.falsifiability_score = falsifiability
+                db_claim.significance_score = significance
+        except Exception:
+            pass  # Handler never crashes — committed by agent_runner

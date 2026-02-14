@@ -18,10 +18,12 @@ import asyncio
 import json
 import os
 import logging
+import uuid as uuid_mod
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse, FileResponse
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.database import get_db
@@ -30,13 +32,34 @@ from app.schemas.session import UserInput
 from app.services.agent_runner import AgentRunner
 from app.core.forge_state import ForgeState
 from app.core.domain_types import Phase, SessionStatus
+from app.models.knowledge_claim import KnowledgeClaim
 from app.config import get_settings
 from app.api.routes.session_lifecycle import (
     _forge_states, get_session_or_404,
 )
+from app.models.session import Session as SessionModel
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])
+
+
+def _get_or_restore_forge_state(
+    session_id: UUID, session: SessionModel,
+) -> ForgeState:
+    """Return in-memory ForgeState or restore from DB snapshot.
+
+    Lookup order: _forge_states dict → session.forge_state_snapshot → new default.
+    """
+    if session_id in _forge_states:
+        return _forge_states[session_id]
+    if session.forge_state_snapshot:
+        state = ForgeState.from_snapshot(session.forge_state_snapshot)
+        _forge_states[session_id] = state
+        logger.info("Restored ForgeState from DB snapshot (session=%s)", session_id)
+        return state
+    state = ForgeState()
+    _forge_states[session_id] = state
+    return state
 
 
 @router.get("/{session_id}/stream")
@@ -45,7 +68,7 @@ async def stream_session(
 ):
     """Initial SSE stream: triggers Phase 1 (DECOMPOSE)."""
     session = await get_session_or_404(session_id, db)
-    forge_state = _forge_states.setdefault(session_id, ForgeState())
+    forge_state = _get_or_restore_forge_state(session_id, session)
     runner = _create_runner(db)
 
     async def event_generator():
@@ -90,7 +113,7 @@ async def send_user_input(
 ):
     """Send user input — dispatches to phase-appropriate processing."""
     session = await get_session_or_404(session_id, db)
-    forge_state = _forge_states.setdefault(session_id, ForgeState())
+    forge_state = _get_or_restore_forge_state(session_id, session)
     runner = _create_runner(db)
 
     message = _format_user_input(body, forge_state)
@@ -310,6 +333,12 @@ async def _apply_user_input(
                             })
                         claim["verdict"] = v.verdict
                         claim["qualification"] = v.qualification
+
+                        # Persist verdict to DB
+                        await _update_claim_verdict(
+                            db, claim.get("claim_id"), v.verdict,
+                            v.rejection_reason, v.qualification,
+                        )
             state.transition_to(Phase.BUILD)
             session.message_history = []
             await _sync_state_to_db(session, state, db)
@@ -327,6 +356,36 @@ async def _apply_user_input(
                 state.transition_to(Phase.CRYSTALLIZE)
                 session.message_history = []
                 await _sync_state_to_db(session, state, db)
+
+
+async def _update_claim_verdict(
+    db: AsyncSession, claim_id: str | None, verdict: str,
+    rejection_reason: str | None, qualification: str | None,
+) -> None:
+    """Persist user verdict to KnowledgeClaim record. Never crashes."""
+    if not claim_id:
+        return
+    try:
+        _VERDICT_TO_STATUS = {
+            "accept": "validated",
+            "reject": "rejected",
+            "qualify": "qualified",
+            "merge": "superseded",
+        }
+        result = await db.execute(
+            select(KnowledgeClaim).where(
+                KnowledgeClaim.id == uuid_mod.UUID(claim_id),
+            ),
+        )
+        db_claim = result.scalar_one_or_none()
+        if db_claim:
+            db_claim.status = _VERDICT_TO_STATUS.get(verdict, db_claim.status)
+            if rejection_reason:
+                db_claim.rejection_reason = rejection_reason
+            if qualification:
+                db_claim.qualification = qualification
+    except Exception as e:
+        logger.warning(f"Failed to update claim verdict: {e}")
 
 
 async def _sync_state_to_db(
@@ -349,6 +408,7 @@ async def _sync_state_to_db(
     session.current_phase = phase_list.index(state.current_phase) + 1
     session.current_round = state.current_round
     session.status = _PHASE_TO_STATUS[state.current_phase].value
+    session.forge_state_snapshot = state.to_snapshot()
     try:
         await db.commit()
     except Exception as e:

@@ -147,6 +147,124 @@ class ForgeState:
             "result_summary": result_summary,
         })
 
+    # --- Snapshot (serialization / deserialization) ---------------------------
+
+    def to_snapshot(self) -> dict:
+        """Serialize ForgeState to JSON-safe dict. Pure, no IO.
+
+        Sets are converted to sorted lists; Enums to their .value strings.
+        Transient pause flags (awaiting_*) are excluded — they are
+        session-scoped and reset on reconnect.
+        """
+        return {
+            "current_phase": self.current_phase.value,
+            "current_round": self.current_round,
+            "locale": self.locale.value,
+            "locale_confidence": self.locale_confidence,
+            "web_searches_this_phase": self.web_searches_this_phase,
+            # Phase 1
+            "fundamentals": self.fundamentals,
+            "state_of_art_researched": self.state_of_art_researched,
+            "assumptions": self.assumptions,
+            "reframings": self.reframings,
+            "user_added_assumptions": self.user_added_assumptions,
+            "user_added_reframings": self.user_added_reframings,
+            # Phase 2
+            "morphological_box": self.morphological_box,
+            "cross_domain_analogies": self.cross_domain_analogies,
+            "cross_domain_search_count": self.cross_domain_search_count,
+            "contradictions": self.contradictions,
+            "adjacent_possible": self.adjacent_possible,
+            # Phase 3
+            "current_round_claims": self.current_round_claims,
+            "theses_stated": self.theses_stated,
+            "antitheses_searched": sorted(self.antitheses_searched),
+            # Phase 4
+            "falsification_attempted": sorted(self.falsification_attempted),
+            "novelty_checked": sorted(self.novelty_checked),
+            # Phase 5
+            "knowledge_graph_nodes": self.knowledge_graph_nodes,
+            "knowledge_graph_edges": self.knowledge_graph_edges,
+            "negative_knowledge": self.negative_knowledge,
+            "gaps": self.gaps,
+            "negative_knowledge_consulted": self.negative_knowledge_consulted,
+            "previous_claims_referenced": self.previous_claims_referenced,
+            # Deep-dive
+            "deep_dive_active": self.deep_dive_active,
+            "deep_dive_target_claim_id": self.deep_dive_target_claim_id,
+            # Phase 6
+            "knowledge_document_markdown": self.knowledge_document_markdown,
+        }
+
+    @classmethod
+    def from_snapshot(cls, data: dict) -> "ForgeState":
+        """Reconstruct ForgeState from snapshot dict. Pure, no IO.
+
+        Missing keys fall back to ForgeState defaults. Lists are converted
+        back to sets for set-typed fields.
+        """
+        state = cls()
+        if not data:
+            return state
+
+        # Phase tracking
+        phase_val = data.get("current_phase")
+        if phase_val:
+            state.current_phase = Phase(phase_val)
+        state.current_round = data.get("current_round", 0)
+
+        locale_val = data.get("locale")
+        if locale_val:
+            state.locale = Locale(locale_val)
+        state.locale_confidence = data.get("locale_confidence", 0.0)
+
+        state.web_searches_this_phase = data.get("web_searches_this_phase", [])
+
+        # Phase 1
+        state.fundamentals = data.get("fundamentals", [])
+        state.state_of_art_researched = data.get("state_of_art_researched", False)
+        state.assumptions = data.get("assumptions", [])
+        state.reframings = data.get("reframings", [])
+        state.user_added_assumptions = data.get("user_added_assumptions", [])
+        state.user_added_reframings = data.get("user_added_reframings", [])
+
+        # Phase 2
+        state.morphological_box = data.get("morphological_box")
+        state.cross_domain_analogies = data.get("cross_domain_analogies", [])
+        state.cross_domain_search_count = data.get("cross_domain_search_count", 0)
+        state.contradictions = data.get("contradictions", [])
+        state.adjacent_possible = data.get("adjacent_possible", [])
+
+        # Phase 3
+        state.current_round_claims = data.get("current_round_claims", [])
+        state.theses_stated = data.get("theses_stated", 0)
+        state.antitheses_searched = set(data.get("antitheses_searched", []))
+
+        # Phase 4
+        state.falsification_attempted = set(data.get("falsification_attempted", []))
+        state.novelty_checked = set(data.get("novelty_checked", []))
+
+        # Phase 5
+        state.knowledge_graph_nodes = data.get("knowledge_graph_nodes", [])
+        state.knowledge_graph_edges = data.get("knowledge_graph_edges", [])
+        state.negative_knowledge = data.get("negative_knowledge", [])
+        state.gaps = data.get("gaps", [])
+        state.negative_knowledge_consulted = data.get(
+            "negative_knowledge_consulted", False,
+        )
+        state.previous_claims_referenced = data.get(
+            "previous_claims_referenced", False,
+        )
+
+        # Deep-dive
+        state.deep_dive_active = data.get("deep_dive_active", False)
+        state.deep_dive_target_claim_id = data.get("deep_dive_target_claim_id")
+
+        # Phase 6
+        state.knowledge_document_markdown = data.get("knowledge_document_markdown")
+
+        return state
+
     # --- Per-round reset (called when BUILD -> SYNTHESIZE) --------------------
 
     def reset_for_new_round(self) -> None:

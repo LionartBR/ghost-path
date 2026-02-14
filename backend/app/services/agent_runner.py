@@ -97,13 +97,14 @@ class AgentRunner:
                     yield _done_event(error=True)
                     return
 
-                # -- Update token usage --
+                # -- Update token usage + snapshot --
                 try:
                     tokens = (
                         response.usage.input_tokens
                         + response.usage.output_tokens
                     )
                     session.total_tokens_used += tokens
+                    session.forge_state_snapshot = forge_state.to_snapshot()
                     await self.db.commit()
                 except Exception as e:
                     logger.error(f"Failed to update token usage: {e}")
@@ -210,9 +211,10 @@ class AgentRunner:
                     yield {"type": "agent_text", "data": text}
 
                 if not has_tool_use:
-                    # Save message history on normal completion (not just pause)
+                    # Save message history + snapshot on normal completion
                     try:
                         session.message_history = messages
+                        session.forge_state_snapshot = forge_state.to_snapshot()
                         await self.db.commit()
                     except Exception as e:
                         logger.error(f"Failed to save message history: {e}")
@@ -273,6 +275,7 @@ class AgentRunner:
                 if should_pause:
                     try:
                         session.message_history = messages
+                        session.forge_state_snapshot = forge_state.to_snapshot()
                         await self.db.commit()
                     except Exception as e:
                         logger.error(f"Failed to save message history: {e}")
