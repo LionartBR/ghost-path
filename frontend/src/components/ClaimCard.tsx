@@ -78,7 +78,7 @@ export default function ClaimCard({ claim, index, compact = false }: ClaimCardPr
     (claim.evidence && claim.evidence.length > 0) || claim.score_reasoning;
 
   return (
-    <div className={`bg-white border border-gray-200 rounded-lg shadow-sm border-l-4 ${borderColor}`}>
+    <div className={`bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 border-l-4 ${borderColor}`}>
       <div className={compact ? "p-4" : "p-5"}>
         {/* Header */}
         <div className="flex items-center gap-3 mb-3">
@@ -111,13 +111,13 @@ export default function ClaimCard({ claim, index, compact = false }: ClaimCardPr
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-gray-500 capitalize">{t(SCORE_KEY[key] || key)}</span>
                     <span className="text-xs text-gray-700 font-semibold tabular-nums">
-                      {Math.round(value * 10)}%
+                      {Math.round(value * 100)}%
                     </span>
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-1.5">
                     <div
                       className={`${SCORE_COLORS[key] || "bg-indigo-500"} h-1.5 rounded-full transition-all duration-300`}
-                      style={{ width: `${value * 10}%` }}
+                      style={{ width: `${value * 100}%` }}
                     />
                   </div>
                 </div>

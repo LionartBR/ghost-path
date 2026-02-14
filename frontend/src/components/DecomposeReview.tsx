@@ -65,7 +65,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
   };
 
   return (
-    <div className="space-y-5 p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+    <div className="space-y-5 p-6 bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40">
       <div>
         <button
           onClick={() => setFundamentalsOpen(!fundamentalsOpen)}
@@ -155,7 +155,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
 
       <button
         onClick={handleSubmit}
-        className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-md transition-colors"
+        className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/50 transition-all"
       >
         {t("decompose.submitReview")}
       </button>

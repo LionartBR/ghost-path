@@ -32,7 +32,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
   };
 
   return (
-    <div className="space-y-5 p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+    <div className="space-y-5 p-6 bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40">
       {data.morphological_box && (
         <div>
           <button
@@ -155,7 +155,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
       <button
         onClick={handleSubmit}
         disabled={starredAnalogies.size === 0}
-        className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-medium text-sm rounded-md transition-colors"
+        className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg shadow-md shadow-blue-200/50 hover:shadow-lg hover:shadow-blue-300/50 transition-all"
       >
         {starredAnalogies.size > 0
           ? t("explore.submitReview", { count: starredAnalogies.size })

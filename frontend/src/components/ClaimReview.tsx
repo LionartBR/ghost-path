@@ -51,7 +51,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
 
   return (
     <div className="space-y-5">
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
+      <div className="bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-1">
           {t("claims.title")}
         </h2>
@@ -63,7 +63,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
       {claims.map((claim, i) => (
         <div key={i} className="space-y-3">
           <ClaimCard claim={claim} index={i} />
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 space-y-3">
+          <div className="bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 p-5 space-y-3">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -125,7 +125,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
 
       <button
         onClick={handleSubmit}
-        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2.5 px-6 rounded-md transition-colors"
+        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-3 px-6 rounded-lg shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/50 transition-all"
       >
         {t("claims.submit")}
       </button>

@@ -37,7 +37,7 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
   const hasActivity = activityItems.length > 0;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm h-96 flex flex-col">
+    <div className="bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 h-96 flex flex-col">
       <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
         <h3 className="text-sm font-semibold text-gray-900">{t("agent.title")}</h3>
         {isStreaming && (

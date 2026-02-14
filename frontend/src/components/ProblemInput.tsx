@@ -32,9 +32,10 @@ export function ProblemInput({ onSubmit, loading, exampleProblem }: Props) {
           id="problem"
           value={problem}
           onChange={(e) => setProblem(e.target.value)}
-          className="w-full p-4 bg-gray-50/50 border border-gray-200 text-gray-900 rounded-xl
-                     text-sm resize-none focus:ring-2 focus:ring-indigo-500
-                     focus:border-transparent placeholder-gray-400 transition-all"
+          className="w-full p-4 bg-gray-50/30 border border-gray-200 text-gray-900 rounded-xl
+                     text-sm resize-none focus:ring-2 focus:ring-indigo-400/50
+                     focus:border-indigo-300 placeholder-gray-400 transition-all
+                     hover:border-gray-300"
           style={{ height: 136 }}
           placeholder={t("problemInput.placeholder")}
           disabled={loading}
@@ -54,13 +55,14 @@ export function ProblemInput({ onSubmit, loading, exampleProblem }: Props) {
         <button
           type="button"
           onClick={() => setProblem(exampleProblem)}
-          className="w-full text-left px-4 py-3 bg-indigo-50 hover:bg-indigo-100
-                     rounded-xl text-sm transition-colors group"
+          className="w-full text-left px-4 py-3 bg-indigo-50/70 hover:bg-indigo-50
+                     rounded-xl text-sm transition-all group border border-indigo-100/60
+                     hover:border-indigo-200/80"
         >
           <span className="text-indigo-400 text-xs font-medium uppercase tracking-wide">
             {t("problemInput.tryExample")}
           </span>
-          <p className="text-indigo-700 mt-0.5 leading-snug">
+          <p className="text-indigo-700 mt-1 leading-snug">
             &ldquo;{exampleProblem}&rdquo;
           </p>
         </button>
@@ -70,7 +72,9 @@ export function ProblemInput({ onSubmit, loading, exampleProblem }: Props) {
         type="submit"
         disabled={loading || problem.trim().length < 10}
         className="w-full py-3.5 bg-indigo-600 text-white font-semibold rounded-xl
-                   hover:bg-indigo-700 disabled:bg-gray-100 disabled:text-gray-400
+                   hover:bg-indigo-700 active:bg-indigo-800
+                   shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/50
+                   disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none
                    disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
       >
         {loading ? (

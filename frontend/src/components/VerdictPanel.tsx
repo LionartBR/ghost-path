@@ -79,7 +79,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
 
   return (
     <div className="space-y-5">
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
+      <div className="bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-1">
           {t("verdicts.title")}
         </h2>
@@ -94,7 +94,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
         return (
           <div key={i} className="space-y-3">
             <ClaimCard claim={claim} index={i} />
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 space-y-3">
+            <div className="bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 p-5 space-y-3">
               <div className="grid grid-cols-4 gap-2">
                 {(["accept", "reject", "qualify", "merge"] as VerdictType[]).map((v) => (
                   <button
@@ -173,7 +173,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
 
       <button
         onClick={handleSubmit}
-        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2.5 px-6 rounded-md transition-colors"
+        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-3 px-6 rounded-lg shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/50 transition-all"
       >
         {t("verdicts.submit")}
       </button>

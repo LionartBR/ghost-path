@@ -47,17 +47,18 @@ export function SessionPage() {
     !stream.knowledgeDocument;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-slate-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-3">
+      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200/80 px-6 py-3 sticky top-0 z-20 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate("/")}
-              className="text-gray-900 text-lg font-bold tracking-tight hover:text-indigo-600 transition-colors"
+              className="text-gray-900 text-lg font-extrabold tracking-tight hover:text-indigo-600 transition-colors"
             >
               TRIZ
             </button>
+            <div className="h-4 w-px bg-gray-200" />
             <span className="text-xs text-gray-400 font-mono">{sessionId?.slice(0, 8)}</span>
           </div>
           <div className="flex items-center gap-3">
@@ -76,14 +77,14 @@ export function SessionPage() {
       </header>
 
       {/* Phase Timeline */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white border-b border-gray-200/60">
         <div className="max-w-7xl mx-auto px-6">
           <PhaseTimeline currentPhase={stream.currentPhase as Phase | null} />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         <div className={`grid gap-6 ${showGraph ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-1"}`}>
           {/* Left: Review panels + Agent activity */}
           <div className={`space-y-5 ${showGraph ? "lg:col-span-2" : ""}`}>
@@ -141,8 +142,8 @@ export function SessionPage() {
 
             {/* Waiting state — ASCII mascot with mouse interaction */}
             {showNothing && stream.isStreaming && (
-              <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8 text-center">
-                <div className="flex justify-center mb-4">
+              <div className="bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 p-10 text-center">
+                <div className="flex justify-center mb-5">
                   <TrizMascot />
                 </div>
                 <p className="text-sm font-medium animate-shimmer">{t("agent.working")}</p>

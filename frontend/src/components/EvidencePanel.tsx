@@ -20,7 +20,7 @@ export default function EvidencePanel({ evidence }: EvidencePanelProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    <div className="bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full px-5 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"

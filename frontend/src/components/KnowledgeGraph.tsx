@@ -49,7 +49,7 @@ export default function KnowledgeGraph({ data }: KnowledgeGraphProps) {
   };
 
   return (
-    <div className="w-full h-full bg-white border border-gray-200 rounded-lg shadow-sm overflow-auto">
+    <div className="w-full h-full bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 overflow-auto">
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-gray-900">{t("graph.title")}</h2>
         <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-medium">

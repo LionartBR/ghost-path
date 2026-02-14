@@ -56,7 +56,7 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
 
   return (
     <div className="space-y-5">
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
+      <div className="bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-1">
           {t("build.title", { round: data.round })}
         </h2>
@@ -66,7 +66,7 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
       </div>
 
       {data.gaps.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
+        <div className="bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 p-5">
           <h3 className="text-sm font-semibold text-gray-900 mb-3">
             {t("build.gaps")}
           </h3>
@@ -102,7 +102,7 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
           </button>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40">
           <button
             onClick={() => setAdvancedOpen(!advancedOpen)}
             className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-600 hover:text-gray-800 transition-colors"

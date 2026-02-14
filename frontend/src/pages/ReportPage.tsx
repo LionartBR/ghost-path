@@ -51,7 +51,7 @@ export function ReportPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white border border-red-200 rounded-lg shadow-sm p-6 max-w-md">
+        <div className="bg-white border border-red-200/80 rounded-xl shadow-md shadow-gray-200/40 p-6 max-w-md">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">{t("common.error")}</h2>
           <p className="text-red-600 text-sm mb-4">{error}</p>
           <button
@@ -66,7 +66,7 @@ export function ReportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-slate-50 p-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-6 flex items-center justify-between">
           <button

@@ -82,48 +82,54 @@ export function HomePage() {
   const exampleProblem = t(`examples.${exampleIndex}`);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-16">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50/80 flex flex-col items-center justify-center px-4 py-16 relative overflow-hidden">
+      {/* Subtle radial background glow */}
+      <div
+        className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at center, rgba(199,210,254,0.35) 0%, transparent 70%)" }}
+      />
+
       {/* Language switcher */}
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-5 right-5 z-10">
         <LanguageSwitcher />
       </div>
 
-      <div className="w-full max-w-xl flex flex-col items-center">
-        {/* Decorative gradient line */}
-        <div className="w-16 h-px bg-gradient-to-r from-transparent via-indigo-400 to-transparent mb-6" />
+      <div className="w-full max-w-xl flex flex-col items-center relative z-[1]">
+        {/* Decorative gradient accent */}
+        <div className="w-12 h-1 rounded-full bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400 mb-8 opacity-60" />
 
         {/* Title */}
-        <h1 className="text-5xl font-bold text-gray-900 tracking-tight">
+        <h1 className="text-5xl font-extrabold tracking-tight bg-gradient-to-b from-gray-900 to-gray-600 bg-clip-text text-transparent">
           {t("app.name")}
         </h1>
 
         {/* Subtitle */}
-        <p className="mt-3 text-gray-500 text-center text-lg leading-relaxed">
+        <p className="mt-4 text-gray-500 text-center text-lg leading-relaxed">
           {t("app.tagline")}
         </p>
-        <p className="text-gray-400 text-center text-sm">
+        <p className="mt-1.5 text-gray-400 text-center text-sm">
           {t("app.subtitle")}
         </p>
 
         {/* Phase pipeline visualization */}
-        <div className="mt-8 flex items-center gap-0">
+        <div className="mt-10 flex items-center gap-0">
           {PHASE_KEYS.map((key, i) => (
             <div key={key} className="flex items-center">
               <div className="flex flex-col items-center">
-                <div className="w-2.5 h-2.5 rounded-full bg-indigo-300" />
-                <span className="mt-2 text-[11px] uppercase tracking-wider text-gray-400 font-medium">
+                <div className="w-3 h-3 rounded-full bg-indigo-400/50 ring-[3px] ring-indigo-100" />
+                <span className="mt-2.5 text-[11px] uppercase tracking-wider text-gray-400 font-medium">
                   {t(key)}
                 </span>
               </div>
               {i < PHASE_KEYS.length - 1 && (
-                <div className="w-8 h-px bg-gray-300 -mt-4 mx-1" />
+                <div className="w-10 h-px bg-gradient-to-r from-indigo-200 to-indigo-100 -mt-4 mx-1.5" />
               )}
             </div>
           ))}
         </div>
 
         {/* Main input card */}
-        <div className="mt-10 w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="mt-12 w-full bg-white rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100/80 p-7">
           <ProblemInput
             onSubmit={handleSubmit}
             loading={loading}
@@ -154,8 +160,8 @@ export function HomePage() {
                   <button
                     key={session.id}
                     onClick={() => navigate(`/session/${session.id}`)}
-                    className="w-full text-left bg-white hover:bg-gray-50 border border-gray-200
-                               rounded-xl p-4 transition-all group"
+                    className="w-full text-left bg-white hover:bg-gray-50/80 border border-gray-200
+                               rounded-xl p-4 transition-all group hover:shadow-sm"
                   >
                     <div className="flex items-start justify-between mb-1.5">
                       <p className="text-sm text-gray-700 line-clamp-2 leading-snug group-hover:text-gray-900 transition-colors">

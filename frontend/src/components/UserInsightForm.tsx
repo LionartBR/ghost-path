@@ -36,7 +36,7 @@ export default function UserInsightForm({ onSubmit, onCancel }: UserInsightFormP
 
   return (
     <div className="space-y-5">
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
+      <div className="bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-1">
           {t("insight.title")}
         </h2>
@@ -45,7 +45,7 @@ export default function UserInsightForm({ onSubmit, onCancel }: UserInsightFormP
         </p>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 space-y-4">
+      <div className="bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 p-5 space-y-4">
         <div>
           <label className="block text-xs text-gray-500 mb-2">
             {t("insight.label")}
@@ -98,7 +98,7 @@ export default function UserInsightForm({ onSubmit, onCancel }: UserInsightFormP
       <div className="flex gap-3">
         <button
           onClick={handleSubmit}
-          className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2.5 px-6 rounded-md transition-colors"
+          className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-3 px-6 rounded-lg shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/50 transition-all"
         >
           {t("insight.submit")}
         </button>
