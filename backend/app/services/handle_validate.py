@@ -22,6 +22,7 @@ from app.core.enforce_claims import (
     check_claim_index_valid,
     validate_scoring_prerequisites,
 )
+from app.core.repository_protocols import SessionLike
 from app.models.knowledge_claim import KnowledgeClaim
 
 
@@ -33,7 +34,7 @@ class ValidateHandlers:
         self.state = state
 
     async def attempt_falsification(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Try to disprove a claim. Gate: web_search required (Rule #15)."""
         error = check_web_search(self.state, "falsification")
@@ -63,7 +64,7 @@ class ValidateHandlers:
         }
 
     async def check_novelty(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Verify claim isn't already known. No web_search gate (Rule #6 only requires it before score_claim)."""
         claim_index = input_data.get("claim_index", 0)
@@ -87,7 +88,7 @@ class ValidateHandlers:
         }
 
     async def score_claim(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Compute scores. Gate: falsification AND novelty must be done (Rules #5, #6)."""
         claim_index = input_data.get("claim_index", 0)
@@ -152,4 +153,4 @@ class ValidateHandlers:
                 db_claim.falsifiability_score = falsifiability
                 db_claim.significance_score = significance
         except Exception:
-            pass  # Handler never crashes — committed by agent_runner
+            pass  # nosec B110

@@ -12,7 +12,7 @@ Design Decisions:
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import String, Text, DateTime, JSON, ForeignKey
+from sqlalchemy import String, DateTime, JSON, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
 

@@ -11,9 +11,8 @@ Design Decisions:
     - Prompt caching saves ~90% input tokens (ADR: Anthropic ephemeral cache_control)
 """
 
-from typing import Any
-
 from app.core.errors import ErrorSeverity
+from app.core.repository_protocols import SessionLike
 
 
 # -- SSE event builders --------------------------------------------------------
@@ -61,7 +60,7 @@ def unexpected_error_event() -> dict:
     }
 
 
-def get_context_usage(session: Any) -> dict:
+def get_context_usage(session: SessionLike) -> dict:
     max_t = 1_000_000
     used = session.total_tokens_used
     return {

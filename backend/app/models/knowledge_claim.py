@@ -74,10 +74,10 @@ class KnowledgeClaim(Base):
     )
 
     # Relationships
-    session: Mapped["Session"] = relationship(
+    session: Mapped["Session"] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "Session", back_populates="claims",
     )
-    evidence: Mapped[list["Evidence"]] = relationship(
+    evidence: Mapped[list["Evidence"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "Evidence", back_populates="claim",
         cascade="all, delete-orphan", lazy="selectin",
     )

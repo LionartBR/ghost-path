@@ -16,7 +16,6 @@ Design Decisions:
 
 from app.core.domain_types import Locale, Phase
 from app.core.forge_state import ForgeState
-from app.core.language_strings import get_phase_prefix
 from app.core import format_messages_pt_br as _pt_br
 from app.core import phase_digest as _digest
 

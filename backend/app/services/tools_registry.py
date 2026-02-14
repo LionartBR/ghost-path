@@ -12,6 +12,8 @@ Design Decisions:
     - Explicit imports from each define_*_tools.py: no auto-discovery (ADR: ExMA)
 """
 
+from typing import Any
+
 from app.core.domain_types import Phase
 from app.services.define_decompose_tools import TOOLS_DECOMPOSE
 from app.services.define_explore_tools import TOOLS_EXPLORE
@@ -25,7 +27,7 @@ from app.services.define_cross_cutting_tools import TOOLS_CROSS_CUTTING
 # ADR: web_search is an Anthropic built-in tool (server-side, not custom).
 # Uses a different schema format (type instead of name+input_schema).
 # Pricing: $10/1000 searches, billed to the same ANTHROPIC_API_KEY.
-WEB_SEARCH_TOOL = {
+WEB_SEARCH_TOOL: dict[str, Any] = {
     "type": "web_search_20250305",
     "name": "web_search",
     "max_uses": 10,

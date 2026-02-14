@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.forge_state import ForgeState
 from app.core.enforce_phases import check_web_search
+from app.core.repository_protocols import SessionLike
 from app.models.problem_reframing import ProblemReframing
 
 
@@ -27,7 +28,7 @@ class DecomposeHandlers:
         self.state = state
 
     async def decompose_to_fundamentals(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Break problem into irreducible elements (First Principles)."""
         fundamentals = input_data.get("fundamentals", [])
@@ -43,7 +44,7 @@ class DecomposeHandlers:
         }
 
     async def map_state_of_art(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Research current knowledge. Gate: requires web_search first (Rule #12)."""
         # Pure gate check
@@ -64,7 +65,7 @@ class DecomposeHandlers:
         }
 
     async def extract_assumptions(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Identify hidden assumptions in the problem domain."""
         assumptions = input_data.get("assumptions", [])
@@ -83,7 +84,7 @@ class DecomposeHandlers:
         }
 
     async def reframe_problem(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Generate alternative problem formulation."""
         reframing_text = input_data.get("reframing_text", "")

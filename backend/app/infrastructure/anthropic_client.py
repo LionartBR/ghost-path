@@ -14,7 +14,9 @@ Design Decisions:
 import asyncio
 import random
 import logging
+from collections.abc import Iterable
 from contextlib import asynccontextmanager
+from typing import Union
 
 import anthropic
 from anthropic import (
@@ -24,10 +26,19 @@ from anthropic import (
     APITimeoutError,
     InternalServerError,
 )
+from anthropic.types import TextBlockParam
+from anthropic.types.beta import BetaTextBlockParam
+from anthropic.lib.streaming import (
+    AsyncMessageStreamManager,
+    BetaAsyncMessageStreamManager,
+)
 
 from app.core.errors import AnthropicAPIError, ErrorContext
 
 logger = logging.getLogger(__name__)
+
+# Union of both SDK system param types — dispatched at runtime by self.betas
+SystemParam = Union[str, Iterable[TextBlockParam], Iterable[BetaTextBlockParam]]
 
 
 class ResilientAnthropicClient:
@@ -65,7 +76,7 @@ class ResilientAnthropicClient:
         *,
         model: str,
         max_tokens: int,
-        system: str | list[dict],
+        system: SystemParam,
         tools: list,
         messages: list,
         context: ErrorContext | None = None,
@@ -153,7 +164,7 @@ class ResilientAnthropicClient:
         *,
         model: str,
         max_tokens: int,
-        system: str | list[dict],
+        system: SystemParam,
         tools: list,
         messages: list,
         context: ErrorContext | None = None,
@@ -166,6 +177,7 @@ class ResilientAnthropicClient:
         CancelledError (BaseException) passes through uncaught.
         """
         try:
+            cm: AsyncMessageStreamManager | BetaAsyncMessageStreamManager  # type: ignore[type-arg]
             if self.betas:
                 cm = self.client.beta.messages.stream(
                     model=model, max_tokens=max_tokens,
@@ -212,7 +224,7 @@ class ResilientAnthropicClient:
     def _backoff(self, attempt: int) -> int:
         """Exponential backoff with ±25% jitter."""
         delay = min(self.max_delay_ms, (2 ** attempt) * self.base_delay_ms)
-        return int(delay * random.uniform(0.75, 1.25))
+        return int(delay * random.uniform(0.75, 1.25))  # nosec B311
 
     def _extract_retry_after(self, error: RateLimitError) -> int | None:
         """Extract Retry-After header (returns milliseconds)."""
@@ -222,5 +234,5 @@ class ResilientAnthropicClient:
                 if val:
                     return int(val) * 1000
         except Exception:
-            pass
+            pass  # nosec B110
         return None

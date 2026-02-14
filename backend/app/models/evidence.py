@@ -52,6 +52,6 @@ class Evidence(Base):
     )
 
     # Relationships
-    claim: Mapped["KnowledgeClaim"] = relationship(
+    claim: Mapped["KnowledgeClaim"] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "KnowledgeClaim", back_populates="evidence",
     )

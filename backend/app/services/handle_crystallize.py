@@ -16,6 +16,7 @@ import tempfile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.forge_state import ForgeState
+from app.core.repository_protocols import SessionLike
 
 
 class CrystallizeHandlers:
@@ -26,7 +27,7 @@ class CrystallizeHandlers:
         self.state = state
 
     async def generate_knowledge_document(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Produce final 10-section Knowledge Document."""
         title = input_data.get("title", "Knowledge Document")

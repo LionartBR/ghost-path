@@ -18,6 +18,19 @@ from uuid import UUID
 from app.core.domain_types import SessionId, ClaimId, EvidenceId, EdgeId, Phase
 
 
+class SessionLike(Protocol):
+    """Structural contract for Session objects passed to handlers and agent runner.
+
+    Avoids coupling shell handlers to the ORM model while giving mypy
+    real type information (unlike Any).
+    """
+    id: UUID
+    problem: str
+    total_tokens_used: int
+    message_history: list
+    forge_state_snapshot: dict | None
+
+
 class ClaimRepository(Protocol):
     """Contract for knowledge claim persistence — implemented by shell."""
     async def save(self, claim_data: dict, session_id: SessionId) -> ClaimId: ...

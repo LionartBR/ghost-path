@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.forge_state import ForgeState
 from app.core.enforce_claims import validate_graph_addition
+from app.core.repository_protocols import SessionLike
 from app.models.claim_edge import ClaimEdge
 
 
@@ -27,7 +28,7 @@ class BuildHandlers:
         self.state = state
 
     async def add_to_knowledge_graph(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Add validated claim + edges to knowledge graph."""
         claim_index = input_data.get("claim_index", 0)
@@ -86,7 +87,7 @@ class BuildHandlers:
         }
 
     async def analyze_gaps(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Identify missing prerequisites and disconnected nodes."""
         gaps = input_data.get("gaps", [])
@@ -104,7 +105,7 @@ class BuildHandlers:
         }
 
     async def get_negative_knowledge(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Retrieve all rejected claims with rejection reasons (Rule #10 gate)."""
         self.state.negative_knowledge_consulted = True

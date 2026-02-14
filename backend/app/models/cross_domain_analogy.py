@@ -46,6 +46,6 @@ class CrossDomainAnalogy(Base):
     )
 
     # Relationships
-    session: Mapped["Session"] = relationship(
+    session: Mapped["Session"] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "Session", back_populates="analogies",
     )

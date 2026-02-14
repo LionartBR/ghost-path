@@ -14,12 +14,12 @@ Design Decisions:
 import asyncio
 import json
 import logging
-from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.tool_dispatch import ToolDispatch, PAUSE_TOOLS
 from app.core.forge_state import ForgeState
+from app.core.repository_protocols import SessionLike
 from app.services.tools_registry import get_phase_tools
 from app.services.system_prompt import build_system_prompt
 from app.core.enforce_language import check_response_language
@@ -249,7 +249,7 @@ class AgentRunner:
             logger.error("Failed to save state: %s", e)
 
     async def _execute_tool_safe(
-        self, dispatch: ToolDispatch, session: Any,
+        self, dispatch: ToolDispatch, session: SessionLike,
         tool_name: str, tool_input: dict,
     ) -> dict:
         """Execute tool with error boundary — never raises."""
@@ -282,7 +282,7 @@ class AgentRunner:
                 parts.append(f"- User directive: {dtype} on '{domain}'")
         return "\n".join(parts)
 
-    def _build_messages(self, session: Any, user_message: str) -> list:
+    def _build_messages(self, session: SessionLike, user_message: str) -> list:
         """Build message array from history + new user message."""
         messages = list(session.message_history or [])
         messages.append({"role": "user", "content": user_message})

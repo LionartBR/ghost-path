@@ -64,19 +64,19 @@ class Session(Base):
     )
 
     # Relationships
-    claims: Mapped[list["KnowledgeClaim"]] = relationship(
+    claims: Mapped[list["KnowledgeClaim"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "KnowledgeClaim", back_populates="session",
         cascade="all, delete-orphan", lazy="selectin",
     )
-    reframings: Mapped[list["ProblemReframing"]] = relationship(
+    reframings: Mapped[list["ProblemReframing"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "ProblemReframing", back_populates="session",
         cascade="all, delete-orphan", lazy="selectin",
     )
-    analogies: Mapped[list["CrossDomainAnalogy"]] = relationship(
+    analogies: Mapped[list["CrossDomainAnalogy"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "CrossDomainAnalogy", back_populates="session",
         cascade="all, delete-orphan", lazy="selectin",
     )
-    contradictions: Mapped[list["Contradiction"]] = relationship(
+    contradictions: Mapped[list["Contradiction"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "Contradiction", back_populates="session",
         cascade="all, delete-orphan", lazy="selectin",
     )

@@ -22,6 +22,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.forge_state import ForgeState
+from app.core.repository_protocols import SessionLike
 from app.services.handle_decompose import DecomposeHandlers
 from app.services.handle_explore import ExploreHandlers
 from app.services.handle_synthesize import SynthesizeHandlers
@@ -102,7 +103,7 @@ class ToolDispatch:
         self._state.record_web_search(query, result_summary)
 
     async def execute(
-        self, tool_name: str, session: object, input_data: dict,
+        self, tool_name: str, session: SessionLike, input_data: dict,
     ) -> dict:
         """Route tool_name to handler. Returns result dict. Logs every call."""
         handler = self._handlers.get(tool_name)

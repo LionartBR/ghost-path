@@ -13,6 +13,7 @@ Design Decisions:
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.forge_state import ForgeState
+from app.core.repository_protocols import SessionLike
 from app.core.enforce_phases import check_web_search
 from app.models.cross_domain_analogy import CrossDomainAnalogy
 from app.models.contradiction import Contradiction
@@ -26,7 +27,7 @@ class ExploreHandlers:
         self.state = state
 
     async def build_morphological_box(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Map parameter space (Zwicky's morphological analysis)."""
         parameters = input_data.get("parameters", [])
@@ -56,7 +57,7 @@ class ExploreHandlers:
         }
 
     async def search_cross_domain(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Find analogies in distant domain. Gate: requires web_search (Rule #13)."""
         error = check_web_search(self.state, "cross_domain")
@@ -96,7 +97,7 @@ class ExploreHandlers:
         }
 
     async def identify_contradictions(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Find competing requirements (TRIZ contradiction)."""
         property_a = input_data.get("property_a", "")
@@ -127,7 +128,7 @@ class ExploreHandlers:
         }
 
     async def map_adjacent_possible(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Map what's one step from current knowledge."""
         current_capability = input_data.get("current_capability", "")

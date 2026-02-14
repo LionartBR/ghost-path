@@ -14,6 +14,7 @@ Design Decisions:
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.forge_state import ForgeState
+from app.core.repository_protocols import SessionLike
 from app.core.enforce_phases import check_web_search
 from app.core.enforce_claims import check_antithesis_exists, check_claim_limit
 from app.models.knowledge_claim import KnowledgeClaim
@@ -28,7 +29,7 @@ class SynthesizeHandlers:
         self.state = state
 
     async def state_thesis(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Declare current knowledge on a direction."""
         thesis_text = input_data.get("thesis_text", "")
@@ -46,7 +47,7 @@ class SynthesizeHandlers:
         }
 
     async def find_antithesis(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Search for contradicting evidence. Gate: web_search required (Rule #14)."""
         error = check_web_search(self.state, "antithesis")
@@ -67,7 +68,7 @@ class SynthesizeHandlers:
         }
 
     async def create_synthesis(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Generate knowledge claim from thesis + antithesis (dialectical synthesis).
 

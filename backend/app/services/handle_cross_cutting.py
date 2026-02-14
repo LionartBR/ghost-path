@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.domain_types import Phase
 from app.core.forge_state import ForgeState
+from app.core.repository_protocols import SessionLike
 from app.models.knowledge_claim import KnowledgeClaim
 from app.models.evidence import Evidence
 
@@ -43,7 +44,7 @@ class CrossCuttingHandlers:
         self.state = state
 
     async def get_session_status(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Current phase, round, claims count, gaps count, context usage."""
         return {
@@ -62,7 +63,7 @@ class CrossCuttingHandlers:
         }
 
     async def submit_user_insight(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Create a user-contributed claim node in the knowledge graph."""
         insight_text = input_data.get("insight_text", "")
@@ -121,7 +122,7 @@ class CrossCuttingHandlers:
         }
 
     async def recall_phase_context(
-        self, session: object, input_data: dict,
+        self, session: SessionLike, input_data: dict,
     ) -> dict:
         """Retrieve detailed artifacts from a completed phase. Read-only."""
         phase_str = input_data.get("phase", "")
