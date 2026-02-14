@@ -14,6 +14,7 @@ Design Decisions:
 import asyncio
 import random
 import logging
+from contextlib import asynccontextmanager
 
 import anthropic
 from anthropic import (
@@ -145,6 +146,60 @@ class ResilientAnthropicClient:
                 raise AnthropicAPIError(
                     str(e), "unknown", context=context,
                 )
+
+    @asynccontextmanager
+    async def stream_message(
+        self,
+        *,
+        model: str,
+        max_tokens: int,
+        system: str | list[dict],
+        tools: list,
+        messages: list,
+        context: ErrorContext | None = None,
+    ):
+        """Stream message with Anthropic error → AnthropicAPIError mapping.
+
+        No retry — caller handles retries. Catches errors from both
+        connection setup AND mid-stream (errors from caller's async for
+        propagate through the yield in asynccontextmanager).
+        CancelledError (BaseException) passes through uncaught.
+        """
+        try:
+            if self.betas:
+                cm = self.client.beta.messages.stream(
+                    model=model, max_tokens=max_tokens,
+                    system=system, tools=tools, messages=messages,
+                    betas=self.betas,
+                )
+            else:
+                cm = self.client.messages.stream(
+                    model=model, max_tokens=max_tokens,
+                    system=system, tools=tools, messages=messages,
+                )
+            async with cm as stream:
+                yield stream
+        except RateLimitError as e:
+            raise AnthropicAPIError(
+                "Rate limit exceeded (streaming)",
+                "rate_limit",
+                retry_after_ms=self._extract_retry_after(e),
+                context=context,
+            )
+        except (APIConnectionError, InternalServerError) as e:
+            raise AnthropicAPIError(
+                f"Connection error during stream: {e}",
+                "connection_error",
+                context=context,
+            )
+        except APITimeoutError:
+            raise AnthropicAPIError(
+                "API timeout during stream", "timeout", context=context,
+            )
+        except APIError as e:
+            raise AnthropicAPIError(
+                str(e), "client_error", context=context,
+            )
 
     async def _call_api(self, **kwargs):
         """Route to beta or standard endpoint based on config."""

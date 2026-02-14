@@ -1,18 +1,13 @@
-"""Agent Runner — async agentic loop orchestrating Claude tool calls and SSE delivery.
+"""Agent Runner — async agentic loop with streaming SSE delivery.
 
 Invariants:
-    - Max 50 iterations per run (AgentLoopExceededError if exceeded)
-    - Tool errors never crash the loop — _execute_tool_safe catches all exceptions
-    - Phase review tools pause the loop (agent yields SSE review event + 'done')
-    - web_search results are intercepted and recorded in ForgeState for gate enforcement
-    - Message history saved to DB on pause for session resumption
+    - Max 50 iterations, tool errors never crash loop, pause tools halt loop
+    - web_search results intercepted for ForgeState gate enforcement
 
 Design Decisions:
-    - Anthropic messages.create (not streaming API): SSE delivery to frontend is separate
-      from Anthropic API streaming (ADR: hackathon simplicity)
-    - ToolDispatch instantiated per-iteration: fresh dispatch with current DB session
-    - pause_turn handling: web_search may cause Anthropic to return pause_turn,
-      we continue the loop transparently (ADR: web_search integration)
+    - Anthropic streaming API for real-time text/tool delivery (ADR: Day 4 polish)
+    - get_final_message() for post-processing (avoids manual block reconstruction)
+    - Language enforcement after stream (trade-off: user may briefly see wrong text)
 """
 
 import asyncio
@@ -37,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 class AgentRunner:
-    """Async agentic loop — yields SSE events for the TRIZ pipeline."""
+    """Async agentic loop — streams SSE events for the TRIZ pipeline."""
 
     MAX_ITERATIONS = 50
     MAX_LANGUAGE_RETRIES = 2
@@ -52,10 +47,10 @@ class AgentRunner:
     async def run(
         self, session, user_message: str, forge_state: ForgeState,
     ):
-        """Async generator yielding SSE events."""
+        """Async generator yielding SSE events with real-time streaming."""
         iteration = 0
         language_retries = 0
-        system_prompt = build_system_prompt(forge_state.locale)
+        system = build_system_prompt(forge_state.locale)
 
         try:
             messages = self._build_messages(session, user_message)
@@ -63,52 +58,76 @@ class AgentRunner:
             while iteration < self.MAX_ITERATIONS:
                 iteration += 1
 
-                # -- Check for cancellation (user-initiated via POST /cancel) --
                 if forge_state.cancelled:
-                    logger.info(
-                        "Session cancelled by user",
-                        extra={"session_id": str(session.id)},
-                    )
                     yield {"type": "agent_text", "data": "Session cancelled."}
                     yield _done_event(error=False)
                     return
 
-                # -- Call Anthropic API with heartbeat (3s interval) --
+                ctx = ErrorContext(session_id=str(session.id))
+                dispatch = ToolDispatch(self.db, forge_state, session.id)
+
+                # === STREAM: real-time SSE to frontend ===
                 try:
-                    cached_system = _with_system_cache(system_prompt)
-                    cached_tools = _with_tools_cache(ALL_TOOLS)
-                    cached_msgs = _with_message_cache(messages)
-                    api_task = asyncio.create_task(
-                        self.client.create_message(
-                            model=self.model,
-                            max_tokens=16384,
-                            system=cached_system,
-                            tools=cached_tools,
-                            messages=cached_msgs,
-                            context=ErrorContext(
-                                session_id=str(session.id),
-                            ),
-                        ),
-                    )
-                    try:
-                        while not api_task.done():
-                            await asyncio.sleep(3)
-                            if not api_task.done():
-                                yield _heartbeat_event(iteration)
-                    except asyncio.CancelledError:
-                        api_task.cancel()
-                        raise
-                    response = api_task.result()
+                    text_lstrip = True
+                    async with self.client.stream_message(
+                        model=self.model, max_tokens=16384,
+                        system=_with_system_cache(system),
+                        tools=_with_tools_cache(ALL_TOOLS),
+                        messages=_with_message_cache(messages),
+                        context=ctx,
+                    ) as stream:
+                        async for event in stream:
+                            if forge_state.cancelled:
+                                break
+                            etype = getattr(event, "type", None)
+                            if etype == "content_block_start":
+                                cb = event.content_block
+                                bt = getattr(cb, "type", None)
+                                if bt == "text":
+                                    text_lstrip = True
+                                elif bt == "tool_use":
+                                    yield _tool_call_event(cb.name, "")
+                                elif bt == "server_tool_use":
+                                    q = getattr(cb, "input", {}).get(
+                                        "query", "",
+                                    )
+                                    yield _tool_call_event(
+                                        getattr(cb, "name", "web_search"), q,
+                                    )
+                            elif etype == "content_block_delta":
+                                dt = getattr(event.delta, "type", None)
+                                if dt == "text_delta" and event.delta.text:
+                                    txt = event.delta.text
+                                    if text_lstrip:
+                                        txt = txt.lstrip()
+                                        if txt:
+                                            text_lstrip = False
+                                    if txt:
+                                        yield {
+                                            "type": "agent_text",
+                                            "data": txt,
+                                        }
+
+                        if forge_state.cancelled:
+                            yield {
+                                "type": "agent_text",
+                                "data": "Session cancelled.",
+                            }
+                            yield _done_event(error=False)
+                            return
+
+                        response = stream.get_final_message()
+
                 except TrizError as e:
                     logger.error(
-                        f"Anthropic API error: {e.message}",
+                        "Anthropic API error: %s", e.message,
                         extra={"session_id": str(session.id)},
                     )
                     yield e.to_sse_event()
                     yield _done_event(error=True)
                     return
 
-                # -- Update token usage + snapshot --
+                # === POST-PROCESS: tokens, ForgeState, tools, history ===
                 try:
                     tokens = (
                         response.usage.input_tokens
@@ -118,153 +137,68 @@ class AgentRunner:
                     session.forge_state_snapshot = forge_state.to_snapshot()
                     await self.db.commit()
                 except Exception as e:
-                    logger.error(f"Failed to update token usage: {e}")
+                    logger.error("Failed to update token usage: %s", e)
 
                 yield {
                     "type": "context_usage",
                     "data": _get_context_usage(session),
                 }
 
-                # -- Process response blocks --
-                assistant_content = []
-                text_buffer = []
-                has_tool_use = False
-                should_pause = False
-                dispatch = ToolDispatch(self.db, forge_state, session.id)
+                for sse in _record_web_searches(response.content, dispatch):
+                    yield sse
 
-                for block in response.content:
-                    assistant_content.append(block)
-
-                    if block.type == "text":
-                        text_buffer.append(block.text)
-
-                    elif block.type == "tool_use":
-                        has_tool_use = True
-                        yield {
-                            "type": "tool_call",
-                            "data": {
-                                "tool": block.name,
-                                "input_preview": str(block.input)[:300],
-                            },
-                        }
-
-                    elif block.type == "server_tool_use":
-                        # web_search initiated by Anthropic
-                        yield {
-                            "type": "tool_call",
-                            "data": {
-                                "tool": block.name,
-                                "input_preview": str(block.input)[:300],
-                            },
-                        }
-
-                    elif block.type == "web_search_tool_result":
-                        # Intercept web_search results for ForgeState tracking
-                        content_list = getattr(block, "content", [])
-                        result_count = sum(
-                            1 for r in content_list
-                            if isinstance(r, dict)
-                            and r.get("type") == "web_search_result"
-                        )
-                        # Record in ForgeState for gate enforcement
-                        query = _extract_web_search_query(assistant_content)
-                        dispatch.record_web_search(
-                            query, f"{result_count} result(s)",
-                        )
-                        yield {
-                            "type": "tool_result",
-                            "data": f"Web search returned {result_count} result(s)",
-                        }
-
-                # Handle pause_turn (long-running web search)
                 if response.stop_reason == "pause_turn":
-                    serialized = [
-                        block.model_dump() for block in assistant_content
-                    ]
-                    messages.append({
-                        "role": "assistant", "content": serialized,
-                    })
+                    serialized = [b.model_dump() for b in response.content]
+                    messages.append({"role": "assistant", "content": serialized})
                     continue
 
-                # === LANGUAGE ENFORCEMENT ===
-                # Text-only: retry without yielding (original behavior).
-                # Tool-interleaved: can't retry (tools must execute), so
-                # inject a language nudge alongside tool_results for the
-                # next iteration. ADR: retry would duplicate tool calls.
+                has_tool_use = any(
+                    getattr(b, "type", None) == "tool_use"
+                    for b in response.content
+                )
                 _lang_nudge = None
+                text_blocks = [
+                    b.text for b in response.content
+                    if getattr(b, "type", None) == "text"
+                ]
                 if (
-                    text_buffer
+                    text_blocks
                     and language_retries < self.MAX_LANGUAGE_RETRIES
                     and forge_state.locale != Locale.EN
                 ):
-                    full_text = "".join(text_buffer)
+                    full_text = "".join(text_blocks)
                     lang_error = check_response_language(
                         full_text, forge_state.locale,
                     )
                     if lang_error:
                         language_retries += 1
                         if not has_tool_use:
-                            # Text-only: retry WITHOUT yielding
-                            logger.warning(
-                                "Language mismatch — retry %d/%d",
-                                language_retries, self.MAX_LANGUAGE_RETRIES,
-                            )
-                            serialized = [
-                                b.model_dump() for b in assistant_content
-                            ]
-                            messages.append({
-                                "role": "assistant", "content": serialized,
-                            })
-                            messages.append({
-                                "role": "user",
-                                "content": lang_error["message"],
-                            })
+                            logger.warning("Language retry %d/%d",
+                                language_retries, self.MAX_LANGUAGE_RETRIES)
+                            serialized = [b.model_dump() for b in response.content]
+                            messages.append({"role": "assistant", "content": serialized})
+                            messages.append({"role": "user", "content": lang_error["message"]})
                             continue
-                        else:
-                            # Tool-interleaved: nudge on next iteration
-                            logger.warning(
-                                "Language mismatch (tool-interleaved) — "
-                                "nudge %d/%d",
-                                language_retries, self.MAX_LANGUAGE_RETRIES,
-                            )
-                            _lang_nudge = lang_error["message"]
-
-                # Yield buffered text (passed check, has tool_use, or
-                # retries exhausted)
-                for text in text_buffer:
-                    stripped = text.strip()
-                    if stripped:
-                        yield {"type": "agent_text", "data": stripped}
+                        logger.warning("Language nudge %d/%d",
+                            language_retries, self.MAX_LANGUAGE_RETRIES)
+                        _lang_nudge = lang_error["message"]
 
                 if not has_tool_use:
-                    # Save message history + snapshot on normal completion
-                    try:
-                        session.message_history = messages
-                        session.forge_state_snapshot = forge_state.to_snapshot()
-                        await self.db.commit()
-                    except Exception as e:
-                        logger.error(f"Failed to save message history: {e}")
+                    await self._save_state(session, messages, forge_state)
                     yield _done_event(error=False)
                     return
 
-                # -- Execute custom tools with error isolation --
-                serialized = [
-                    block.model_dump() for block in assistant_content
-                ]
-                messages.append({
-                    "role": "assistant", "content": serialized,
-                })
+                serialized = [b.model_dump() for b in response.content]
+                messages.append({"role": "assistant", "content": serialized})
                 tool_results = []
+                should_pause = False
 
-                for block in assistant_content:
-                    if block.type != "tool_use":
+                for block in response.content:
+                    if getattr(block, "type", None) != "tool_use":
                         continue
-
                     result = await self._execute_tool_safe(
                         dispatch, session, block.name, block.input,
                     )
-
-                    # Emit appropriate SSE event based on result
                     if result.get("status") == "error":
                         yield {
                             "type": "tool_error",
@@ -282,11 +216,8 @@ class AgentRunner:
                                 "result_preview": str(result)[:300],
                             },
                         }
-
-                    # Check if this tool pauses the agent loop
                     if block.name in PAUSE_TOOLS and result.get("paused"):
                         should_pause = True
-
                     tool_results.append({
                         "type": "tool_result",
                         "tool_use_id": block.id,
@@ -295,31 +226,22 @@ class AgentRunner:
                         ),
                     })
 
-                # Inject language nudge alongside tool results
                 if _lang_nudge:
-                    tool_results.append({
-                        "type": "text", "text": _lang_nudge,
-                    })
+                    tool_results.append({"type": "text", "text": _lang_nudge})
                 messages.append({"role": "user", "content": tool_results})
 
-                # -- Pause for user interaction --
                 if should_pause:
-                    try:
-                        session.message_history = messages
-                        session.forge_state_snapshot = forge_state.to_snapshot()
-                        await self.db.commit()
-                    except Exception as e:
-                        logger.error(f"Failed to save message history: {e}")
+                    await self._save_state(session, messages, forge_state)
                     yield _done_event(error=False, awaiting_input=True)
                     return
 
-            # -- Max iterations exceeded --
+            # Max iterations exceeded
             error = AgentLoopExceededError(
                 self.MAX_ITERATIONS,
                 ErrorContext(session_id=str(session.id)),
             )
             logger.error(
-                f"Agent loop exceeded: {iteration} iterations",
+                "Agent loop exceeded: %d iterations", iteration,
                 extra={"session_id": str(session.id)},
             )
             yield error.to_sse_event()
@@ -334,7 +256,7 @@ class AgentRunner:
 
         except Exception as e:
             logger.error(
-                f"Unexpected error in agent runner: {e}",
+                "Unexpected error in agent runner: %s", e,
                 extra={"session_id": str(session.id)},
                 exc_info=True,
             )
@@ -349,6 +271,15 @@ class AgentRunner:
             }
             yield _done_event(error=True)
 
+    async def _save_state(self, session, messages, forge_state):
+        """Save message history + ForgeState snapshot. Never crashes."""
+        try:
+            session.message_history = messages
+            session.forge_state_snapshot = forge_state.to_snapshot()
+            await self.db.commit()
+        except Exception as e:
+            logger.error("Failed to save state: %s", e)
+
     async def _execute_tool_safe(
         self, dispatch: ToolDispatch, session: object,
         tool_name: str, tool_input: dict,
@@ -357,21 +288,14 @@ class AgentRunner:
         try:
             return await dispatch.execute(tool_name, session, tool_input)
         except TrizError as e:
-            logger.warning(
-                f"Tool error: {e.message}",
-                extra={"tool_name": tool_name, "error_code": e.code},
-            )
+            logger.warning("Tool error: %s", e.message,
+                extra={"tool_name": tool_name, "error_code": e.code})
             return e.to_response()
         except Exception as e:
-            logger.error(
-                f"Unexpected error in tool '{tool_name}': {e}",
-                exc_info=True,
-            )
-            return {
-                "status": "error",
-                "error_code": "TOOL_EXECUTION_ERROR",
-                "message": f"Internal error executing {tool_name}",
-            }
+            logger.error("Unexpected error in tool '%s': %s",
+                tool_name, e, exc_info=True)
+            return {"status": "error", "error_code": "TOOL_EXECUTION_ERROR",
+                "message": f"Internal error executing {tool_name}"}
 
     def _build_messages(self, session: object, user_message: str) -> list:
         """Build message array from history + new user message."""
@@ -389,10 +313,10 @@ def _done_event(error: bool = False, awaiting_input: bool = False) -> dict:
     }
 
 
-def _heartbeat_event(iteration: int) -> dict:
+def _tool_call_event(name: str, preview: str) -> dict:
     return {
-        "type": "heartbeat",
-        "data": {"status": "thinking", "iteration": iteration},
+        "type": "tool_call",
+        "data": {"tool": name, "input_preview": preview},
     }
 
 
@@ -407,30 +331,41 @@ def _get_context_usage(session: object) -> dict:
     }
 
 
-def _extract_web_search_query(blocks: list) -> str:
-    """Extract the web_search query from the most recent server_tool_use block."""
-    for block in reversed(blocks):
-        if getattr(block, "type", None) == "server_tool_use":
-            input_data = getattr(block, "input", {})
-            return input_data.get("query", "unknown query")
-    return "unknown query"
+def _record_web_searches(content_blocks: list, dispatch: ToolDispatch) -> list:
+    """Record web_search in ForgeState, return SSE events. Handles multi-search."""
+    events = []
+    last_query = "unknown query"
+    for block in content_blocks:
+        btype = getattr(block, "type", None)
+        if btype == "server_tool_use":
+            last_query = getattr(block, "input", {}).get(
+                "query", "unknown query",
+            )
+        elif btype == "web_search_tool_result":
+            content_list = getattr(block, "content", [])
+            n = sum(
+                1 for r in content_list
+                if (isinstance(r, dict) and r.get("type") == "web_search_result")
+                or getattr(r, "type", None) == "web_search_result"
+            )
+            dispatch.record_web_search(last_query, f"{n} result(s)")
+            events.append({
+                "type": "tool_result",
+                "data": f"Web search returned {n} result(s)",
+            })
+    return events
 
 
-# -- Prompt Caching helpers ----------------------------------------------------
-# ADR: Anthropic prompt caching reduces input token costs by 90% for cached
-# content. System prompt (~2.8K tokens) + tools (~8.5K tokens) are identical
-# every call. cache_control: {"type": "ephemeral"} marks the cache breakpoint.
+# -- Prompt Caching helpers (ADR: 90% input token savings) ---------------------
 
 _CACHE_CONTROL = {"type": "ephemeral"}
 
 
 def _with_system_cache(system: str) -> list[dict]:
-    """Wrap system prompt as list with cache_control on the text block."""
     return [{"type": "text", "text": system, "cache_control": _CACHE_CONTROL}]
 
 
 def _with_tools_cache(tools: list[dict]) -> list[dict]:
-    """Add cache_control to the last tool definition."""
     if not tools:
         return tools
     cached = list(tools)
@@ -439,11 +374,9 @@ def _with_tools_cache(tools: list[dict]) -> list[dict]:
 
 
 def _with_message_cache(messages: list[dict]) -> list[dict]:
-    """Add cache_control to the last user message for multi-turn caching."""
     if not messages:
         return messages
     cached = [dict(m) for m in messages]
-    # Find last user message and mark it for caching
     for i in range(len(cached) - 1, -1, -1):
         if cached[i].get("role") == "user":
             content = cached[i].get("content")
