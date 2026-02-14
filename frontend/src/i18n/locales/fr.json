@@ -40,6 +40,8 @@
   "decompose.addReframing": "Ajouter un nouveau recadrage...",
   "decompose.submitReview": "Soumettre la revue",
 
+  "explore.title": "Phase 2 : Explorer",
+  "explore.description": "L'espace du problème a été cartographié à travers des domaines distants. Marquez au moins une analogie qui résonne avec votre problème, examinez la boîte morphologique et les contradictions, et suggérez éventuellement de nouveaux domaines à explorer.",
   "explore.morphBox": "Boîte morphologique",
   "explore.analogies": "Analogies",
   "explore.contradictions": "Contradictions",

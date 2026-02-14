@@ -40,6 +40,8 @@
   "decompose.addReframing": "添加新重构...",
   "decompose.submitReview": "提交审查",
 
+  "explore.title": "阶段2：探索",
+  "explore.description": "问题空间已在远距离领域中进行了映射。请标星至少一个与您的问题产生共鸣的类比，审查形态学盒子和矛盾，并可选择性地建议新的搜索领域。",
   "explore.morphBox": "形态学盒子",
   "explore.analogies": "类比",
   "explore.contradictions": "矛盾",

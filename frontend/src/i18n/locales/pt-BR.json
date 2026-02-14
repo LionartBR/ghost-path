@@ -40,6 +40,8 @@
   "decompose.addReframing": "Adicionar nova reformulação...",
   "decompose.submitReview": "Enviar Revisão",
 
+  "explore.title": "Fase 2: Explorar",
+  "explore.description": "O espaço do problema foi mapeado em domínios distantes. Destaque pelo menos uma analogia que ressoe com seu problema, revise a caixa morfológica e as contradições, e opcionalmente sugira novos domínios para pesquisar.",
   "explore.morphBox": "Caixa Morfológica",
   "explore.analogies": "Analogias",
   "explore.contradictions": "Contradições",

@@ -47,6 +47,16 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
 
   return (
     <div className="space-y-4">
+      {/* ── Phase Header ── */}
+      <div className="bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 p-5">
+        <h2 className="text-base font-semibold text-gray-900 mb-1">
+          {t("explore.title")}
+        </h2>
+        <p className="text-gray-500 text-sm">
+          {t("explore.description")}
+        </p>
+      </div>
+
       {/* ── Morphological Box ── */}
       {data.morphological_box && (
         <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5">

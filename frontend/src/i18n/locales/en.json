@@ -40,6 +40,8 @@
   "decompose.addReframing": "Add new reframing...",
   "decompose.submitReview": "Submit Review",
 
+  "explore.title": "Phase 2: Explore",
+  "explore.description": "The problem space has been mapped across distant domains. Star at least one analogy that resonates with your problem, review the morphological box and contradictions, and optionally suggest new domains to search.",
   "explore.morphBox": "Morphological Box",
   "explore.analogies": "Analogies",
   "explore.contradictions": "Contradictions",

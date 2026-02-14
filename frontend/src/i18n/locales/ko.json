@@ -40,6 +40,8 @@
   "decompose.addReframing": "새 재구성 추가...",
   "decompose.submitReview": "검토 제출",
 
+  "explore.title": "2단계: 탐색",
+  "explore.description": "문제 공간이 먼 도메인에 걸쳐 매핑되었습니다. 문제와 공명하는 유추를 최소 하나 별표하고, 형태학적 박스와 모순을 검토하며, 선택적으로 새로운 탐색 도메인을 제안하세요.",
   "explore.morphBox": "형태학적 박스",
   "explore.analogies": "유추",
   "explore.contradictions": "모순",

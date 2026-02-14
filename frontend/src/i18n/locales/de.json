@@ -40,6 +40,8 @@
   "decompose.addReframing": "Neue Neuformulierung hinzufügen...",
   "decompose.submitReview": "Überprüfung absenden",
 
+  "explore.title": "Phase 2: Erkunden",
+  "explore.description": "Der Problemraum wurde über entfernte Domänen kartiert. Markieren Sie mindestens eine Analogie, die zu Ihrem Problem passt, überprüfen Sie den morphologischen Kasten und die Widersprüche, und schlagen Sie optional neue Domänen zur Suche vor.",
   "explore.morphBox": "Morphologischer Kasten",
   "explore.analogies": "Analogien",
   "explore.contradictions": "Widersprüche",

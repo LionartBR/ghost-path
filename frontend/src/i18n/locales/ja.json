@@ -40,6 +40,8 @@
   "decompose.addReframing": "新しい再定義を追加...",
   "decompose.submitReview": "レビューを送信",
 
+  "explore.title": "フェーズ2：探索",
+  "explore.description": "問題空間が遠い領域にわたってマッピングされました。問題に共鳴する類推を少なくとも1つスターし、形態学的マトリックスと矛盾を確認し、必要に応じて新しい探索領域を提案してください。",
   "explore.morphBox": "形態学的マトリックス",
   "explore.analogies": "類推",
   "explore.contradictions": "矛盾",
