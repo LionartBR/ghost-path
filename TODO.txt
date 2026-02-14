@@ -1,0 +1,1 @@
+- melhorar a velocidade das etapas pra não prender o usuário por muito tempo. 3 minutos é o budget total desde a primeira fase até o final
