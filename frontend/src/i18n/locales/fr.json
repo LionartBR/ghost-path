@@ -139,5 +139,12 @@
   "errors.createSession": "Échec de la création de la session",
   "errors.loadSession": "Échec du chargement de la session",
 
-  "session.cancel": "Annuler le Pipeline"
+  "session.cancel": "Annuler le Pipeline",
+
+  "transition.toExplore": "Hypothèses déconstruites. Nous cherchons maintenant dans des domaines lointains des motifs structurels que personne n'a encore reliés à votre problème.",
+  "transition.toSynthesize": "Le terrain est cartographié. Il est temps de confronter des idées opposées par la dialectique et de forger quelque chose qui transcende les deux côtés.",
+  "transition.toValidate": "Affirmations forgées. Chacune fait face à son critique le plus dur — ce qui survit à la tentative de destruction est un savoir réel.",
+  "transition.toBuild": "Les survivants émergent. Tissage des affirmations validées en un graphe de connaissances — chaque nœud a gagné sa place par le feu dialectique.",
+  "transition.toCrystallize": "La forge est terminée. Tout est distillé en un Document de Connaissances final — savoir cristallisé issu du processus dialectique.",
+  "transition.toSynthesizeReturn": "Armés de ce que nous avons appris et rejeté, un nouveau cycle de création dialectique commence."
 }

@@ -139,5 +139,12 @@
   "errors.createSession": "セッションの作成に失敗しました",
   "errors.loadSession": "セッションの読み込みに失敗しました",
 
-  "session.cancel": "パイプラインをキャンセル"
+  "session.cancel": "パイプラインをキャンセル",
+
+  "transition.toExplore": "前提を解体しました。今度は遠い領域から、まだ誰もあなたの問題に結びつけていない構造的パターンを探します。",
+  "transition.toSynthesize": "地形が把握できました。対立するアイデアを弁証法で対峙させ、両者を超越する何かを鍛造する時です。",
+  "transition.toValidate": "主張が鍛造されました。今度は最も厳しい批判に直面します——破壊の試みを生き延びたものが真の知識です。",
+  "transition.toBuild": "生存者が現れます。検証された主張を知識グラフに編み込みます——各ノードは弁証法の炎で己の場所を勝ち取りました。",
+  "transition.toCrystallize": "鍛造は完了しました。全てを最終的な知識文書に蒸留します——弁証法プロセスから結晶化された知識。",
+  "transition.toSynthesizeReturn": "学んだことと却下したことを武器に、新たな弁証法的創造のラウンドが始まります。"
 }

@@ -16,6 +16,7 @@ import KnowledgeGraph from "../components/KnowledgeGraph";
 import KnowledgeDocument from "../components/KnowledgeDocument";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import { TrizMascot } from "../components/TrizMascot";
+import { PhaseTransitionCard } from "../components/PhaseTransitionCard";
 import type { Phase, UserInput } from "../types";
 
 export function SessionPage() {
@@ -130,6 +131,15 @@ export function SessionPage() {
             {/* Phase 6: Knowledge Document */}
             {stream.knowledgeDocument && (
               <KnowledgeDocument markdown={stream.knowledgeDocument} />
+            )}
+
+            {/* Phase Transition Card — narrative interstitial between phases */}
+            {stream.phaseTransition && (
+              <PhaseTransitionCard
+                from={stream.phaseTransition.from}
+                to={stream.phaseTransition.to}
+                onDismiss={stream.dismissTransition}
+              />
             )}
 
             {/* Waiting state — ASCII mascot with mouse interaction */}

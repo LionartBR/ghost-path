@@ -139,5 +139,12 @@
   "errors.createSession": "Error al crear sesión",
   "errors.loadSession": "Error al cargar sesión",
 
-  "session.cancel": "Cancelar Pipeline"
+  "session.cancel": "Cancelar Pipeline",
+
+  "transition.toExplore": "Supuestos desarmados. Ahora buscamos en dominios distantes patrones estructurales que nadie ha conectado con tu problema aún.",
+  "transition.toSynthesize": "El terreno está mapeado. Es hora de confrontar ideas opuestas mediante la dialéctica y forjar algo que trascienda ambos lados.",
+  "transition.toValidate": "Afirmaciones forjadas. Ahora cada una enfrenta a su crítico más duro — lo que sobreviva al intento de destrucción es conocimiento real.",
+  "transition.toBuild": "Los supervivientes emergen. Tejiendo afirmaciones validadas en un grafo de conocimiento — cada nodo ganó su lugar en el fuego dialéctico.",
+  "transition.toCrystallize": "La forja ha terminado. Destilando todo en un Documento de Conocimiento final — conocimiento cristalizado del proceso dialéctico.",
+  "transition.toSynthesizeReturn": "Armados con lo aprendido y lo rechazado, comienza una nueva ronda de creación dialéctica."
 }

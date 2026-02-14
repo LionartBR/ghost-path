@@ -139,5 +139,12 @@
   "errors.createSession": "Sitzung konnte nicht erstellt werden",
   "errors.loadSession": "Sitzung konnte nicht geladen werden",
 
-  "session.cancel": "Pipeline abbrechen"
+  "session.cancel": "Pipeline abbrechen",
+
+  "transition.toExplore": "Annahmen zerlegt. Jetzt durchsuchen wir ferne Domänen nach strukturellen Mustern, die noch niemand mit Ihrem Problem verknüpft hat.",
+  "transition.toSynthesize": "Das Terrain ist kartiert. Zeit, gegensätzliche Ideen durch Dialektik zu konfrontieren und etwas zu schmieden, das beide Seiten transzendiert.",
+  "transition.toValidate": "Behauptungen geschmiedet. Jede stellt sich nun ihrem härtesten Kritiker — was den Zerstörungsversuch überlebt, ist echtes Wissen.",
+  "transition.toBuild": "Überlebende treten hervor. Validierte Behauptungen werden zu einem Wissensgraphen verwoben — jeder Knoten hat sich im dialektischen Feuer bewährt.",
+  "transition.toCrystallize": "Die Schmiede ist beendet. Alles wird zu einem finalen Wissensdokument destilliert — kristallisiertes Wissen aus dem dialektischen Prozess.",
+  "transition.toSynthesizeReturn": "Bewaffnet mit dem, was wir gelernt und verworfen haben, beginnt eine neue Runde dialektischer Schöpfung."
 }

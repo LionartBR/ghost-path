@@ -1,4 +1,18 @@
-import React, { useState } from "react";
+/* DecomposeReview — Phase 1 review UI with single-card assumption carousel.
+
+Invariants:
+    - All assumptions start pre-confirmed (user must explicitly reject)
+    - At least 1 reframing must be selected before submit
+    - Carousel allows free navigation (prev/next) through assumptions
+    - Confirm/Reject auto-advances to next card after brief visual feedback
+
+Design Decisions:
+    - Carousel over list: reduces cognitive load when 3+ assumptions (ADR: hackathon UX polish)
+    - slideDirection state + key remount triggers CSS animation per direction
+    - Auto-advance delay (300ms) lets user see the color feedback before slide
+*/
+
+import React, { useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { DecomposeReviewData, UserInput } from "../types";
 
@@ -18,7 +32,31 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
   const [newAssumption, setNewAssumption] = useState("");
   const [newReframing, setNewReframing] = useState("");
 
-  const toggleAssumption = (index: number, type: "confirm" | "reject") => {
+  const [currentCard, setCurrentCard] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
+  const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const totalAssumptions = data.assumptions.length;
+  const isLastCard = currentCard >= totalAssumptions - 1;
+  const isFirstCard = currentCard <= 0;
+
+  const goToCard = useCallback((index: number, direction: "left" | "right") => {
+    if (index < 0 || index >= totalAssumptions) return;
+    setSlideDirection(direction);
+    setCurrentCard(index);
+  }, [totalAssumptions]);
+
+  const goNext = useCallback(() => {
+    if (!isLastCard) goToCard(currentCard + 1, "right");
+  }, [currentCard, isLastCard, goToCard]);
+
+  const goPrev = useCallback(() => {
+    if (!isFirstCard) goToCard(currentCard - 1, "left");
+  }, [currentCard, isFirstCard, goToCard]);
+
+  const toggleAssumption = useCallback((index: number, type: "confirm" | "reject") => {
+    if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+
     if (type === "confirm") {
       setConfirmedAssumptions((prev) => {
         const next = new Set(prev);
@@ -42,7 +80,11 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
         return next;
       });
     }
-  };
+
+    if (index < totalAssumptions - 1) {
+      autoAdvanceTimer.current = setTimeout(() => goNext(), 300);
+    }
+  }, [totalAssumptions, goNext]);
 
   const toggleReframing = (index: number) => {
     setSelectedReframings((prev) => {
@@ -64,8 +106,21 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
     onSubmit(input);
   };
 
+  const cardStatus = (index: number): "confirmed" | "rejected" | "pending" => {
+    if (confirmedAssumptions.has(index)) return "confirmed";
+    if (rejectedAssumptions.has(index)) return "rejected";
+    return "pending";
+  };
+
+  const assumption = data.assumptions[currentCard];
+  const status = assumption ? cardStatus(currentCard) : "pending";
+
+  const animationClass =
+    slideDirection === "right" ? "animate-slide-in-right" : "animate-slide-in-left";
+
   return (
     <div className="space-y-5 p-6 bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40">
+      {/* Fundamentals (collapsible) */}
       <div>
         <button
           onClick={() => setFundamentalsOpen(!fundamentalsOpen)}
@@ -86,46 +141,124 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
         )}
       </div>
 
+      {/* Assumptions — single-card carousel */}
       <div>
-        <h3 className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">{t("decompose.assumptions")}</h3>
-        <div className="space-y-2">
-          {data.assumptions.map((assumption, i) => (
-            <div key={i} className="p-3 bg-gray-50 rounded-md border border-gray-100">
-              <p className="text-gray-700 text-sm mb-2">{assumption.text}</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => toggleAssumption(i, "confirm")}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                    confirmedAssumptions.has(i)
-                      ? "bg-green-500 text-white"
-                      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  {t("decompose.confirm")}
-                </button>
-                <button
-                  onClick={() => toggleAssumption(i, "reject")}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                    rejectedAssumptions.has(i)
-                      ? "bg-red-500 text-white"
-                      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  {t("decompose.reject")}
-                </button>
-              </div>
+        <h3 className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">
+          {t("decompose.assumptions")}
+        </h3>
+
+        {totalAssumptions > 0 && assumption && (
+          <div className="flex flex-col items-center">
+            {/* Progress dots */}
+            <div className="flex items-center gap-1.5 mb-4">
+              {data.assumptions.map((_, i) => {
+                const s = cardStatus(i);
+                const dotColor =
+                  s === "confirmed"
+                    ? "bg-green-500"
+                    : s === "rejected"
+                      ? "bg-red-500"
+                      : "bg-gray-300";
+                const ring = i === currentCard ? "ring-2 ring-indigo-400 ring-offset-1" : "";
+                return (
+                  <button
+                    key={i}
+                    onClick={() => goToCard(i, i > currentCard ? "right" : "left")}
+                    className={`w-2.5 h-2.5 rounded-full transition-all ${dotColor} ${ring}`}
+                    aria-label={`Assumption ${i + 1}`}
+                  />
+                );
+              })}
             </div>
-          ))}
-        </div>
+
+            {/* Card + navigation */}
+            <div className="flex items-center gap-3 w-full max-w-lg">
+              {/* Prev arrow */}
+              <button
+                onClick={goPrev}
+                disabled={isFirstCard}
+                className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                  isFirstCard
+                    ? "text-gray-300 cursor-not-allowed"
+                    : "text-gray-500 hover:bg-gray-100 hover:text-indigo-600"
+                }`}
+                aria-label="Previous assumption"
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M12 15L7 10L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+
+              {/* Card */}
+              <div
+                key={currentCard}
+                className={`flex-1 p-5 rounded-lg border text-center ${animationClass} ${
+                  status === "confirmed"
+                    ? "bg-green-50 border-green-200"
+                    : status === "rejected"
+                      ? "bg-red-50 border-red-200"
+                      : "bg-gray-50 border-gray-200"
+                }`}
+              >
+                <p className="text-xs text-gray-400 font-medium mb-2">
+                  {currentCard + 1} / {totalAssumptions}
+                </p>
+                <p className="text-gray-700 text-sm leading-relaxed mb-4">
+                  {assumption.text}
+                </p>
+                <div className="flex justify-center gap-3">
+                  <button
+                    onClick={() => toggleAssumption(currentCard, "confirm")}
+                    className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                      confirmedAssumptions.has(currentCard)
+                        ? "bg-green-500 text-white shadow-sm shadow-green-200"
+                        : "bg-white border border-gray-200 text-gray-600 hover:border-green-300 hover:text-green-600"
+                    }`}
+                  >
+                    {t("decompose.confirm")}
+                  </button>
+                  <button
+                    onClick={() => toggleAssumption(currentCard, "reject")}
+                    className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                      rejectedAssumptions.has(currentCard)
+                        ? "bg-red-500 text-white shadow-sm shadow-red-200"
+                        : "bg-white border border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-600"
+                    }`}
+                  >
+                    {t("decompose.reject")}
+                  </button>
+                </div>
+              </div>
+
+              {/* Next arrow */}
+              <button
+                onClick={goNext}
+                disabled={isLastCard}
+                className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                  isLastCard
+                    ? "text-gray-300 cursor-not-allowed"
+                    : "text-gray-500 hover:bg-gray-100 hover:text-indigo-600"
+                }`}
+                aria-label="Next assumption"
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M8 5L13 10L8 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
         <input
           type="text"
           value={newAssumption}
           onChange={(e) => setNewAssumption(e.target.value)}
           placeholder={t("decompose.addAssumption")}
-          className="mt-3 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          className="mt-4 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
       </div>
 
+      {/* Reframings */}
       <div>
         <h3 className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">{t("decompose.reframings")}</h3>
         <div className="space-y-2">

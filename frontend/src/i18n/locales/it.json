@@ -139,5 +139,12 @@
   "errors.createSession": "Impossibile creare la sessione",
   "errors.loadSession": "Impossibile caricare la sessione",
 
-  "session.cancel": "Annulla Pipeline"
+  "session.cancel": "Annulla Pipeline",
+
+  "transition.toExplore": "Presupposti smontati. Ora cerchiamo in domini distanti schemi strutturali che nessuno ha ancora collegato al tuo problema.",
+  "transition.toSynthesize": "Il terreno è mappato. È ora di confrontare idee opposte attraverso la dialettica e forgiare qualcosa che trascenda entrambi i lati.",
+  "transition.toValidate": "Affermazioni forgiate. Ognuna affronta il suo critico più duro — ciò che sopravvive al tentativo di distruzione è vera conoscenza.",
+  "transition.toBuild": "I sopravvissuti emergono. Tessiamo le affermazioni validate in un grafo della conoscenza — ogni nodo ha guadagnato il suo posto nel fuoco dialettico.",
+  "transition.toCrystallize": "La forgia è finita. Distilliamo tutto in un Documento di Conoscenza finale — conoscenza cristallizzata dal processo dialettico.",
+  "transition.toSynthesizeReturn": "Armati di ciò che abbiamo imparato e rifiutato, un nuovo ciclo di creazione dialettica ha inizio."
 }

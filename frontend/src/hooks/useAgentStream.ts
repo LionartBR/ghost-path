@@ -12,7 +12,28 @@ import type {
   ContextUsage,
   UserInput,
   ActivityItem,
+  Phase,
+  PhaseTransition,
 } from "../types";
+
+/* ADR: derive next phase from user input type — avoids needing
+   a server-emitted phase_change event for the transition card */
+function getNextPhase(input: UserInput): Phase | null {
+  switch (input.type) {
+    case "decompose_review":
+      return "explore";
+    case "explore_review":
+      return "synthesize";
+    case "claims_review":
+      return "validate";
+    case "verdicts":
+      return "build";
+    case "build_decision":
+      return input.decision === "resolve" ? "crystallize" : "synthesize";
+    default:
+      return null;
+  }
+}
 
 interface AgentStreamState {
   isStreaming: boolean;
@@ -31,6 +52,7 @@ interface AgentStreamState {
   awaitingInput: boolean;
   error: string | null;
   currentPhase: string | null;
+  phaseTransition: PhaseTransition | null;
 }
 
 const initialState: AgentStreamState = {
@@ -47,6 +69,7 @@ const initialState: AgentStreamState = {
   awaitingInput: false,
   error: null,
   currentPhase: null,
+  phaseTransition: null,
 };
 
 export function useAgentStream(sessionId: string | null) {
@@ -109,6 +132,7 @@ export function useAgentStream(sessionId: string | null) {
           decomposeReview: event.data as DecomposeReviewData,
           awaitingInput: true,
           currentPhase: "decompose",
+          phaseTransition: null,
         }));
         break;
 
@@ -118,6 +142,7 @@ export function useAgentStream(sessionId: string | null) {
           exploreReview: event.data as ExploreReviewData,
           awaitingInput: true,
           currentPhase: "explore",
+          phaseTransition: null,
         }));
         break;
 
@@ -128,6 +153,7 @@ export function useAgentStream(sessionId: string | null) {
           ...s,
           claimsReview: claims,
           currentPhase: "synthesize",
+          phaseTransition: null,
           /* awaitingInput deliberately NOT set — auto-submit fires via useEffect */
         }));
         break;
@@ -139,6 +165,7 @@ export function useAgentStream(sessionId: string | null) {
           verdictsReview: (event.data as { claims: Claim[] }).claims,
           awaitingInput: true,
           currentPhase: "validate",
+          phaseTransition: null,
         }));
         break;
 
@@ -148,6 +175,7 @@ export function useAgentStream(sessionId: string | null) {
           buildReview: event.data as BuildReviewData,
           awaitingInput: true,
           currentPhase: "build",
+          phaseTransition: null,
         }));
         break;
 
@@ -156,6 +184,7 @@ export function useAgentStream(sessionId: string | null) {
           ...s,
           knowledgeDocument: (event.data as { markdown: string }).markdown,
           currentPhase: "crystallize",
+          phaseTransition: null,
         }));
         break;
 
@@ -218,6 +247,7 @@ export function useAgentStream(sessionId: string | null) {
     (input: UserInput) => {
       if (!sessionId) return;
       activeRef.current = true;
+      const nextPhase = getNextPhase(input);
       setState((s) => ({
         ...s,
         isStreaming: true,
@@ -230,6 +260,10 @@ export function useAgentStream(sessionId: string | null) {
         activityItems: [],
         toolErrors: [],
         error: null,
+        phaseTransition:
+          nextPhase && s.currentPhase
+            ? { from: s.currentPhase as Phase, to: nextPhase }
+            : null,
       }));
       controllerRef.current = sendUserInput(
         sessionId, input, handleEvent,
@@ -277,5 +311,9 @@ export function useAgentStream(sessionId: string | null) {
     setState((s) => ({ ...s, isStreaming: false }));
   }, [sessionId]);
 
-  return { ...state, startStream, sendInput, abort };
+  const dismissTransition = useCallback(() => {
+    setState((s) => ({ ...s, phaseTransition: null }));
+  }, []);
+
+  return { ...state, startStream, sendInput, abort, dismissTransition };
 }

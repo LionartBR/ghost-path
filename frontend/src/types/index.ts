@@ -10,6 +10,11 @@ export type Phase =
   | "decompose" | "explore" | "synthesize"
   | "validate" | "build" | "crystallize";
 
+export interface PhaseTransition {
+  from: Phase;
+  to: Phase;
+}
+
 export interface Session {
   id: string;
   problem: string;

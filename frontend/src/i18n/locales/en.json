@@ -139,5 +139,12 @@
   "errors.createSession": "Failed to create session",
   "errors.loadSession": "Failed to load session",
 
-  "session.cancel": "Cancel Pipeline"
+  "session.cancel": "Cancel Pipeline",
+
+  "transition.toExplore": "We've dismantled assumptions. Now we search distant domains for structural patterns nobody has connected to your problem yet.",
+  "transition.toSynthesize": "The landscape is mapped. Time to confront opposing ideas through dialectic and forge something that transcends both sides.",
+  "transition.toValidate": "Claims are forged. Now every one faces its toughest critic — what survives attempted destruction is real knowledge.",
+  "transition.toBuild": "Survivors emerge. Weaving validated claims into a knowledge graph — each node earned its place through dialectical fire.",
+  "transition.toCrystallize": "The forge is done. Distilling everything into a final Knowledge Document — crystallized knowledge from the dialectical process.",
+  "transition.toSynthesizeReturn": "Armed with what we learned and what we rejected, a new round of dialectical creation begins."
 }

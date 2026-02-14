@@ -139,5 +139,12 @@
   "errors.createSession": "세션 생성 실패",
   "errors.loadSession": "세션 로드 실패",
 
-  "session.cancel": "파이프라인 취소"
+  "session.cancel": "파이프라인 취소",
+
+  "transition.toExplore": "가정을 해체했습니다. 이제 아무도 당신의 문제에 연결하지 못한 구조적 패턴을 먼 영역에서 찾아봅니다.",
+  "transition.toSynthesize": "지형이 파악되었습니다. 변증법을 통해 대립하는 아이디어를 대면하고 양쪽을 초월하는 무언가를 만들어낼 시간입니다.",
+  "transition.toValidate": "주장이 단조되었습니다. 이제 가장 가혹한 비평가와 마주합니다 — 파괴 시도에서 살아남은 것이 진정한 지식입니다.",
+  "transition.toBuild": "생존자가 나타납니다. 검증된 주장을 지식 그래프로 엮어갑니다 — 각 노드는 변증법의 불로 자리를 얻었습니다.",
+  "transition.toCrystallize": "단조가 끝났습니다. 모든 것을 최종 지식 문서로 증류합니다 — 변증법 과정에서 결정화된 지식.",
+  "transition.toSynthesizeReturn": "배운 것과 거부한 것을 무장하고, 새로운 변증법적 창조의 라운드가 시작됩니다."
 }
