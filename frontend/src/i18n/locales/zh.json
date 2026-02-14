@@ -132,5 +132,7 @@
   "errors.loadingDocument": "加载文档失败",
   "errors.sessionNotFound": "未找到会话",
   "errors.createSession": "创建会话失败",
-  "errors.loadSession": "加载会话失败"
+  "errors.loadSession": "加载会话失败",
+
+  "session.cancel": "取消流水线"
 }

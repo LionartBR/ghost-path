@@ -35,6 +35,17 @@ export async function getKnowledgeGraph(sessionId: string): Promise<GraphData> {
   return res.json();
 }
 
+export async function cancelSession(sessionId: string): Promise<{ message: string }> {
+  const res = await fetch(`${API_BASE}/sessions/${sessionId}/cancel`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.detail || `Failed to cancel session: ${res.status}`);
+  }
+  return res.json();
+}
+
 function createSSEStream(
   url: string,
   options: RequestInit,

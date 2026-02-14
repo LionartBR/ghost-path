@@ -1,7 +1,7 @@
 /* useAgentStream — SSE consumer for TRIZ's 6-phase pipeline. */
 
 import { useCallback, useRef, useState } from "react";
-import { streamSession, sendUserInput } from "../api/client";
+import { streamSession, sendUserInput, cancelSession } from "../api/client";
 import type {
   SSEEvent,
   Claim,
@@ -211,10 +211,18 @@ export function useAgentStream(sessionId: string | null) {
     [sessionId, handleEvent],
   );
 
-  const abort = useCallback(() => {
+  const abort = useCallback(async () => {
     controllerRef.current?.abort();
+    if (sessionId) {
+      try {
+        await cancelSession(sessionId);
+      } catch (err) {
+        // Best-effort: stream already aborted client-side
+        console.error("Failed to cancel session:", err);
+      }
+    }
     setState((s) => ({ ...s, isStreaming: false }));
-  }, []);
+  }, [sessionId]);
 
   return { ...state, startStream, sendInput, abort };
 }

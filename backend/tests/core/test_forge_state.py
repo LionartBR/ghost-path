@@ -269,3 +269,27 @@ def test_locale_persists_across_round_reset():
     state.reset_for_new_round()
     assert state.locale == Locale.PT_BR
     assert state.locale_confidence == 0.95
+
+
+# --- Cancellation flag (transient) -------------------------------------------
+
+def test_initial_not_cancelled():
+    state = ForgeState()
+    assert state.cancelled is False
+
+
+def test_cancelled_not_in_snapshot():
+    """Cancelled flag is transient — not persisted to snapshot."""
+    state = ForgeState()
+    state.cancelled = True
+    snapshot = state.to_snapshot()
+    assert "cancelled" not in snapshot
+
+
+def test_cancelled_defaults_false_on_restore():
+    """Restored state always has cancelled=False (resumable after restart)."""
+    state = ForgeState()
+    state.cancelled = True
+    snapshot = state.to_snapshot()
+    restored = ForgeState.from_snapshot(snapshot)
+    assert restored.cancelled is False

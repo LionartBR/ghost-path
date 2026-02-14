@@ -132,5 +132,7 @@
   "errors.loadingDocument": "Impossibile caricare il documento",
   "errors.sessionNotFound": "Sessione non trovata",
   "errors.createSession": "Impossibile creare la sessione",
-  "errors.loadSession": "Impossibile caricare la sessione"
+  "errors.loadSession": "Impossibile caricare la sessione",
+
+  "session.cancel": "Annulla Pipeline"
 }

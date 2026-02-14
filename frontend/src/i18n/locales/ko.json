@@ -132,5 +132,7 @@
   "errors.loadingDocument": "문서 로드 실패",
   "errors.sessionNotFound": "세션을 찾을 수 없음",
   "errors.createSession": "세션 생성 실패",
-  "errors.loadSession": "세션 로드 실패"
+  "errors.loadSession": "세션 로드 실패",
+
+  "session.cancel": "파이프라인 취소"
 }

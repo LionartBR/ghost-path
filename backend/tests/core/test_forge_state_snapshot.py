@@ -180,7 +180,7 @@ def test_to_snapshot_captures_all_dataclass_fields():
     field_names = {f.name for f in dc_fields(ForgeState)}
 
     # Exclude transient fields that don't need persistence
-    transient = {"awaiting_user_input", "awaiting_input_type"}
+    transient = {"awaiting_user_input", "awaiting_input_type", "cancelled"}
     expected = field_names - transient
 
     for field_name in expected:

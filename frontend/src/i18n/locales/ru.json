@@ -132,5 +132,7 @@
   "errors.loadingDocument": "Не удалось загрузить документ",
   "errors.sessionNotFound": "Сессия не найдена",
   "errors.createSession": "Не удалось создать сессию",
-  "errors.loadSession": "Не удалось загрузить сессию"
+  "errors.loadSession": "Не удалось загрузить сессию",
+
+  "session.cancel": "Отменить конвейер"
 }

@@ -132,5 +132,7 @@
   "errors.loadingDocument": "ドキュメントの読み込みに失敗しました",
   "errors.sessionNotFound": "セッションが見つかりません",
   "errors.createSession": "セッションの作成に失敗しました",
-  "errors.loadSession": "セッションの読み込みに失敗しました"
+  "errors.loadSession": "セッションの読み込みに失敗しました",
+
+  "session.cancel": "パイプラインをキャンセル"
 }

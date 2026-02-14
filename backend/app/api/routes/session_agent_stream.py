@@ -73,6 +73,10 @@ async def stream_session(
 ):
     """Initial SSE stream: triggers Phase 1 (DECOMPOSE)."""
     session = await get_session_or_404(session_id, db)
+    if session.status == "cancelled":
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, detail="Session is cancelled",
+        )
     forge_state = _get_or_restore_forge_state(session_id, session)
     runner = _create_runner(db)
 
@@ -111,6 +115,10 @@ async def send_user_input(
 ):
     """Send user input — dispatches to phase-appropriate processing."""
     session = await get_session_or_404(session_id, db)
+    if session.status == "cancelled":
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, detail="Session is cancelled",
+        )
     forge_state = _get_or_restore_forge_state(session_id, session)
     runner = _create_runner(db)
 

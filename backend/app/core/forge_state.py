@@ -72,6 +72,9 @@ class ForgeState:
     awaiting_user_input: bool = False
     awaiting_input_type: str | None = None
 
+    # === Cancellation (transient — not persisted to snapshot) ===
+    cancelled: bool = False
+
     # --- Computed properties ---------------------------------------------------
 
     @property

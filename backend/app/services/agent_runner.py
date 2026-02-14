@@ -62,6 +62,16 @@ class AgentRunner:
             while iteration < self.MAX_ITERATIONS:
                 iteration += 1
 
+                # -- Check for cancellation (user-initiated via POST /cancel) --
+                if forge_state.cancelled:
+                    logger.info(
+                        "Session cancelled by user",
+                        extra={"session_id": str(session.id)},
+                    )
+                    yield {"type": "agent_text", "data": "Session cancelled."}
+                    yield _done_event(error=False)
+                    return
+
                 # -- Call Anthropic API with heartbeat (3s interval) --
                 try:
                     cached_system = _with_system_cache(system_prompt)

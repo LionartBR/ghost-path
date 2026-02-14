@@ -132,5 +132,7 @@
   "errors.loadingDocument": "Failed to load document",
   "errors.sessionNotFound": "Session not found",
   "errors.createSession": "Failed to create session",
-  "errors.loadSession": "Failed to load session"
+  "errors.loadSession": "Failed to load session",
+
+  "session.cancel": "Cancel Pipeline"
 }

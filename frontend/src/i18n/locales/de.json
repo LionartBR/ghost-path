@@ -132,5 +132,7 @@
   "errors.loadingDocument": "Dokument konnte nicht geladen werden",
   "errors.sessionNotFound": "Sitzung nicht gefunden",
   "errors.createSession": "Sitzung konnte nicht erstellt werden",
-  "errors.loadSession": "Sitzung konnte nicht geladen werden"
+  "errors.loadSession": "Sitzung konnte nicht geladen werden",
+
+  "session.cancel": "Pipeline abbrechen"
 }

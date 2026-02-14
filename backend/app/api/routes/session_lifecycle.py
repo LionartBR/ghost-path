@@ -164,13 +164,24 @@ async def delete_session(
 async def cancel_session(
     session_id: UUID, db: AsyncSession = Depends(get_db),
 ):
-    """Cancel an active session."""
+    """Cancel an active session. Sets ForgeState flag for immediate loop termination."""
     session = await get_session_or_404(session_id, db)
     if session.status == "cancelled":
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
             detail="Session is already cancelled",
         )
+    if session.status == "crystallized":
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="Cannot cancel a completed session",
+        )
+
+    # Set cancellation flag — immediate effect if agent loop is running
+    # (shared reference: _forge_states[id] IS the same object the runner holds)
+    if session_id in _forge_states:
+        _forge_states[session_id].cancelled = True
+
     session.status = "cancelled"
     await db.commit()
     return {"message": "Session cancelled"}
