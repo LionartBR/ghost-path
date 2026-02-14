@@ -57,6 +57,7 @@
 
   "verdicts.title": "Phase 4: Urteile fällen",
   "verdicts.description": "Entscheiden Sie über das Schicksal jeder Behauptung. Akzeptieren, ablehnen, qualifizieren (nur wahr wenn...) oder mit einer anderen Behauptung zusammenführen.",
+  "verdicts.unifiedDescription": "Überprüfen Sie jede Behauptung mit ihren Bewertungen und Belegen, dann entscheiden Sie: akzeptieren, ablehnen, qualifizieren oder zusammenführen.",
   "verdicts.accept": "Akzeptieren",
   "verdicts.reject": "Ablehnen",
   "verdicts.qualify": "Qualifizieren",
@@ -80,6 +81,7 @@
   "build.deepDiveAction": "Vertiefen",
   "build.selectClaim": "Behauptung auswählen...",
   "build.addInsight": "Eigene Einsicht hinzufügen",
+  "build.advancedOptions": "Erweiterte Optionen",
   "build.maxRounds": "Maximale Anzahl an Runden erreicht. Sie können nur Auflösen oder Ihre eigene Einsicht hinzufügen.",
 
   "graph.title": "Wissensgraph",
@@ -119,6 +121,7 @@
   "common.reasoning": "Begründung",
   "common.falsifiability": "Falsifizierbarkeitsbedingung",
   "common.scoreReasoning": "Bewertungsbegründung",
+  "common.details": "Details",
   "common.rejected": "Abgelehnt",
   "common.loading": "Wird geladen...",
   "common.error": "Fehler",

@@ -57,6 +57,7 @@
 
   "verdicts.title": "阶段4：作出裁决",
   "verdicts.description": "决定每个主张的命运。接受、拒绝、限定（仅当...时为真），或与另一个主张合并。",
+  "verdicts.unifiedDescription": "审查每个主张的评分和证据，然后决定：接受、拒绝、限定或合并。",
   "verdicts.accept": "接受",
   "verdicts.reject": "拒绝",
   "verdicts.qualify": "限定",
@@ -80,6 +81,7 @@
   "build.deepDiveAction": "深入研究",
   "build.selectClaim": "选择一个主张...",
   "build.addInsight": "添加您自己的见解",
+  "build.advancedOptions": "高级选项",
   "build.maxRounds": "已达到最大轮数。您只能选择解决或添加您自己的见解。",
 
   "graph.title": "知识图谱",
@@ -119,6 +121,7 @@
   "common.reasoning": "推理",
   "common.falsifiability": "可证伪性条件",
   "common.scoreReasoning": "评分推理",
+  "common.details": "详情",
   "common.rejected": "已拒绝",
   "common.loading": "加载中...",
   "common.error": "错误",

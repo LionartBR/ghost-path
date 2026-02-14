@@ -5,6 +5,7 @@ import type { Claim } from "../types";
 interface ClaimCardProps {
   claim: Claim;
   index: number;
+  compact?: boolean;
 }
 
 const CLAIM_TYPE_BORDER: Record<string, string> = {
@@ -57,9 +58,10 @@ const SCORE_KEY: Record<string, string> = {
   significance: "score.significance",
 };
 
-export default function ClaimCard({ claim, index }: ClaimCardProps) {
+export default function ClaimCard({ claim, index, compact = false }: ClaimCardProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(!compact);
 
   const borderColor = claim.claim_type
     ? CLAIM_TYPE_BORDER[claim.claim_type] || "border-l-gray-300"
@@ -72,9 +74,12 @@ export default function ClaimCard({ claim, index }: ClaimCardProps) {
     ? CONFIDENCE_BADGE[claim.confidence] || "bg-gray-50 text-gray-600 border border-gray-200"
     : null;
 
+  const hasDetails = claim.reasoning || claim.falsifiability_condition ||
+    (claim.evidence && claim.evidence.length > 0) || claim.score_reasoning;
+
   return (
     <div className={`bg-white border border-gray-200 rounded-lg shadow-sm border-l-4 ${borderColor}`}>
-      <div className="p-5">
+      <div className={compact ? "p-4" : "p-5"}>
         {/* Header */}
         <div className="flex items-center gap-3 mb-3">
           {typeKey && typeColor && (
@@ -92,28 +97,12 @@ export default function ClaimCard({ claim, index }: ClaimCardProps) {
           )}
         </div>
 
-        {/* Claim text */}
-        <p className="text-gray-900 text-base font-medium leading-relaxed">
+        {/* Claim text — always visible */}
+        <p className={`text-gray-900 font-medium leading-relaxed ${compact ? "text-sm" : "text-base"}`}>
           {claim.claim_text}
         </p>
 
-        {/* Reasoning */}
-        {claim.reasoning && (
-          <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-100">
-            <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wide">{t("common.reasoning")}</p>
-            <p className="text-gray-600 text-sm leading-relaxed">{claim.reasoning}</p>
-          </div>
-        )}
-
-        {/* Falsifiability */}
-        {claim.falsifiability_condition && (
-          <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-100">
-            <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wide">{t("common.falsifiability")}</p>
-            <p className="text-gray-600 text-sm leading-relaxed">{claim.falsifiability_condition}</p>
-          </div>
-        )}
-
-        {/* Scores */}
+        {/* Scores — always visible */}
         {claim.scores && (
           <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3">
             {Object.entries(claim.scores).map(([key, value]) =>
@@ -137,46 +126,76 @@ export default function ClaimCard({ claim, index }: ClaimCardProps) {
           </div>
         )}
 
-        {/* Evidence toggle */}
-        {claim.evidence && claim.evidence.length > 0 && (
-          <div className="mt-4">
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="text-sm text-indigo-600 hover:text-indigo-500 font-medium"
-            >
-              {expanded ? t("common.hide") : t("common.show")} {t("evidence.title")} ({claim.evidence.length})
-            </button>
-            {expanded && (
-              <div className="mt-2 space-y-2">
-                {claim.evidence.map((ev, i) => (
-                  <div key={i} className="p-3 bg-gray-50 rounded-md border border-gray-100">
-                    <a
-                      href={ev.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-indigo-600 hover:text-indigo-500 text-sm font-medium"
-                    >
-                      {ev.title}
-                    </a>
-                    <p className="text-gray-500 text-xs mt-1">{ev.summary}</p>
-                    {ev.type && (
-                      <span className="inline-block mt-1.5 px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded border border-gray-200">
-                        {ev.type}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+        {/* Collapsible details in compact mode */}
+        {compact && hasDetails && (
+          <button
+            onClick={() => setDetailsOpen(!detailsOpen)}
+            className="mt-3 text-xs text-indigo-600 hover:text-indigo-500 font-medium"
+          >
+            {detailsOpen ? t("common.hide") : t("common.show")} {t("common.details")}
+          </button>
         )}
 
-        {/* Score reasoning */}
-        {claim.score_reasoning && (
-          <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-100">
-            <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wide">{t("common.scoreReasoning")}</p>
-            <p className="text-gray-600 text-sm leading-relaxed">{claim.score_reasoning}</p>
-          </div>
+        {detailsOpen && (
+          <>
+            {/* Reasoning */}
+            {claim.reasoning && (
+              <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-100">
+                <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wide">{t("common.reasoning")}</p>
+                <p className="text-gray-600 text-sm leading-relaxed">{claim.reasoning}</p>
+              </div>
+            )}
+
+            {/* Falsifiability */}
+            {claim.falsifiability_condition && (
+              <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-100">
+                <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wide">{t("common.falsifiability")}</p>
+                <p className="text-gray-600 text-sm leading-relaxed">{claim.falsifiability_condition}</p>
+              </div>
+            )}
+
+            {/* Evidence toggle */}
+            {claim.evidence && claim.evidence.length > 0 && (
+              <div className="mt-4">
+                <button
+                  onClick={() => setExpanded(!expanded)}
+                  className="text-sm text-indigo-600 hover:text-indigo-500 font-medium"
+                >
+                  {expanded ? t("common.hide") : t("common.show")} {t("evidence.title")} ({claim.evidence.length})
+                </button>
+                {expanded && (
+                  <div className="mt-2 space-y-2">
+                    {claim.evidence.map((ev, i) => (
+                      <div key={i} className="p-3 bg-gray-50 rounded-md border border-gray-100">
+                        <a
+                          href={ev.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 hover:text-indigo-500 text-sm font-medium"
+                        >
+                          {ev.title}
+                        </a>
+                        <p className="text-gray-500 text-xs mt-1">{ev.summary}</p>
+                        {ev.type && (
+                          <span className="inline-block mt-1.5 px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded border border-gray-200">
+                            {ev.type}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Score reasoning */}
+            {claim.score_reasoning && (
+              <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-100">
+                <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wide">{t("common.scoreReasoning")}</p>
+                <p className="text-gray-600 text-sm leading-relaxed">{claim.score_reasoning}</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

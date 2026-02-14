@@ -57,6 +57,7 @@
 
   "verdicts.title": "4단계: 판정 내리기",
   "verdicts.description": "각 주장의 운명을 결정하세요. 수락, 거부, 제한 (... 경우에만 참), 또는 다른 주장과 병합하세요.",
+  "verdicts.unifiedDescription": "각 주장의 점수와 증거를 검토한 후 수락, 거부, 제한 또는 병합을 결정하세요.",
   "verdicts.accept": "수락",
   "verdicts.reject": "거부",
   "verdicts.qualify": "제한",
@@ -80,6 +81,7 @@
   "build.deepDiveAction": "심층 분석",
   "build.selectClaim": "주장 선택...",
   "build.addInsight": "자신의 통찰 추가",
+  "build.advancedOptions": "고급 옵션",
   "build.maxRounds": "최대 라운드에 도달했습니다. 해결 또는 자신의 통찰 추가만 가능합니다.",
 
   "graph.title": "지식 그래프",
@@ -119,6 +121,7 @@
   "common.reasoning": "추론",
   "common.falsifiability": "반증 가능성 조건",
   "common.scoreReasoning": "점수 추론",
+  "common.details": "세부 정보",
   "common.rejected": "거부됨",
   "common.loading": "로딩 중...",
   "common.error": "오류",

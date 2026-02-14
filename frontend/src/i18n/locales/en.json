@@ -57,6 +57,7 @@
 
   "verdicts.title": "Phase 4: Render Verdicts",
   "verdicts.description": "Decide the fate of each claim. Accept, reject, qualify (true only if...), or merge with another claim.",
+  "verdicts.unifiedDescription": "Review each claim with its scores and evidence, then decide: accept, reject, qualify, or merge.",
   "verdicts.accept": "Accept",
   "verdicts.reject": "Reject",
   "verdicts.qualify": "Qualify",
@@ -80,6 +81,7 @@
   "build.deepDiveAction": "Deep-dive",
   "build.selectClaim": "Select a claim...",
   "build.addInsight": "Add Your Own Insight",
+  "build.advancedOptions": "Advanced options",
   "build.maxRounds": "Maximum rounds reached. You can only Resolve or Add Your Own Insight.",
 
   "graph.title": "Knowledge Graph",
@@ -119,6 +121,7 @@
   "common.reasoning": "Reasoning",
   "common.falsifiability": "Falsifiability Condition",
   "common.scoreReasoning": "Score Reasoning",
+  "common.details": "Details",
   "common.rejected": "Rejected",
   "common.loading": "Loading...",
   "common.error": "Error",

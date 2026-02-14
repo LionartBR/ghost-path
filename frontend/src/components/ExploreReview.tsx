@@ -9,6 +9,8 @@ interface ExploreReviewProps {
 
 export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) => {
   const { t } = useTranslation();
+  const [morphBoxOpen, setMorphBoxOpen] = useState(false);
+  const [contradictionsOpen, setContradictionsOpen] = useState(false);
   const [starredAnalogies, setStarredAnalogies] = useState<Set<number>>(new Set());
   const [newDomain, setNewDomain] = useState("");
 
@@ -33,41 +35,49 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
     <div className="space-y-5 p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
       {data.morphological_box && (
         <div>
-          <h3 className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">{t("explore.morphBox")}</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  {data.morphological_box.parameters.map((param, i) => (
-                    <th
-                      key={i}
-                      className="px-3 py-2 bg-blue-50 text-blue-700 text-left text-xs font-semibold uppercase tracking-wide border border-gray-200"
-                    >
-                      {param.name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {Array.from({
-                  length: Math.max(
-                    ...data.morphological_box.parameters.map((p) => p.values.length)
-                  ),
-                }).map((_, rowIndex) => (
-                  <tr key={rowIndex}>
-                    {data.morphological_box!.parameters.map((param, colIndex) => (
-                      <td
-                        key={colIndex}
-                        className="px-3 py-2 text-gray-700 text-sm border border-gray-200"
+          <button
+            onClick={() => setMorphBoxOpen(!morphBoxOpen)}
+            className="flex items-center gap-2 text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3 hover:text-blue-500 transition-colors"
+          >
+            <span className={`transition-transform ${morphBoxOpen ? "rotate-90" : ""}`}>&#9654;</span>
+            {t("explore.morphBox")} ({data.morphological_box.parameters.length})
+          </button>
+          {morphBoxOpen && (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    {data.morphological_box.parameters.map((param, i) => (
+                      <th
+                        key={i}
+                        className="px-3 py-2 bg-blue-50 text-blue-700 text-left text-xs font-semibold uppercase tracking-wide border border-gray-200"
                       >
-                        {param.values[rowIndex] || ""}
-                      </td>
+                        {param.name}
+                      </th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {Array.from({
+                    length: Math.max(
+                      ...data.morphological_box.parameters.map((p) => p.values.length)
+                    ),
+                  }).map((_, rowIndex) => (
+                    <tr key={rowIndex}>
+                      {data.morphological_box!.parameters.map((param, colIndex) => (
+                        <td
+                          key={colIndex}
+                          className="px-3 py-2 text-gray-700 text-sm border border-gray-200"
+                        >
+                          {param.values[rowIndex] || ""}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -115,23 +125,31 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">{t("explore.contradictions")}</h3>
-        <div className="space-y-2">
-          {data.contradictions.map((contradiction, i) => (
-            <div key={i} className="p-3 bg-gray-50 rounded-md border border-gray-100">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded text-xs font-medium">
-                  {contradiction.property_a}
-                </span>
-                <span className="text-gray-400 text-xs">vs</span>
-                <span className="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded text-xs font-medium">
-                  {contradiction.property_b}
-                </span>
+        <button
+          onClick={() => setContradictionsOpen(!contradictionsOpen)}
+          className="flex items-center gap-2 text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3 hover:text-blue-500 transition-colors"
+        >
+          <span className={`transition-transform ${contradictionsOpen ? "rotate-90" : ""}`}>&#9654;</span>
+          {t("explore.contradictions")} ({data.contradictions.length})
+        </button>
+        {contradictionsOpen && (
+          <div className="space-y-2">
+            {data.contradictions.map((contradiction, i) => (
+              <div key={i} className="p-3 bg-gray-50 rounded-md border border-gray-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded text-xs font-medium">
+                    {contradiction.property_a}
+                  </span>
+                  <span className="text-gray-400 text-xs">vs</span>
+                  <span className="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded text-xs font-medium">
+                    {contradiction.property_b}
+                  </span>
+                </div>
+                <p className="text-gray-600 text-sm">{contradiction.description}</p>
               </div>
-              <p className="text-gray-600 text-sm">{contradiction.description}</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <button

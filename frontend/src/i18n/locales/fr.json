@@ -57,6 +57,7 @@
 
   "verdicts.title": "Phase 4 : Rendre les verdicts",
   "verdicts.description": "Décidez du sort de chaque affirmation. Acceptez, rejetez, qualifiez (vrai seulement si...) ou fusionnez avec une autre affirmation.",
+  "verdicts.unifiedDescription": "Examinez chaque affirmation avec ses scores et preuves, puis décidez : accepter, rejeter, qualifier ou fusionner.",
   "verdicts.accept": "Accepter",
   "verdicts.reject": "Rejeter",
   "verdicts.qualify": "Qualifier",
@@ -80,6 +81,7 @@
   "build.deepDiveAction": "Approfondir",
   "build.selectClaim": "Sélectionner une affirmation...",
   "build.addInsight": "Ajouter votre propre aperçu",
+  "build.advancedOptions": "Options avancées",
   "build.maxRounds": "Nombre maximum de tours atteint. Vous pouvez uniquement Résoudre ou Ajouter votre propre aperçu.",
 
   "graph.title": "Graphe de connaissances",
@@ -119,6 +121,7 @@
   "common.reasoning": "Raisonnement",
   "common.falsifiability": "Condition de réfutabilité",
   "common.scoreReasoning": "Raisonnement du score",
+  "common.details": "Détails",
   "common.rejected": "Rejeté",
   "common.loading": "Chargement...",
   "common.error": "Erreur",

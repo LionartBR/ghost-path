@@ -57,6 +57,7 @@
 
   "verdicts.title": "Fase 4: Emetti Verdetti",
   "verdicts.description": "Decidi il destino di ciascuna affermazione. Accetta, rifiuta, qualifica (vero solo se...), o unisci con un'altra affermazione.",
+  "verdicts.unifiedDescription": "Esamina ogni affermazione con i suoi punteggi e prove, poi decidi: accetta, rifiuta, qualifica o unisci.",
   "verdicts.accept": "Accetta",
   "verdicts.reject": "Rifiuta",
   "verdicts.qualify": "Qualifica",
@@ -80,6 +81,7 @@
   "build.deepDiveAction": "Approfondisci",
   "build.selectClaim": "Seleziona un'affermazione...",
   "build.addInsight": "Aggiungi la Tua Intuizione",
+  "build.advancedOptions": "Opzioni avanzate",
   "build.maxRounds": "Numero massimo di round raggiunto. Puoi solo Risolvere o Aggiungere la Tua Intuizione.",
 
   "graph.title": "Grafo della Conoscenza",
@@ -119,6 +121,7 @@
   "common.reasoning": "Ragionamento",
   "common.falsifiability": "Condizione di Falsificabilità",
   "common.scoreReasoning": "Ragionamento del Punteggio",
+  "common.details": "Dettagli",
   "common.rejected": "Rifiutato",
   "common.loading": "Caricamento...",
   "common.error": "Errore",

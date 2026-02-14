@@ -10,7 +10,7 @@ import { ContextMeter } from "../components/ContextMeter";
 import { DecomposeReview } from "../components/DecomposeReview";
 import { ExploreReview } from "../components/ExploreReview";
 import ClaimReview from "../components/ClaimReview";
-import VerdictPanel from "../components/VerdictPanel";
+import ClaimVerdictReview from "../components/ClaimVerdictReview";
 import BuildDecision from "../components/BuildDecision";
 import KnowledgeGraph from "../components/KnowledgeGraph";
 import KnowledgeDocument from "../components/KnowledgeDocument";
@@ -42,7 +42,6 @@ export function SessionPage() {
   const showNothing =
     !stream.decomposeReview &&
     !stream.exploreReview &&
-    !stream.claimsReview &&
     !stream.verdictsReview &&
     !stream.buildReview &&
     !stream.knowledgeDocument;
@@ -120,14 +119,14 @@ export function SessionPage() {
               <ExploreReview data={stream.exploreReview} onSubmit={handleSubmit} />
             )}
 
-            {/* Phase 3: Claims Review */}
-            {stream.claimsReview && stream.awaitingInput && (
+            {/* Phase 3: Claims Review (fallback — normally auto-submitted) */}
+            {stream.claimsReview && stream.awaitingInput && !stream.verdictsReview && (
               <ClaimReview claims={stream.claimsReview} onSubmit={handleSubmit} />
             )}
 
-            {/* Phase 4: Verdicts */}
+            {/* Phase 4: Unified Claim + Verdict Review */}
             {stream.verdictsReview && stream.awaitingInput && (
-              <VerdictPanel claims={stream.verdictsReview} onSubmit={handleSubmit} />
+              <ClaimVerdictReview claims={stream.verdictsReview} onSubmit={handleSubmit} />
             )}
 
             {/* Phase 5: Build Decision */}

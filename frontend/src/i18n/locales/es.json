@@ -57,6 +57,7 @@
 
   "verdicts.title": "Fase 4: Emitir Veredictos",
   "verdicts.description": "Decide el destino de cada afirmación. Acepta, rechaza, califica (verdadero solo si...) o fusiona con otra afirmación.",
+  "verdicts.unifiedDescription": "Revisa cada afirmación con sus puntuaciones y evidencia, luego decide: aceptar, rechazar, calificar o fusionar.",
   "verdicts.accept": "Aceptar",
   "verdicts.reject": "Rechazar",
   "verdicts.qualify": "Calificar",
@@ -80,6 +81,7 @@
   "build.deepDiveAction": "Profundizar",
   "build.selectClaim": "Seleccionar una afirmación...",
   "build.addInsight": "Añadir Tu Propia Perspectiva",
+  "build.advancedOptions": "Opciones avanzadas",
   "build.maxRounds": "Número máximo de rondas alcanzado. Solo puedes Resolver o Añadir Tu Propia Perspectiva.",
 
   "graph.title": "Grafo de Conocimiento",
@@ -119,6 +121,7 @@
   "common.reasoning": "Razonamiento",
   "common.falsifiability": "Condición de Falsabilidad",
   "common.scoreReasoning": "Razonamiento de Puntuación",
+  "common.details": "Detalles",
   "common.rejected": "Rechazado",
   "common.loading": "Cargando...",
   "common.error": "Error",

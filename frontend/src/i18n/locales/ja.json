@@ -57,6 +57,7 @@
 
   "verdicts.title": "フェーズ4: 判定を下す",
   "verdicts.description": "各主張の運命を決定します。受諾、却下、限定（〜の場合のみ真）、または他の主張との統合を選択してください。",
+  "verdicts.unifiedDescription": "各主張のスコアと証拠を確認し、受諾、却下、限定、または統合を決定してください。",
   "verdicts.accept": "受諾",
   "verdicts.reject": "却下",
   "verdicts.qualify": "限定",
@@ -80,6 +81,7 @@
   "build.deepDiveAction": "深掘り",
   "build.selectClaim": "主張を選択...",
   "build.addInsight": "独自の洞察を追加",
+  "build.advancedOptions": "詳細オプション",
   "build.maxRounds": "最大ラウンド数に到達しました。解決または独自の洞察の追加のみ可能です。",
 
   "graph.title": "知識グラフ",
@@ -119,6 +121,7 @@
   "common.reasoning": "推論",
   "common.falsifiability": "反証可能性条件",
   "common.scoreReasoning": "スコア推論",
+  "common.details": "詳細",
   "common.rejected": "却下済み",
   "common.loading": "読み込み中...",
   "common.error": "エラー",

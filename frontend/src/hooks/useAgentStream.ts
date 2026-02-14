@@ -1,10 +1,11 @@
 /* useAgentStream — SSE consumer for TRIZ's 6-phase pipeline. */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { streamSession, sendUserInput, cancelSession } from "../api/client";
 import type {
   SSEEvent,
   Claim,
+  ClaimFeedback,
   DecomposeReviewData,
   ExploreReviewData,
   BuildReviewData,
@@ -56,6 +57,11 @@ export function useAgentStream(sessionId: string | null) {
      so the second effect invocation sees activeRef.current === true
      and skips the duplicate SSE connection. */
   const activeRef = useRef(false);
+  /* ADR: auto-submit Phase 3 claims review so the user sees only the
+     unified verdict UI (Phase 4). Claims are stored here when the
+     review_claims event arrives; a useEffect fires the auto-submit
+     once the stream settles (isStreaming=false). */
+  const autoSubmitClaimsRef = useRef<Claim[] | null>(null);
 
   const handleEvent = useCallback((event: SSEEvent) => {
     switch (event.type) {
@@ -115,14 +121,17 @@ export function useAgentStream(sessionId: string | null) {
         }));
         break;
 
-      case "review_claims":
+      case "review_claims": {
+        const claims = (event.data as { claims: Claim[] }).claims;
+        autoSubmitClaimsRef.current = claims;
         setState((s) => ({
           ...s,
-          claimsReview: (event.data as { claims: Claim[] }).claims,
-          awaitingInput: true,
+          claimsReview: claims,
           currentPhase: "synthesize",
+          /* awaitingInput deliberately NOT set — auto-submit fires via useEffect */
         }));
         break;
+      }
 
       case "review_verdicts":
         setState((s) => ({
@@ -171,10 +180,18 @@ export function useAgentStream(sessionId: string | null) {
       case "done": {
         activeRef.current = false;
         const d = event.data as { error: boolean; awaiting_input: boolean };
+        const hasAutoSubmitPending = autoSubmitClaimsRef.current !== null;
+        /* Clear auto-submit on error so the useEffect fallback doesn't fire
+           against a broken stream — user sees the manual ClaimReview instead. */
+        if (d.error) {
+          autoSubmitClaimsRef.current = null;
+        }
         setState((s) => ({
           ...s,
           isStreaming: false,
-          awaitingInput: s.awaitingInput || d.awaiting_input,
+          awaitingInput: hasAutoSubmitPending && !d.error
+            ? s.awaitingInput
+            : s.awaitingInput || d.awaiting_input,
         }));
         break;
       }
@@ -225,8 +242,29 @@ export function useAgentStream(sessionId: string | null) {
     [sessionId, handleEvent],
   );
 
+  /* Auto-submit Phase 3 claims review once the stream finishes.
+     Sends default feedback (all evidence_valid: true) so the pipeline
+     continues to Phase 4 (VALIDATE) without user interaction.
+     Fallback: on failure, shows the manual ClaimReview UI. */
+  useEffect(() => {
+    if (state.isStreaming || !autoSubmitClaimsRef.current || !sessionId) return;
+    const claims = autoSubmitClaimsRef.current;
+    autoSubmitClaimsRef.current = null;
+    const claim_feedback: ClaimFeedback[] = claims.map((_, i) => ({
+      claim_index: i,
+      evidence_valid: true,
+    }));
+    try {
+      sendInput({ type: "claims_review", claim_feedback });
+    } catch {
+      /* Fallback: show manual ClaimReview if auto-submit fails */
+      setState((s) => ({ ...s, awaitingInput: true }));
+    }
+  }, [state.isStreaming, sessionId, sendInput]);
+
   const abort = useCallback(async () => {
     activeRef.current = false;
+    autoSubmitClaimsRef.current = null;
     controllerRef.current?.abort();
     if (sessionId) {
       try {

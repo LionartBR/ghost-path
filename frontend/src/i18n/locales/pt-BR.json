@@ -57,6 +57,7 @@
 
   "verdicts.title": "Fase 4: Emitir Vereditos",
   "verdicts.description": "Decida o destino de cada afirmação. Aceite, rejeite, qualifique (verdadeiro apenas se...), ou combine com outra afirmação.",
+  "verdicts.unifiedDescription": "Revise cada afirmação com suas pontuações e evidências, depois decida: aceitar, rejeitar, qualificar ou combinar.",
   "verdicts.accept": "Aceitar",
   "verdicts.reject": "Rejeitar",
   "verdicts.qualify": "Qualificar",
@@ -80,6 +81,7 @@
   "build.deepDiveAction": "Aprofundar",
   "build.selectClaim": "Selecione uma afirmação...",
   "build.addInsight": "Adicionar Sua Própria Percepção",
+  "build.advancedOptions": "Opções avançadas",
   "build.maxRounds": "Número máximo de rodadas atingido. Você só pode Resolver ou Adicionar Sua Própria Percepção.",
 
   "graph.title": "Grafo de Conhecimento",
@@ -119,6 +121,7 @@
   "common.reasoning": "Raciocínio",
   "common.falsifiability": "Condição de Falsificabilidade",
   "common.scoreReasoning": "Raciocínio da Pontuação",
+  "common.details": "Detalhes",
   "common.rejected": "Rejeitado",
   "common.loading": "Carregando...",
   "common.error": "Erro",

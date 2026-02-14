@@ -9,7 +9,10 @@ interface DecomposeReviewProps {
 
 export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit }) => {
   const { t } = useTranslation();
-  const [confirmedAssumptions, setConfirmedAssumptions] = useState<Set<number>>(new Set());
+  const [fundamentalsOpen, setFundamentalsOpen] = useState(false);
+  const [confirmedAssumptions, setConfirmedAssumptions] = useState<Set<number>>(
+    () => new Set(data.assumptions.map((_, i) => i))
+  );
   const [rejectedAssumptions, setRejectedAssumptions] = useState<Set<number>>(new Set());
   const [selectedReframings, setSelectedReframings] = useState<Set<number>>(new Set());
   const [newAssumption, setNewAssumption] = useState("");
@@ -64,15 +67,23 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
   return (
     <div className="space-y-5 p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
       <div>
-        <h3 className="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">{t("decompose.fundamentals")}</h3>
-        <ul className="space-y-2">
-          {data.fundamentals.map((fundamental, i) => (
-            <li key={i} className="text-gray-700 text-sm flex items-start">
-              <span className="text-indigo-400 mr-2 mt-0.5">&bull;</span>
-              {fundamental}
-            </li>
-          ))}
-        </ul>
+        <button
+          onClick={() => setFundamentalsOpen(!fundamentalsOpen)}
+          className="flex items-center gap-2 text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3 hover:text-indigo-500 transition-colors"
+        >
+          <span className={`transition-transform ${fundamentalsOpen ? "rotate-90" : ""}`}>&#9654;</span>
+          {t("decompose.fundamentals")} ({data.fundamentals.length})
+        </button>
+        {fundamentalsOpen && (
+          <ul className="space-y-2">
+            {data.fundamentals.map((fundamental, i) => (
+              <li key={i} className="text-gray-700 text-sm flex items-start">
+                <span className="text-indigo-400 mr-2 mt-0.5">&bull;</span>
+                {fundamental}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div>
