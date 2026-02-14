@@ -13,6 +13,7 @@
 import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { ActivityItem } from "../types";
 
 interface AgentActivityProps {
@@ -65,6 +66,7 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
               return (
                 <div key={i} className="agent-markdown animate-fade-in">
                   <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
                     components={{
                       h1: ({ children }) => (
                         <h1 className="text-base font-bold text-gray-900 mb-2 mt-3 first:mt-0">{children}</h1>
