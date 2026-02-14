@@ -111,9 +111,6 @@
   "agent.waiting": "에이전트 활동 대기 중...",
   "agent.working": "에이전트가 지식을 구축하고 있습니다...",
 
-  "context.label": "컨텍스트",
-  "context.approaching": "제한에 도달 중",
-
   "insight.title": "자신의 통찰 추가",
   "insight.description": "증거 URL과 함께 자신의 지식 주장을 기여하세요.",
   "insight.label": "통찰 또는 주장",

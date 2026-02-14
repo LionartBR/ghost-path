@@ -111,9 +111,6 @@
   "agent.waiting": "In attesa dell'attività dell'agente...",
   "agent.working": "L'agente sta costruendo conoscenza...",
 
-  "context.label": "Contesto",
-  "context.approaching": "Limite in avvicinamento",
-
   "insight.title": "Aggiungi la Tua Intuizione",
   "insight.description": "Contribuisci con la tua affermazione di conoscenza con URL di evidenza a supporto.",
   "insight.label": "La tua intuizione o affermazione",

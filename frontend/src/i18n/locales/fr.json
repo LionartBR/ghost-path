@@ -111,9 +111,6 @@
   "agent.waiting": "En attente de l'activité de l'agent...",
   "agent.working": "L'agent construit des connaissances...",
 
-  "context.label": "Contexte",
-  "context.approaching": "Limite approchante",
-
   "insight.title": "Ajouter votre propre aperçu",
   "insight.description": "Contribuez votre propre affirmation de connaissance avec des URLs de preuves à l'appui.",
   "insight.label": "Votre aperçu ou affirmation",

@@ -111,9 +111,6 @@
   "agent.waiting": "等待代理活动...",
   "agent.working": "代理正在构建知识...",
 
-  "context.label": "上下文",
-  "context.approaching": "接近限制",
-
   "insight.title": "添加您自己的见解",
   "insight.description": "贡献您自己的知识主张并提供支持证据的URL。",
   "insight.label": "您的见解或主张",

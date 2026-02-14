@@ -111,9 +111,6 @@
   "agent.waiting": "Waiting for agent activity...",
   "agent.working": "Agent is building knowledge...",
 
-  "context.label": "Context",
-  "context.approaching": "Limit approaching",
-
   "insight.title": "Add Your Own Insight",
   "insight.description": "Contribute your own knowledge claim with supporting evidence URLs.",
   "insight.label": "Your insight or claim",

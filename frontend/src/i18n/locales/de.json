@@ -111,9 +111,6 @@
   "agent.waiting": "Warte auf Agenten-Aktivität...",
   "agent.working": "Agent baut Wissen auf...",
 
-  "context.label": "Kontext",
-  "context.approaching": "Limit wird erreicht",
-
   "insight.title": "Eigene Einsicht hinzufügen",
   "insight.description": "Tragen Sie Ihre eigene Wissensbehauptung mit unterstützenden Beleg-URLs bei.",
   "insight.label": "Ihre Einsicht oder Behauptung",

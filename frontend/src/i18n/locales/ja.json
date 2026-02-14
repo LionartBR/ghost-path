@@ -111,9 +111,6 @@
   "agent.waiting": "エージェントアクティビティを待機中...",
   "agent.working": "エージェントが知識を構築しています...",
 
-  "context.label": "コンテキスト",
-  "context.approaching": "上限に近づいています",
-
   "insight.title": "独自の洞察を追加",
   "insight.description": "証拠URLを添えて独自の知識主張を提供します。",
   "insight.label": "あなたの洞察または主張",

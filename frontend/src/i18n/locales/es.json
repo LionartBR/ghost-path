@@ -111,9 +111,6 @@
   "agent.waiting": "Esperando actividad del agente...",
   "agent.working": "El agente está construyendo conocimiento...",
 
-  "context.label": "Contexto",
-  "context.approaching": "Acercándose al límite",
-
   "insight.title": "Añadir Tu Propia Perspectiva",
   "insight.description": "Contribuye con tu propia afirmación de conocimiento con URLs de evidencia de respaldo.",
   "insight.label": "Tu perspectiva o afirmación",
