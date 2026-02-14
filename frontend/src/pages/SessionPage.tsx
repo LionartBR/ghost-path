@@ -145,7 +145,7 @@ export function SessionPage() {
                 <div className="flex justify-center mb-4">
                   <TrizMascot />
                 </div>
-                <p className="text-gray-500 text-sm">{t("agent.working")}</p>
+                <p className="text-sm font-medium animate-shimmer">{t("agent.working")}</p>
               </div>
             )}
 

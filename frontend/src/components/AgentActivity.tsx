@@ -43,7 +43,7 @@ export const AgentActivity: React.FC<AgentActivityProps> = ({
         {isStreaming && (
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-xs text-green-600 font-medium">
+            <span className="text-xs font-medium animate-shimmer-green">
               {hasActivity ? t("agent.processing") : t("agent.thinking")}
             </span>
           </div>

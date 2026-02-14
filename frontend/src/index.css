@@ -69,6 +69,44 @@ body {
   animation: mascot-jump 0.4s ease-out infinite;
 }
 
+/* Shimmer glow for loading text */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    #6b7280 0%,
+    #6b7280 35%,
+    #818cf8 50%,
+    #6b7280 65%,
+    #6b7280 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 2.5s ease-in-out infinite;
+}
+
+.animate-shimmer-green {
+  background: linear-gradient(
+    90deg,
+    #16a34a 0%,
+    #16a34a 35%,
+    #86efac 50%,
+    #16a34a 65%,
+    #16a34a 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 2.5s ease-in-out infinite;
+}
+
 
 /* Agent markdown — scoped overrides so ReactMarkdown inherits panel context */
 .agent-markdown > *:first-child {
