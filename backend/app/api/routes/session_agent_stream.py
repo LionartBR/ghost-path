@@ -255,6 +255,7 @@ def _format_user_input(
         input_type=body.type,
         locale_prefix=prefix,
         locale=state.locale,
+        forge_state=state,
         confirmed_assumptions=body.confirmed_assumptions,
         rejected_assumptions=body.rejected_assumptions,
         added_assumptions=body.added_assumptions,

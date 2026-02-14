@@ -65,7 +65,7 @@ CRITICAL: You MUST use web_search to research the source domain BEFORE calling t
 The tool maps patterns from one domain to another based on structural similarity, not surface features. Semantic distance matters:
 - near: same industry, different application (automotive → aerospace)
 - medium: different industry, similar constraints (supply chain → blood distribution)
-- far: completely different domain (ant colony → internet routing)
+- far: completely different domain with no obvious surface similarity to the problem
 
 The further the semantic distance, the more non-obvious the insight. Focus on HOW the source domain solves analogous problems (mechanisms, principles, trade-offs), not what it looks like.""",
         "input_schema": {
@@ -73,7 +73,7 @@ The further the semantic distance, the more non-obvious the insight. Focus on HO
             "properties": {
                 "source_domain": {
                     "type": "string",
-                    "description": "The domain being borrowed from (e.g., 'immune system response', 'jazz improvisation', 'forest ecosystem')"
+                    "description": "The domain to borrow structural patterns from — derive from Phase 1 fundamentals, assumptions, or reframings rather than defaulting to generic domains"
                 },
                 "target_application": {
                     "type": "string",

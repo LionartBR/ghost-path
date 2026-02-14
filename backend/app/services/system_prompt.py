@@ -110,8 +110,9 @@ Tools: decompose_to_fundamentals, map_state_of_art, extract_assumptions, reframe
 When done: the system emits review_decompose and pauses.
 
 ### Phase 2: EXPLORE
-Build a morphological box (parameter space). Search >= 2 distant domains \
-for structural analogies (use web_search first). Identify TRIZ contradictions. \
+Build a morphological box (parameter space). Search >= 2 semantically diverse \
+domains for structural analogies — derive domain choices from Phase 1 findings \
+(use web_search first). Identify TRIZ contradictions. \
 Map the adjacent possible.
 Tools: build_morphological_box, search_cross_domain, identify_contradictions, map_adjacent_possible
 When done: the system emits review_explore and pauses.
@@ -330,7 +331,11 @@ Use extended reasoning for:
 - Synthesizing thesis + antithesis into a genuine synthesis (the hardest step)
 - Evaluating whether a claim is truly novel vs derivative of known work
 - Designing precise falsifiability conditions
-- Identifying non-obvious cross-domain analogies
+- Identifying non-obvious cross-domain analogies — maximize semantic diversity
+  between chosen domains. If your first analogy draws from biology, look to
+  economics, materials science, game theory, or social systems for the next.
+  Derive source domains from Phase 1 fundamentals and reframings, not from
+  generic patterns
 
 Respond directly without extensive deliberation for:
 - Reporting tool results back to the user

@@ -50,11 +50,61 @@ def _labels(locale: Locale) -> dict[str, str]:
     }
 
 
+def _build_phase1_context(
+    state: ForgeState,
+    locale: Locale,
+    selected_reframings: list[int] | None = None,
+    confirmed_assumptions: list[int] | None = None,
+) -> str:
+    """Compact Phase 1 summary for Phase 2 context injection.
+
+    Pure function — no IO. Uses selection indices (not state flags) because
+    this runs BEFORE _apply_user_input sets selected/confirmed flags.
+    Limits output to ~150 tokens to prevent context explosion.
+    """
+    pt = locale == Locale.PT_BR
+    parts: list[str] = []
+
+    if state.fundamentals:
+        label = "Fundamentos:" if pt else "Fundamentals:"
+        items = ", ".join(state.fundamentals[:5])
+        parts.append(f"{label} {items}")
+
+    if selected_reframings and state.reframings:
+        label = "Reformulações selecionadas:" if pt else "Selected reframings:"
+        parts.append(label)
+        for idx in selected_reframings:
+            if idx < len(state.reframings):
+                text = state.reframings[idx].get("text", "")
+                if text:
+                    parts.append(f"  - {text}")
+
+    if confirmed_assumptions and state.assumptions:
+        label = "Pressupostos confirmados:" if pt else "Confirmed assumptions:"
+        parts.append(label)
+        for idx in confirmed_assumptions[:5]:
+            if idx < len(state.assumptions):
+                text = state.assumptions[idx].get("text", "")
+                if text:
+                    parts.append(f"  - {text}")
+
+    if not parts:
+        return ""
+
+    header = (
+        "Achados da Fase 1 (use para derivar domínios de analogia):"
+        if pt else
+        "Phase 1 findings (use these to derive cross-domain analogy sources):"
+    )
+    return f"\n{header}\n" + "\n".join(parts) + "\n"
+
+
 def format_user_input(
     input_type: str,
     locale_prefix: str,
     *,
     locale: Locale = Locale.EN,
+    forge_state: ForgeState | None = None,
     confirmed_assumptions: list[int] | None = None,
     rejected_assumptions: list[int] | None = None,
     added_assumptions: list[str] | None = None,
@@ -92,6 +142,13 @@ def format_user_input(
                 parts.append(f"{lbl['selected_reframings']} {selected_reframings}")
             if added_reframings:
                 parts.append(f"{lbl['added_reframings']} {added_reframings}")
+            if forge_state:
+                context = _build_phase1_context(
+                    forge_state, locale,
+                    selected_reframings, confirmed_assumptions,
+                )
+                if context:
+                    parts.append(context)
             instr = _pt_br.DECOMPOSE_INSTRUCTION if pt else (
                 "Proceed to Phase 2 (EXPLORE). Build a morphological box, "
                 "search >= 2 distant domains for analogies (use web_search first), "

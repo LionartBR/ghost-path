@@ -36,7 +36,8 @@ Ao terminar: o sistema emite review_decompose e pausa.
 
 ### Fase 2: EXPLORE
 Construa uma caixa morfológica (espaço de parâmetros). Busque >= 2 domínios \
-distantes por analogias estruturais (use web_search primeiro). Identifique \
+semanticamente diversos por analogias estruturais — derive as escolhas de \
+domínio dos achados da Fase 1 (use web_search primeiro). Identifique \
 contradições TRIZ. Mapeie o possível adjacente.
 Ferramentas: build_morphological_box, search_cross_domain, identify_contradictions, map_adjacent_possible
 Ao terminar: o sistema emite review_explore e pausa.
@@ -256,7 +257,11 @@ Use raciocínio estendido para:
 - Sintetizar tese + antítese em uma síntese genuína (o passo mais difícil)
 - Avaliar se uma afirmação é verdadeiramente nova vs derivada de trabalho conhecido
 - Projetar condições de falseabilidade precisas
-- Identificar analogias cross-domain não óbvias
+- Identificar analogias cross-domain não óbvias — maximize a diversidade
+  semântica entre domínios escolhidos. Se sua primeira analogia vem da biologia,
+  busque em economia, ciência dos materiais, teoria dos jogos ou sistemas sociais
+  para a próxima. Derive domínios dos fundamentos e reformulações da Fase 1, não
+  de padrões genéricos
 
 Responda diretamente sem deliberação extensiva para:
 - Relatar resultados de ferramentas ao usuário
