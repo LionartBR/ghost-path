@@ -13,6 +13,7 @@ Design Decisions:
 """
 
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 from app.core.domain_types import Locale, Phase, MAX_ROUNDS_PER_SESSION
 
@@ -201,6 +202,29 @@ class ForgeState:
             "awaiting_input_type": self.awaiting_input_type,
         }
 
+    # Field mappings for snapshot deserialization (ADR: DRY over 60+ manual lines)
+    _SIMPLE_FIELDS: ClassVar[dict[str, object]] = {
+        "current_round": 0, "locale_confidence": 0.0,
+        "web_searches_this_phase": [], "fundamentals": [],
+        "state_of_art_researched": False, "assumptions": [],
+        "reframings": [], "user_added_assumptions": [],
+        "user_added_reframings": [], "cross_domain_analogies": [],
+        "cross_domain_search_count": 0, "contradictions": [],
+        "adjacent_possible": [], "current_round_claims": [],
+        "theses_stated": 0, "knowledge_graph_nodes": [],
+        "knowledge_graph_edges": [], "negative_knowledge": [],
+        "gaps": [], "negative_knowledge_consulted": False,
+        "previous_claims_referenced": False, "deep_dive_active": False,
+        "awaiting_user_input": False,
+    }
+    _NULLABLE_FIELDS: ClassVar[tuple[str, ...]] = (
+        "morphological_box", "deep_dive_target_claim_id",
+        "knowledge_document_markdown", "awaiting_input_type",
+    )
+    _SET_FIELDS: ClassVar[tuple[str, ...]] = (
+        "antitheses_searched", "falsification_attempted", "novelty_checked",
+    )
+
     @classmethod
     def from_snapshot(cls, data: dict) -> "ForgeState":
         """Reconstruct ForgeState from snapshot dict. Pure, no IO.
@@ -212,65 +236,21 @@ class ForgeState:
         if not data:
             return state
 
-        # Phase tracking
+        # Enum fields (need explicit conversion)
         phase_val = data.get("current_phase")
         if phase_val:
             state.current_phase = Phase(phase_val)
-        state.current_round = data.get("current_round", 0)
-
         locale_val = data.get("locale")
         if locale_val:
             state.locale = Locale(locale_val)
-        state.locale_confidence = data.get("locale_confidence", 0.0)
 
-        state.web_searches_this_phase = data.get("web_searches_this_phase", [])
-
-        # Phase 1
-        state.fundamentals = data.get("fundamentals", [])
-        state.state_of_art_researched = data.get("state_of_art_researched", False)
-        state.assumptions = data.get("assumptions", [])
-        state.reframings = data.get("reframings", [])
-        state.user_added_assumptions = data.get("user_added_assumptions", [])
-        state.user_added_reframings = data.get("user_added_reframings", [])
-
-        # Phase 2
-        state.morphological_box = data.get("morphological_box")
-        state.cross_domain_analogies = data.get("cross_domain_analogies", [])
-        state.cross_domain_search_count = data.get("cross_domain_search_count", 0)
-        state.contradictions = data.get("contradictions", [])
-        state.adjacent_possible = data.get("adjacent_possible", [])
-
-        # Phase 3
-        state.current_round_claims = data.get("current_round_claims", [])
-        state.theses_stated = data.get("theses_stated", 0)
-        state.antitheses_searched = set(data.get("antitheses_searched", []))
-
-        # Phase 4
-        state.falsification_attempted = set(data.get("falsification_attempted", []))
-        state.novelty_checked = set(data.get("novelty_checked", []))
-
-        # Phase 5
-        state.knowledge_graph_nodes = data.get("knowledge_graph_nodes", [])
-        state.knowledge_graph_edges = data.get("knowledge_graph_edges", [])
-        state.negative_knowledge = data.get("negative_knowledge", [])
-        state.gaps = data.get("gaps", [])
-        state.negative_knowledge_consulted = data.get(
-            "negative_knowledge_consulted", False,
-        )
-        state.previous_claims_referenced = data.get(
-            "previous_claims_referenced", False,
-        )
-
-        # Deep-dive
-        state.deep_dive_active = data.get("deep_dive_active", False)
-        state.deep_dive_target_claim_id = data.get("deep_dive_target_claim_id")
-
-        # Phase 6
-        state.knowledge_document_markdown = data.get("knowledge_document_markdown")
-
-        # Pause state (restored for session resume)
-        state.awaiting_user_input = data.get("awaiting_user_input", False)
-        state.awaiting_input_type = data.get("awaiting_input_type")
+        # Bulk restore: simple, nullable, and set fields
+        for field, default in cls._SIMPLE_FIELDS.items():
+            setattr(state, field, data.get(field, default))
+        for field in cls._NULLABLE_FIELDS:
+            setattr(state, field, data.get(field))
+        for field in cls._SET_FIELDS:
+            setattr(state, field, set(data.get(field, [])))
 
         return state
 

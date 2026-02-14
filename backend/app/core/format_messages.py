@@ -11,9 +11,7 @@ Design Decisions:
       without shell dependencies (SQLAlchemy, FastAPI). ADR: ExMA pure/impure separation.
     - Prefix includes problem excerpt because message_history is cleared on phase transitions,
       and the model needs language context re-anchoring at each phase start.
-    - Full PT_BR translation of message bodies (ADR: the model drifted to English because
-      user-role messages had English instructions after a Portuguese prefix; recency bias
-      caused the English body to override the Portuguese system prompt).
+    - Per-type formatters extracted from format_user_input to stay under ExMA 50-line limit.
 """
 
 from app.core.domain_types import Locale, Phase
@@ -78,140 +76,196 @@ def format_user_input(
 ) -> str:
     """Format user input into a message string for the agent.
 
-    Pure function — takes structured data, returns formatted string.
-    The locale_prefix is pre-built by the caller via get_phase_prefix().
-    For PT_BR, message bodies are fully translated to prevent English drift.
+    Pure function — dispatches to per-type formatters.
     """
-    pt = locale == Locale.PT_BR
     lbl = _labels(locale)
+    pt = locale == Locale.PT_BR
 
     match input_type:
         case "decompose_review":
-            parts = [locale_prefix, f"\n{lbl['reviewed_decomposition']}"]
-            if confirmed_assumptions:
-                parts.append(f"{lbl['confirmed']} {confirmed_assumptions}")
-            if rejected_assumptions:
-                parts.append(f"{lbl['rejected']} {rejected_assumptions}")
-            if added_assumptions:
-                parts.append(f"{lbl['added_assumptions']} {added_assumptions}")
-            if selected_reframings:
-                parts.append(f"{lbl['selected_reframings']} {selected_reframings}")
-            if added_reframings:
-                parts.append(f"{lbl['added_reframings']} {added_reframings}")
-            if forge_state:
-                context = _build_phase1_context(
-                    forge_state, locale,
-                    selected_reframings, confirmed_assumptions,
-                )
-                if context:
-                    parts.append(context)
-            instr = _pt_br.DECOMPOSE_INSTRUCTION if pt else (
-                "Proceed to Phase 2 (EXPLORE). Build a morphological box, "
-                "search >= 2 distant domains for analogies (use web_search first), "
-                "identify contradictions, and map the adjacent possible."
+            return _format_decompose_review(
+                locale_prefix, pt, lbl, forge_state,
+                confirmed_assumptions, rejected_assumptions,
+                added_assumptions, selected_reframings,
+                added_reframings, locale,
             )
-            parts.append(instr)
-            return "\n".join(parts)
-
         case "explore_review":
-            parts = [locale_prefix, f"\n{lbl['reviewed_exploration']}"]
-            if forge_state:
-                ctx = _digest.build_phase2_context(
-                    forge_state, locale, starred_analogies,
-                )
-                if ctx:
-                    parts.append(ctx)
-            elif starred_analogies:
-                # Fallback: raw indices only when no digest available
-                parts.append(f"{lbl['starred_analogies']} {starred_analogies}")
-            if suggested_domains:
-                parts.append(f"{lbl['suggested_domains']} {suggested_domains}")
-            if added_contradictions:
-                parts.append(f"{lbl['added_contradictions']} {added_contradictions}")
-            instr = _pt_br.EXPLORE_INSTRUCTION if pt else (
-                "Proceed to Phase 3 (SYNTHESIZE). For each promising direction, "
-                "state a thesis (with evidence), find antithesis (use web_search), "
-                "then create a synthesis claim. Generate up to 3 claims this round."
+            return _format_explore_review(
+                locale_prefix, pt, lbl, forge_state,
+                starred_analogies, suggested_domains,
+                added_contradictions, locale,
             )
-            parts.append(instr)
-            return "\n".join(parts)
-
         case "claims_review":
-            parts = [locale_prefix, f"\n{lbl['reviewed_claims']}"]
-            if forge_state:
-                ctx = _digest.build_phase3_context(forge_state, locale)
-                if ctx:
-                    parts.append(ctx)
-            if claim_feedback:
-                for fb in claim_feedback:
-                    idx = fb.claim_index if hasattr(fb, "claim_index") else fb.get("claim_index", 0)
-                    valid = fb.evidence_valid if hasattr(fb, "evidence_valid") else fb.get("evidence_valid", True)
-                    parts.append(lbl['claim_n'].format(idx=idx))
-                    parts.append(f"{lbl['evidence_valid']} {valid}")
-                    counter = getattr(fb, "counter_example", None) or (fb.get("counter_example") if isinstance(fb, dict) else None)
-                    if counter:
-                        parts.append(f"{lbl['counter_example']} {counter}")
-                    ignores = getattr(fb, "synthesis_ignores", None) or (fb.get("synthesis_ignores") if isinstance(fb, dict) else None)
-                    if ignores:
-                        parts.append(f"{lbl['missing_factor']} {ignores}")
-                    additional = getattr(fb, "additional_evidence", None) or (fb.get("additional_evidence") if isinstance(fb, dict) else None)
-                    if additional:
-                        parts.append(f"{lbl['additional_evidence']} {additional}")
-            instr = _pt_br.CLAIMS_INSTRUCTION if pt else (
-                "Proceed to Phase 4 (VALIDATE). For each claim, attempt falsification "
-                "(use web_search to disprove), check novelty (use web_search), "
-                "then score each claim."
+            return _format_claims_review(
+                locale_prefix, pt, lbl, forge_state,
+                claim_feedback, locale,
             )
-            parts.append(instr)
-            return "\n".join(parts)
-
         case "verdicts":
-            parts = [locale_prefix, f"\n{lbl['rendered_verdicts']}"]
-            if forge_state:
-                ctx = _digest.build_phase4_context(
-                    forge_state, locale, verdicts,
-                )
-                if ctx:
-                    parts.append(ctx)
-            # Verdict details (reason/qualification/merge) not in digest
-            if verdicts:
-                for v in verdicts:
-                    reason = getattr(v, "rejection_reason", None) or (v.get("rejection_reason") if isinstance(v, dict) else None)
-                    qual = getattr(v, "qualification", None) or (v.get("qualification") if isinstance(v, dict) else None)
-                    merge = getattr(v, "merge_with_claim_id", None) or (v.get("merge_with_claim_id") if isinstance(v, dict) else None)
-                    if reason or qual or merge:
-                        idx = v.claim_index if hasattr(v, "claim_index") else v.get("claim_index", 0)
-                        parts.append(lbl['claim_n'].format(idx=idx))
-                        if reason:
-                            parts.append(f"{lbl['reason']} {reason}")
-                        if qual:
-                            parts.append(f"{lbl['qualification']} {qual}")
-                        if merge:
-                            parts.append(f"{lbl['merge_with']} {merge}")
-            instr = _pt_br.VERDICTS_INSTRUCTION if pt else (
-                "Proceed to Phase 5 (BUILD). Add accepted/qualified claims to "
-                "the knowledge graph, analyze gaps, and present the build review."
+            return _format_verdicts(
+                locale_prefix, pt, lbl, forge_state,
+                verdicts, locale,
             )
-            parts.append(instr)
-            return "\n".join(parts)
-
         case "build_decision":
             return _format_build_decision(
                 locale_prefix, locale, decision,
-                deep_dive_claim_id, user_insight, user_evidence_urls,
-                forge_state,
+                deep_dive_claim_id, user_insight,
+                user_evidence_urls, forge_state,
             )
 
     fallback = _pt_br.UNKNOWN_INPUT if pt else "Unknown user input type."
     return f"{locale_prefix}\n\n{fallback}"
 
 
+# -- Per-type formatters -------------------------------------------------------
+
+def _format_decompose_review(
+    prefix, pt, lbl, forge_state,
+    confirmed, rejected, added, selected, added_ref, locale,
+):
+    """Format decompose_review input."""
+    parts = [prefix, f"\n{lbl['reviewed_decomposition']}"]
+    if confirmed:
+        parts.append(f"{lbl['confirmed']} {confirmed}")
+    if rejected:
+        parts.append(f"{lbl['rejected']} {rejected}")
+    if added:
+        parts.append(f"{lbl['added_assumptions']} {added}")
+    if selected:
+        parts.append(f"{lbl['selected_reframings']} {selected}")
+    if added_ref:
+        parts.append(f"{lbl['added_reframings']} {added_ref}")
+    if forge_state:
+        ctx = _build_phase1_context(
+            forge_state, locale, selected, confirmed,
+        )
+        if ctx:
+            parts.append(ctx)
+    instr = _pt_br.DECOMPOSE_INSTRUCTION if pt else (
+        "Proceed to Phase 2 (EXPLORE). Build a morphological box, "
+        "search >= 2 distant domains for analogies (use web_search first), "
+        "identify contradictions, and map the adjacent possible."
+    )
+    parts.append(instr)
+    return "\n".join(parts)
+
+
+def _format_explore_review(
+    prefix, pt, lbl, forge_state,
+    starred, suggested, added_contradictions, locale,
+):
+    """Format explore_review input."""
+    parts = [prefix, f"\n{lbl['reviewed_exploration']}"]
+    if forge_state:
+        ctx = _digest.build_phase2_context(
+            forge_state, locale, starred,
+        )
+        if ctx:
+            parts.append(ctx)
+    elif starred:
+        parts.append(f"{lbl['starred_analogies']} {starred}")
+    if suggested:
+        parts.append(f"{lbl['suggested_domains']} {suggested}")
+    if added_contradictions:
+        parts.append(
+            f"{lbl['added_contradictions']} {added_contradictions}",
+        )
+    instr = _pt_br.EXPLORE_INSTRUCTION if pt else (
+        "Proceed to Phase 3 (SYNTHESIZE). For each promising direction, "
+        "state a thesis (with evidence), find antithesis (use web_search), "
+        "then create a synthesis claim. Generate up to 3 claims this round."
+    )
+    parts.append(instr)
+    return "\n".join(parts)
+
+
+def _format_claims_review(prefix, pt, lbl, forge_state, feedback, locale):
+    """Format claims_review input."""
+    parts = [prefix, f"\n{lbl['reviewed_claims']}"]
+    if forge_state:
+        ctx = _digest.build_phase3_context(forge_state, locale)
+        if ctx:
+            parts.append(ctx)
+    if feedback:
+        for fb in feedback:
+            _append_claim_feedback(parts, fb, lbl)
+    instr = _pt_br.CLAIMS_INSTRUCTION if pt else (
+        "Proceed to Phase 4 (VALIDATE). For each claim, attempt "
+        "falsification (use web_search to disprove), check novelty "
+        "(use web_search), then score each claim."
+    )
+    parts.append(instr)
+    return "\n".join(parts)
+
+
+def _append_claim_feedback(parts: list, fb, lbl: dict) -> None:
+    """Append a single claim's feedback lines to parts."""
+    idx = _attr_or_key(fb, "claim_index", 0)
+    valid = _attr_or_key(fb, "evidence_valid", True)
+    parts.append(lbl['claim_n'].format(idx=idx))
+    parts.append(f"{lbl['evidence_valid']} {valid}")
+    counter = _attr_or_key(fb, "counter_example", None)
+    if counter:
+        parts.append(f"{lbl['counter_example']} {counter}")
+    ignores = _attr_or_key(fb, "synthesis_ignores", None)
+    if ignores:
+        parts.append(f"{lbl['missing_factor']} {ignores}")
+    additional = _attr_or_key(fb, "additional_evidence", None)
+    if additional:
+        parts.append(f"{lbl['additional_evidence']} {additional}")
+
+
+def _format_verdicts(prefix, pt, lbl, forge_state, verdicts, locale):
+    """Format verdicts input."""
+    parts = [prefix, f"\n{lbl['rendered_verdicts']}"]
+    if forge_state:
+        ctx = _digest.build_phase4_context(
+            forge_state, locale, verdicts,
+        )
+        if ctx:
+            parts.append(ctx)
+    if verdicts:
+        for v in verdicts:
+            _append_verdict_detail(parts, v, lbl)
+    instr = _pt_br.VERDICTS_INSTRUCTION if pt else (
+        "Proceed to Phase 5 (BUILD). Add accepted/qualified claims to "
+        "the knowledge graph, analyze gaps, and present the build review."
+    )
+    parts.append(instr)
+    return "\n".join(parts)
+
+
+def _append_verdict_detail(parts: list, v, lbl: dict) -> None:
+    """Append verdict detail lines (reason/qualification/merge) if present."""
+    reason = _attr_or_key(v, "rejection_reason", None)
+    qual = _attr_or_key(v, "qualification", None)
+    merge = _attr_or_key(v, "merge_with_claim_id", None)
+    if not (reason or qual or merge):
+        return
+    idx = _attr_or_key(v, "claim_index", 0)
+    parts.append(lbl['claim_n'].format(idx=idx))
+    if reason:
+        parts.append(f"{lbl['reason']} {reason}")
+    if qual:
+        parts.append(f"{lbl['qualification']} {qual}")
+    if merge:
+        parts.append(f"{lbl['merge_with']} {merge}")
+
+
+def _attr_or_key(obj, name: str, default=None):
+    """Get attribute or dict key — handles both Pydantic models and dicts."""
+    if hasattr(obj, name):
+        return getattr(obj, name)
+    if isinstance(obj, dict):
+        return obj.get(name, default)
+    return default
+
+
 def _format_build_decision(
     prefix: str, locale: Locale, decision: str | None,
-    claim_id: str | None, insight: str | None, urls: list[str] | None,
-    forge_state: ForgeState | None = None,
+    claim_id: str | None, insight: str | None,
+    urls: list[str] | None, forge_state: ForgeState | None = None,
 ) -> str:
-    """Format build_decision variant. Extracted to keep format_user_input under 50 lines."""
+    """Format build_decision variant."""
     pt = locale == Locale.PT_BR
     if decision == "continue":
         body = _pt_br.BUILD_CONTINUE if pt else (
@@ -247,8 +301,8 @@ def _format_build_decision(
             'The user wants to add their own insight:\n'
             '"{insight}"\n'
             'Evidence URLs: {urls}\n'
-            'Call submit_user_insight to add this to the knowledge graph, '
-            'then present the updated build review.'
+            'Call submit_user_insight to add this to the knowledge '
+            'graph, then present the updated build review.'
         )
         return f"{prefix}\n\n{tmpl.format(insight=insight, urls=urls or [])}"
     fallback = _pt_br.UNKNOWN_BUILD if pt else "Unknown build decision."
@@ -258,22 +312,19 @@ def _format_build_decision(
 def build_initial_stream_message(
     locale_prefix: str, problem: str, locale: Locale = Locale.EN,
 ) -> str:
-    """Build the initial message for Phase 1 (DECOMPOSE) stream.
-
-    Includes locale prefix to anchor language from the first message.
-    For PT_BR, the entire body is in Portuguese to prevent English drift.
-    """
+    """Build the initial message for Phase 1 (DECOMPOSE) stream."""
     if locale == Locale.PT_BR:
         body = _pt_br.INITIAL_BODY.format(problem=problem)
     else:
         body = (
             f'The user has submitted the following problem:\n\n'
             f'"{problem}"\n\n'
-            f'Begin Phase 1 (DECOMPOSE). Use web_search to research the domain, '
-            f'then call decompose_to_fundamentals, map_state_of_art, '
-            f'extract_assumptions, and reframe_problem (>= 3 reframings). '
-            f'When you are done with all decompose tools, output a summary '
-            f'of your findings for the user to review.'
+            f'Begin Phase 1 (DECOMPOSE). Use web_search to research '
+            f'the domain, then call decompose_to_fundamentals, '
+            f'map_state_of_art, extract_assumptions, and '
+            f'reframe_problem (>= 3 reframings). When you are done '
+            f'with all decompose tools, output a summary of your '
+            f'findings for the user to review.'
         )
     return f'{locale_prefix}\n\n{body}'
 
@@ -282,11 +333,7 @@ def build_resume_message(
     locale_prefix: str, phase: Phase, problem: str,
     locale: Locale = Locale.EN,
 ) -> str:
-    """Build a phase-appropriate message for resuming an interrupted session.
-
-    Pure function — no IO. For DECOMPOSE, delegates to build_initial_stream_message.
-    For other phases, instructs the agent to continue the current phase's work.
-    """
+    """Build a phase-appropriate message for resuming a session."""
     if phase == Phase.DECOMPOSE:
         return build_initial_stream_message(locale_prefix, problem, locale)
 
@@ -295,30 +342,34 @@ def build_resume_message(
         Phase.EXPLORE: (
             _pt_br.RESUME_EXPLORE if pt else
             "Continue Phase 2 (EXPLORE). Build a morphological box, "
-            "search >= 2 distant domains for analogies (use web_search first), "
-            "identify contradictions, and map the adjacent possible."
+            "search >= 2 distant domains for analogies (use "
+            "web_search first), identify contradictions, and map "
+            "the adjacent possible."
         ),
         Phase.SYNTHESIZE: (
             _pt_br.RESUME_SYNTHESIZE if pt else
-            "Continue Phase 3 (SYNTHESIZE). For each promising direction, "
-            "state a thesis (with evidence), find antithesis (use web_search), "
-            "then create a synthesis claim. Generate up to 3 claims this round."
+            "Continue Phase 3 (SYNTHESIZE). For each promising "
+            "direction, state a thesis (with evidence), find "
+            "antithesis (use web_search), then create a synthesis "
+            "claim. Generate up to 3 claims this round."
         ),
         Phase.VALIDATE: (
             _pt_br.RESUME_VALIDATE if pt else
-            "Continue Phase 4 (VALIDATE). For each claim, attempt falsification "
-            "(use web_search to disprove), check novelty (use web_search), "
-            "then score each claim."
+            "Continue Phase 4 (VALIDATE). For each claim, attempt "
+            "falsification (use web_search to disprove), check "
+            "novelty (use web_search), then score each claim."
         ),
         Phase.BUILD: (
             _pt_br.RESUME_BUILD if pt else
-            "Continue Phase 5 (BUILD). Add accepted/qualified claims to "
-            "the knowledge graph, analyze gaps, and present the build review."
+            "Continue Phase 5 (BUILD). Add accepted/qualified "
+            "claims to the knowledge graph, analyze gaps, and "
+            "present the build review."
         ),
         Phase.CRYSTALLIZE: (
             _pt_br.RESUME_CRYSTALLIZE if pt else
-            "Continue Phase 6 (CRYSTALLIZE). Generate the final Knowledge "
-            "Document with all 10 sections using generate_knowledge_document."
+            "Continue Phase 6 (CRYSTALLIZE). Generate the final "
+            "Knowledge Document with all 10 sections using "
+            "generate_knowledge_document."
         ),
     }
     body = _RESUME[phase]

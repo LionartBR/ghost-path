@@ -281,97 +281,120 @@ def build_crystallize_context(
     locale: Locale,
 ) -> str:
     """Rich digest for Phase 6 -- primary context source for Knowledge Document.
+
     Section-mapped template organizes data by document sections.
-    Budget: ~1200-1500 tokens.
+    Budget: ~1200-1500 tokens. Delegates to per-section builders.
     """
     pt = locale == Locale.PT_BR
-    parts: list[str] = []
-
     header = (
         _pt_br.DIGEST_CRYSTALLIZE_HEADER if pt else
         "== Knowledge Document Sources =="
     )
-    parts.append(header)
+    parts = [header]
+    parts.append(_cryst_problem_framing(state, pt))
+    parts.append(_cryst_exploration(state, pt))
+    parts.append(_cryst_claims(state, pt))
+    parts.append(_cryst_graph_structure(state, pt))
+    parts.append(_cryst_negative_knowledge(state, pt))
+    parts.append(_cryst_gaps(state, pt))
+    s10 = "Rodadas" if pt else "Rounds"
+    parts.append(f"\n[S10] {s10}: {state.current_round + 1}")
+    return "\n".join(p for p in parts if p) + "\n\n"
 
-    # Sections 1-2: Problem framing
+
+def _cryst_problem_framing(state: ForgeState, pt: bool) -> str:
+    """Sections 1-2: Reframings + assumptions."""
     sel_ref = state.selected_reframings
     conf_assum = state.confirmed_assumptions
-    if sel_ref or conf_assum:
-        parts.append(f"\n[S1-2]")
+    if not (sel_ref or conf_assum):
+        return ""
+    lines = ["\n[S1-2]"]
     if sel_ref:
         s = "Reformulações" if pt else "Reframings"
-        parts.append(f"  {s}:")
+        lines.append(f"  {s}:")
         for r in sel_ref:
-            parts.append(f"  - {r.get('text', '')[:120]}")
+            lines.append(f"  - {r.get('text', '')[:120]}")
     if conf_assum:
         s = "Pressupostos" if pt else "Assumptions"
-        parts.append(f"  {s}:")
+        lines.append(f"  {s}:")
         for a in conf_assum:
-            parts.append(f"  - {a.get('text', '')[:120]}")
+            lines.append(f"  - {a.get('text', '')[:120]}")
+    return "\n".join(lines)
 
-    # Section 3: Exploration
+
+def _cryst_exploration(state: ForgeState, pt: bool) -> str:
+    """Section 3: Morphological box, analogies, contradictions."""
     morph_count = 0
     if state.morphological_box:
         morph_count = len(state.morphological_box.get("parameters", []))
     analogy_count = len(state.cross_domain_analogies)
     s3 = "Exploração" if pt else "Exploration"
-    parts.append(
+    lines = [
         f"\n[S3] {s3}: {morph_count} morph params, "
-        f"{analogy_count} analogies"
-    )
+        f"{analogy_count} analogies",
+    ]
     if state.contradictions:
         s = "Contradições" if pt else "Contradictions"
-        parts.append(f"  {s}:")
+        lines.append(f"  {s}:")
         for c in state.contradictions:
-            parts.append(
-                f"  - {c.get('property_a', '')} vs "
-                f"{c.get('property_b', '')}"
-            )
+            pa = c.get("property_a", "")
+            pb = c.get("property_b", "")
+            lines.append(f"  - {pa} vs {pb}")
+    return "\n".join(lines)
 
-    # Sections 4-5: All claims
-    if state.knowledge_graph_nodes:
-        s = "Afirmações validadas" if pt else "Validated claims"
-        parts.append(f"\n[S4-5] {s}:")
-        for node in state.knowledge_graph_nodes:
-            text = node.get("claim_text", "")[:120]
-            status = node.get("status", "")
-            qual = node.get("qualification", "")
-            line = f"  - [{status}] {text}"
-            if qual:
-                line += f" ({qual})"
-            parts.append(line)
 
-    # Section 6: Graph structure
+def _cryst_claims(state: ForgeState, pt: bool) -> str:
+    """Sections 4-5: Validated claims."""
+    if not state.knowledge_graph_nodes:
+        return ""
+    s = "Afirmações validadas" if pt else "Validated claims"
+    lines = [f"\n[S4-5] {s}:"]
+    for node in state.knowledge_graph_nodes:
+        text = node.get("claim_text", "")[:120]
+        st = node.get("status", "")
+        qual = node.get("qualification", "")
+        line = f"  - [{st}] {text}"
+        if qual:
+            line += f" ({qual})"
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def _cryst_graph_structure(state: ForgeState, pt: bool) -> str:
+    """Section 6: Graph node/edge counts and edge type summary."""
     n_nodes = len(state.knowledge_graph_nodes)
     n_edges = len(state.knowledge_graph_edges)
     s6 = "Estrutura do grafo" if pt else "Graph structure"
-    parts.append(f"\n[S6] {s6}: {n_nodes} nodes, {n_edges} edges")
+    lines = [f"\n[S6] {s6}: {n_nodes} nodes, {n_edges} edges"]
     if state.knowledge_graph_edges:
         edge_types: dict[str, int] = {}
         for e in state.knowledge_graph_edges:
             et = e.get("type", "unknown")
             edge_types[et] = edge_types.get(et, 0) + 1
         summary = ", ".join(f"{k}={v}" for k, v in edge_types.items())
-        parts.append(f"  Edge types: {summary}")
+        lines.append(f"  Edge types: {summary}")
+    return "\n".join(lines)
 
-    # Section 7: Negative knowledge
-    if state.negative_knowledge:
-        s7 = "Conhecimento negativo" if pt else "Negative knowledge"
-        parts.append(f"\n[S7] {s7}:")
-        for nk in state.negative_knowledge:
-            text = nk.get("claim_text", "")[:120]
-            reason = nk.get("rejection_reason", "")[:80]
-            parts.append(f"  - {text} (reason: {reason})")
 
-    # Sections 8-9: Gaps
-    if state.gaps:
-        s89 = "Lacunas" if pt else "Gaps"
-        parts.append(f"\n[S8-9] {s89}:")
-        for gap in state.gaps:
-            parts.append(f"  - {gap[:120]}")
+def _cryst_negative_knowledge(state: ForgeState, pt: bool) -> str:
+    """Section 7: Rejected claims and reasons."""
+    if not state.negative_knowledge:
+        return ""
+    s7 = "Conhecimento negativo" if pt else "Negative knowledge"
+    lines = [f"\n[S7] {s7}:"]
+    for nk in state.negative_knowledge:
+        text = nk.get("claim_text", "")[:120]
+        reason = nk.get("rejection_reason", "")[:80]
+        lines.append(f"  - {text} (reason: {reason})")
+    return "\n".join(lines)
 
-    # Section 10: Rounds
-    s10 = "Rodadas" if pt else "Rounds"
-    parts.append(f"\n[S10] {s10}: {state.current_round + 1}")
 
-    return "\n".join(parts) + "\n\n"
+def _cryst_gaps(state: ForgeState, pt: bool) -> str:
+    """Sections 8-9: Knowledge gaps."""
+    if not state.gaps:
+        return ""
+    s89 = "Lacunas" if pt else "Gaps"
+    lines = [f"\n[S8-9] {s89}:"]
+    for gap in state.gaps:
+        lines.append(f"  - {gap[:120]}")
+    return "\n".join(lines)
