@@ -82,21 +82,15 @@ export function HomePage() {
   const exampleProblem = t(`examples.${exampleIndex}`);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50/80 flex flex-col items-center justify-center px-4 py-16 relative overflow-hidden">
-      {/* Subtle radial background glow */}
-      <div
-        className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(ellipse at center, rgba(199,210,254,0.35) 0%, transparent 70%)" }}
-      />
-
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-16">
       {/* Language switcher */}
-      <div className="absolute top-5 right-5 z-10">
+      <div className="absolute top-5 right-5">
         <LanguageSwitcher />
       </div>
 
-      <div className="w-full max-w-xl flex flex-col items-center relative z-[1]">
-        {/* Decorative gradient accent */}
-        <div className="w-12 h-1 rounded-full bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400 mb-8 opacity-60" />
+      <div className="w-full max-w-xl flex flex-col items-center">
+        {/* Decorative gradient line */}
+        <div className="w-16 h-px bg-gradient-to-r from-transparent via-indigo-400 to-transparent mb-6" />
 
         {/* Title */}
         <h1 className="text-5xl font-extrabold tracking-tight bg-gradient-to-b from-gray-900 to-gray-600 bg-clip-text text-transparent">
