@@ -1,6 +1,6 @@
 {
   "app.name": "TRIZ",
-  "app.tagline": "将复杂问题转化为结构化知识",
+  "app.tagline": "结构化知识生成平台",
   "app.subtitle": "通过6个阶段的辩证推理",
 
   "phases.decompose": "分解",

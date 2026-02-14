@@ -1,6 +1,6 @@
 {
   "app.name": "TRIZ",
-  "app.tagline": "複雑な問題を構造化された知識に変換",
+  "app.tagline": "構造化知識生成プラットフォーム",
   "app.subtitle": "6つのフェーズで弁証法的推論を実現",
 
   "phases.decompose": "分解",

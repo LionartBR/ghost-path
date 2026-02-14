@@ -1,6 +1,6 @@
 {
   "app.name": "TRIZ",
-  "app.tagline": "복잡한 문제를 구조화된 지식으로 변환",
+  "app.tagline": "구조화된 지식 생성 플랫폼",
   "app.subtitle": "6단계 변증법적 추론을 통해",
 
   "phases.decompose": "분해",

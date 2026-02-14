@@ -1,6 +1,6 @@
 {
   "app.name": "TRIZ",
-  "app.tagline": "Verwandeln Sie komplexe Probleme in strukturiertes Wissen",
+  "app.tagline": "Plattform zur Generierung strukturierten Wissens",
   "app.subtitle": "durch dialektisches Denken in 6 Phasen",
 
   "phases.decompose": "Zerlegen",

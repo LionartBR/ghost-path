@@ -1,6 +1,6 @@
 {
   "app.name": "TRIZ",
-  "app.tagline": "Transformez des problèmes complexes en connaissances structurées",
+  "app.tagline": "Plateforme de génération de connaissances structurées",
   "app.subtitle": "par raisonnement dialectique en 6 phases",
 
   "phases.decompose": "Décomposer",
