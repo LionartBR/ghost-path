@@ -109,7 +109,7 @@
   "agent.processing": "Обработка...",
   "agent.thinking": "Размышление...",
   "agent.waiting": "Ожидание активности агента...",
-  "agent.working": "Агент работает над вашим исследованием...",
+  "agent.working": "Агент создаёт знания...",
 
   "context.label": "Контекст",
   "context.approaching": "Приближение к лимиту",

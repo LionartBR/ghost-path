@@ -109,7 +109,7 @@
   "agent.processing": "処理中...",
   "agent.thinking": "思考中...",
   "agent.waiting": "エージェントアクティビティを待機中...",
-  "agent.working": "エージェントが調査を進めています...",
+  "agent.working": "エージェントが知識を構築しています...",
 
   "context.label": "コンテキスト",
   "context.approaching": "上限に近づいています",

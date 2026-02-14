@@ -109,7 +109,7 @@
   "agent.processing": "Procesando...",
   "agent.thinking": "Pensando...",
   "agent.waiting": "Esperando actividad del agente...",
-  "agent.working": "El agente está trabajando en tu investigación...",
+  "agent.working": "El agente está construyendo conocimiento...",
 
   "context.label": "Contexto",
   "context.approaching": "Acercándose al límite",

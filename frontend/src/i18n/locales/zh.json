@@ -109,7 +109,7 @@
   "agent.processing": "处理中...",
   "agent.thinking": "思考中...",
   "agent.waiting": "等待代理活动...",
-  "agent.working": "代理正在处理您的调查...",
+  "agent.working": "代理正在构建知识...",
 
   "context.label": "上下文",
   "context.approaching": "接近限制",
