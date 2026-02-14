@@ -87,9 +87,10 @@ class ToolDispatch:
             # Phase 6: CRYSTALLIZE (1 tool)
             "generate_knowledge_document": crystallize.generate_knowledge_document,
 
-            # Cross-cutting (2 tools)
+            # Cross-cutting (3 tools)
             "get_session_status": cross_cutting.get_session_status,
             "submit_user_insight": cross_cutting.submit_user_insight,
+            "recall_phase_context": cross_cutting.recall_phase_context,
         }
 
     def record_web_search(self, query: str, result_summary: str) -> None:

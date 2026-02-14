@@ -37,6 +37,15 @@ LABELS_PT_BR: dict[str, str] = {
     "merge_with": "  Fundir com:",
 }
 
+# --- Phase digest headers (used by core/phase_digest.py) ----------------------
+
+DIGEST_PHASE1_HEADER = "Achados da Fase 1 (use para derivar domínios de analogia):"
+DIGEST_PHASE2_HEADER = "Achados da Fase 2 (use para derivar direções de síntese):"
+DIGEST_PHASE3_HEADER = "Afirmações a validar:"
+DIGEST_PHASE4_HEADER = "Validação concluída:"
+DIGEST_CONTINUE_HEADER = "Contexto acumulado (rodada {round}):"
+DIGEST_CRYSTALLIZE_HEADER = "== Fontes do Documento de Conhecimento =="
+
 # --- Instruções de fase -------------------------------------------------------
 
 INITIAL_BODY = (

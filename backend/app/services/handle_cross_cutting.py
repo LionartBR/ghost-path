@@ -1,4 +1,4 @@
-"""Cross-Cutting Handlers — tools available across all phases (2 methods).
+"""Cross-Cutting Handlers — tools available across all phases (3 methods).
 
 Invariants:
     - get_session_status is always available, never gated
@@ -11,9 +11,28 @@ Design Decisions:
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.domain_types import Phase
 from app.core.forge_state import ForgeState
 from app.models.knowledge_claim import KnowledgeClaim
 from app.models.evidence import Evidence
+
+
+# ADR: artifact map for recall_phase_context — module-level constant, not per-call.
+_ARTIFACT_MAP = {
+    ("decompose", "fundamentals"): lambda s: s.fundamentals,
+    ("decompose", "assumptions"): lambda s: s.assumptions,
+    ("decompose", "reframings"): lambda s: s.reframings,
+    ("explore", "morphological_box"): lambda s: s.morphological_box,
+    ("explore", "analogies"): lambda s: s.cross_domain_analogies,
+    ("explore", "contradictions"): lambda s: s.contradictions,
+    ("explore", "adjacent_possible"): lambda s: s.adjacent_possible,
+    ("synthesize", "claims"): lambda s: s.current_round_claims,
+    ("validate", "claims"): lambda s: s.current_round_claims,
+    ("build", "graph_nodes"): lambda s: s.knowledge_graph_nodes,
+    ("build", "graph_edges"): lambda s: s.knowledge_graph_edges,
+    ("build", "negative_knowledge"): lambda s: s.negative_knowledge,
+    ("build", "gaps"): lambda s: s.gaps,
+}
 
 
 class CrossCuttingHandlers:
@@ -99,4 +118,50 @@ class CrossCuttingHandlers:
             "insight_text": insight_text,
             "evidence_count": len(evidence_urls),
             "total_graph_nodes": len(self.state.knowledge_graph_nodes),
+        }
+
+    async def recall_phase_context(
+        self, session: object, input_data: dict,
+    ) -> dict:
+        """Retrieve detailed artifacts from a completed phase. Read-only."""
+        phase_str = input_data.get("phase", "")
+        artifact = input_data.get("artifact", "")
+
+        phase_order = list(Phase)
+        try:
+            requested = Phase(phase_str)
+        except ValueError:
+            return {
+                "status": "error",
+                "error_code": "INVALID_PHASE",
+                "message": f"Unknown phase: '{phase_str}'",
+            }
+
+        current_idx = phase_order.index(self.state.current_phase)
+        requested_idx = phase_order.index(requested)
+        if current_idx <= requested_idx:
+            return {
+                "status": "error",
+                "error_code": "PHASE_NOT_COMPLETED",
+                "message": (
+                    f"Phase '{phase_str}' not yet completed "
+                    f"(current: {self.state.current_phase.value})"
+                ),
+            }
+
+        getter = _ARTIFACT_MAP.get((phase_str, artifact))
+        if not getter:
+            return {
+                "status": "error",
+                "error_code": "ARTIFACT_NOT_FOUND",
+                "message": (
+                    f"'{artifact}' not available for phase '{phase_str}'"
+                ),
+            }
+
+        return {
+            "status": "ok",
+            "phase": phase_str,
+            "artifact": artifact,
+            "data": getter(self.state),
         }

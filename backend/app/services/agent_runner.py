@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.tool_dispatch import ToolDispatch, PAUSE_TOOLS
 from app.core.domain_types import Locale
 from app.core.forge_state import ForgeState
-from app.services.tools_registry import ALL_TOOLS
+from app.services.tools_registry import get_phase_tools
 from app.services.system_prompt import build_system_prompt
 from app.core.enforce_language import check_response_language
 from app.infrastructure.anthropic_client import ResilientAnthropicClient
@@ -72,7 +72,7 @@ class AgentRunner:
                     async with self.client.stream_message(
                         model=self.model, max_tokens=16384,
                         system=_with_system_cache(system),
-                        tools=_with_tools_cache(ALL_TOOLS),
+                        tools=_with_tools_cache(get_phase_tools(forge_state.current_phase)),
                         messages=_with_message_cache(messages),
                         context=ctx,
                     ) as stream:

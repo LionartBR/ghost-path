@@ -64,5 +64,46 @@ This makes the investigation collaborative.""",
             },
             "required": ["insight_text"]
         }
-    }
+    },
+    {
+        "name": "recall_phase_context",
+        "description": (
+            "Retrieve detailed artifacts from a completed phase. "
+            "Use when you need specific data from an earlier phase. "
+            "Returns raw structured data. Read-only, no side effects. "
+            "Only call for phases already completed — calling for "
+            "current or future phases returns an error.\n\n"
+            "Valid phase-artifact combinations:\n"
+            "- decompose: fundamentals, assumptions, reframings\n"
+            "- explore: morphological_box, analogies, contradictions, adjacent_possible\n"
+            "- synthesize: claims\n"
+            "- validate: claims\n"
+            "- build: graph_nodes, graph_edges, negative_knowledge, gaps"
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "phase": {
+                    "type": "string",
+                    "enum": [
+                        "decompose", "explore", "synthesize",
+                        "validate", "build",
+                    ],
+                    "description": "The completed phase to recall from",
+                },
+                "artifact": {
+                    "type": "string",
+                    "enum": [
+                        "fundamentals", "assumptions", "reframings",
+                        "morphological_box", "analogies",
+                        "contradictions", "adjacent_possible",
+                        "claims", "graph_nodes", "graph_edges",
+                        "negative_knowledge", "gaps",
+                    ],
+                    "description": "The specific artifact to retrieve",
+                },
+            },
+            "required": ["phase", "artifact"],
+        },
+    },
 ]

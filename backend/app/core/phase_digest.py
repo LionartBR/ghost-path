@@ -1,0 +1,377 @@
+"""Phase Digest Builders — compact context injection for phase transitions.
+
+Invariants:
+    - All functions are pure (no IO, no async, no DB)
+    - User selection indices used where state flags not yet set (timing rule)
+    - Token budgets: Phase 1-5 ~150-400 tokens, Phase 6 ~1200-1500 tokens
+    - Empty state -> empty string (except crystallize, which always emits template)
+
+Design Decisions:
+    - Extracted from format_messages.py (ADR: ExMA 400-line limit, single responsibility)
+    - Progressive compression: earlier phase data shrinks in later digests
+    - Crystallize digest maps to Knowledge Document sections (reduces model guesswork)
+"""
+
+from app.core.domain_types import Locale
+from app.core.forge_state import ForgeState
+from app.core import format_messages_pt_br as _pt_br
+
+
+# ---------------------------------------------------------------------------
+# Phase 1 context (DECOMPOSE -> EXPLORE)
+# ---------------------------------------------------------------------------
+
+def build_phase1_context(
+    state: ForgeState,
+    locale: Locale,
+    selected_reframings: list[int] | None = None,
+    confirmed_assumptions: list[int] | None = None,
+) -> str:
+    """Compact Phase 1 summary for Phase 2 context injection.
+
+    Pure function -- no IO. Uses selection indices (not state flags) because
+    this runs BEFORE _apply_user_input sets selected/confirmed flags.
+    Limits output to ~150 tokens to prevent context explosion.
+    """
+    pt = locale == Locale.PT_BR
+    parts: list[str] = []
+
+    if state.fundamentals:
+        label = "Fundamentos:" if pt else "Fundamentals:"
+        items = ", ".join(state.fundamentals[:5])
+        parts.append(f"{label} {items}")
+
+    if selected_reframings and state.reframings:
+        label = "Reformulações selecionadas:" if pt else "Selected reframings:"
+        parts.append(label)
+        for idx in selected_reframings:
+            if 0 <= idx < len(state.reframings):
+                text = state.reframings[idx].get("text", "")[:120]
+                if text:
+                    parts.append(f"  - {text}")
+
+    if confirmed_assumptions and state.assumptions:
+        label = "Pressupostos confirmados:" if pt else "Confirmed assumptions:"
+        parts.append(label)
+        for idx in confirmed_assumptions[:5]:
+            if 0 <= idx < len(state.assumptions):
+                text = state.assumptions[idx].get("text", "")
+                if text:
+                    parts.append(f"  - {text}")
+
+    if not parts:
+        return ""
+
+    header = (
+        _pt_br.DIGEST_PHASE1_HEADER if pt else
+        "Phase 1 findings (use these to derive cross-domain analogy sources):"
+    )
+    return f"\n{header}\n" + "\n".join(parts) + "\n"
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 context (EXPLORE -> SYNTHESIZE)
+# ---------------------------------------------------------------------------
+
+def build_phase2_context(
+    state: ForgeState,
+    locale: Locale,
+    starred_analogies: list[int] | None = None,
+) -> str:
+    """Phase 2 summary for Phase 3 context. Uses indices for starred analogies
+    (not yet set in state at format time). Reads selected_reframings from state
+    (already set by prior _apply_user_input).
+    """
+    pt = locale == Locale.PT_BR
+    parts: list[str] = []
+
+    # Selected reframings (already set in state from decompose_review)
+    sel_reframings = state.selected_reframings
+    if sel_reframings:
+        label = "Reformulações selecionadas:" if pt else "Selected reframings:"
+        parts.append(label)
+        for r in sel_reframings[:3]:
+            parts.append(f"  - {r.get('text', '')[:120]}")
+
+    # Starred analogies by index (NOT yet set in state)
+    if starred_analogies and state.cross_domain_analogies:
+        label = "Analogias marcadas:" if pt else "Starred analogies:"
+        parts.append(label)
+        for idx in starred_analogies:
+            if 0 <= idx < len(state.cross_domain_analogies):
+                a = state.cross_domain_analogies[idx]
+                domain = a.get("domain", "")
+                desc = a.get("description", "")[:80]
+                parts.append(f"  - [{domain}] {desc}")
+
+    # Contradictions (already populated by handlers)
+    if state.contradictions:
+        label = "Contradições:" if pt else "Contradictions:"
+        parts.append(label)
+        for c in state.contradictions[:3]:
+            pa = c.get("property_a", "")
+            pb = c.get("property_b", "")
+            parts.append(f"  - {pa} vs {pb}")
+
+    # Morphological box parameter names
+    if state.morphological_box:
+        params = state.morphological_box.get("parameters", [])
+        if params:
+            label = "Parâmetros morfológicos:" if pt else "Morphological parameters:"
+            names = [p.get("name", "") for p in params[:5] if p.get("name")]
+            parts.append(f"{label} {', '.join(names)}")
+
+    if not parts:
+        return ""
+
+    header = (
+        _pt_br.DIGEST_PHASE2_HEADER if pt else
+        "Phase 2 findings (use these to derive synthesis directions):"
+    )
+    return f"\n{header}\n" + "\n".join(parts) + "\n"
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 context (SYNTHESIZE -> VALIDATE)
+# ---------------------------------------------------------------------------
+
+def build_phase3_context(
+    state: ForgeState,
+    locale: Locale,
+) -> str:
+    """Phase 3 summary for Phase 4 context. No timing issue: claims are set by
+    handlers during Phase 3, not by _apply_user_input.
+    """
+    if not state.current_round_claims:
+        return ""
+
+    pt = locale == Locale.PT_BR
+    header = (
+        _pt_br.DIGEST_PHASE3_HEADER if pt else "Claims to validate:"
+    )
+    parts: list[str] = [header]
+
+    for i, claim in enumerate(state.current_round_claims):
+        text = claim.get("claim_text", "")[:120]
+        fc = claim.get("falsifiability_condition", "")[:80]
+        ev_count = len(claim.get("evidence", []))
+        label_fc = "Condição de falsificabilidade" if pt else "Falsifiability"
+        label_ev = "evidências" if pt else "evidence items"
+        parts.append(
+            f"  [{i}] {text}\n"
+            f"      {label_fc}: {fc}\n"
+            f"      {ev_count} {label_ev}"
+        )
+
+    return "\n" + "\n".join(parts) + "\n"
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 context (VALIDATE -> BUILD)
+# ---------------------------------------------------------------------------
+
+def build_phase4_context(
+    state: ForgeState,
+    locale: Locale,
+    verdicts: list | None = None,
+) -> str:
+    """Phase 4 summary for Phase 5 context. Verdicts come from raw UserInput
+    (NOT yet set in state at format time).
+    """
+    if not state.current_round_claims:
+        return ""
+
+    pt = locale == Locale.PT_BR
+
+    # Build verdict lookup from raw input
+    verdict_map: dict[int, str] = {}
+    if verdicts:
+        for v in verdicts:
+            idx = (
+                v.claim_index if hasattr(v, "claim_index")
+                else v.get("claim_index", 0)
+            )
+            vrd = (
+                v.verdict if hasattr(v, "verdict")
+                else v.get("verdict", "")
+            )
+            verdict_map[idx] = vrd
+
+    header = (
+        _pt_br.DIGEST_PHASE4_HEADER if pt else "Validation complete:"
+    )
+    parts: list[str] = [header]
+
+    for i, claim in enumerate(state.current_round_claims):
+        text = claim.get("claim_text", "")[:100]
+        verdict_str = verdict_map.get(i, "?")
+        scores = claim.get("scores", {})
+        nov = scores.get("novelty", "?")
+        grd = scores.get("groundedness", "?")
+        label_v = "Veredicto" if pt else "Verdict"
+        parts.append(
+            f"  [{i}] {text}\n"
+            f"      {label_v}: {verdict_str} | "
+            f"novelty={nov}, groundedness={grd}"
+        )
+
+    if state.current_round > 0:
+        n_nodes = len(state.knowledge_graph_nodes)
+        n_edges = len(state.knowledge_graph_edges)
+        label_g = "Grafo" if pt else "Graph"
+        parts.append(f"  {label_g}: {n_nodes} nodes, {n_edges} edges")
+
+    return "\n" + "\n".join(parts) + "\n"
+
+
+# ---------------------------------------------------------------------------
+# Continue context (BUILD -> SYNTHESIZE, round 2+)
+# ---------------------------------------------------------------------------
+
+def build_continue_context(
+    state: ForgeState,
+    locale: Locale,
+) -> str:
+    """Cumulative context for round 2+ synthesis. All data already in state."""
+    pt = locale == Locale.PT_BR
+    parts: list[str] = []
+
+    # Recent graph nodes (last 5)
+    if state.knowledge_graph_nodes:
+        label = "Nós recentes do grafo:" if pt else "Recent graph nodes:"
+        parts.append(label)
+        for node in state.knowledge_graph_nodes[-5:]:
+            text = node.get("claim_text", "")[:80]
+            status = node.get("status", "")
+            parts.append(f"  - [{status}] {text}")
+
+    # Negative knowledge (last 3)
+    if state.negative_knowledge:
+        label = "Conhecimento negativo:" if pt else "Negative knowledge:"
+        parts.append(label)
+        for nk in state.negative_knowledge[-3:]:
+            text = nk.get("claim_text", "")[:80]
+            reason = nk.get("rejection_reason", "")[:60]
+            parts.append(f"  - {text} (reason: {reason})")
+
+    # Gaps (top 3)
+    if state.gaps:
+        label = "Lacunas:" if pt else "Gaps:"
+        parts.append(label)
+        for gap in state.gaps[:3]:
+            parts.append(f"  - {gap[:120]}")
+
+    if not parts:
+        return ""
+
+    rnd = state.current_round + 1
+    header = (
+        _pt_br.DIGEST_CONTINUE_HEADER.format(round=rnd) if pt else
+        f"Cumulative context (round {rnd}):"
+    )
+    return f"{header}\n" + "\n".join(parts) + "\n\n"
+
+
+# ---------------------------------------------------------------------------
+# Crystallize context (BUILD -> CRYSTALLIZE)
+# ---------------------------------------------------------------------------
+
+def build_crystallize_context(
+    state: ForgeState,
+    locale: Locale,
+) -> str:
+    """Rich digest for Phase 6 -- primary context source for Knowledge Document.
+    Section-mapped template organizes data by document sections.
+    Budget: ~1200-1500 tokens.
+    """
+    pt = locale == Locale.PT_BR
+    parts: list[str] = []
+
+    header = (
+        _pt_br.DIGEST_CRYSTALLIZE_HEADER if pt else
+        "== Knowledge Document Sources =="
+    )
+    parts.append(header)
+
+    # Sections 1-2: Problem framing
+    sel_ref = state.selected_reframings
+    conf_assum = state.confirmed_assumptions
+    if sel_ref or conf_assum:
+        parts.append(f"\n[S1-2]")
+    if sel_ref:
+        s = "Reformulações" if pt else "Reframings"
+        parts.append(f"  {s}:")
+        for r in sel_ref:
+            parts.append(f"  - {r.get('text', '')[:120]}")
+    if conf_assum:
+        s = "Pressupostos" if pt else "Assumptions"
+        parts.append(f"  {s}:")
+        for a in conf_assum:
+            parts.append(f"  - {a.get('text', '')[:120]}")
+
+    # Section 3: Exploration
+    morph_count = 0
+    if state.morphological_box:
+        morph_count = len(state.morphological_box.get("parameters", []))
+    analogy_count = len(state.cross_domain_analogies)
+    s3 = "Exploração" if pt else "Exploration"
+    parts.append(
+        f"\n[S3] {s3}: {morph_count} morph params, "
+        f"{analogy_count} analogies"
+    )
+    if state.contradictions:
+        s = "Contradições" if pt else "Contradictions"
+        parts.append(f"  {s}:")
+        for c in state.contradictions:
+            parts.append(
+                f"  - {c.get('property_a', '')} vs "
+                f"{c.get('property_b', '')}"
+            )
+
+    # Sections 4-5: All claims
+    if state.knowledge_graph_nodes:
+        s = "Afirmações validadas" if pt else "Validated claims"
+        parts.append(f"\n[S4-5] {s}:")
+        for node in state.knowledge_graph_nodes:
+            text = node.get("claim_text", "")[:120]
+            status = node.get("status", "")
+            qual = node.get("qualification", "")
+            line = f"  - [{status}] {text}"
+            if qual:
+                line += f" ({qual})"
+            parts.append(line)
+
+    # Section 6: Graph structure
+    n_nodes = len(state.knowledge_graph_nodes)
+    n_edges = len(state.knowledge_graph_edges)
+    s6 = "Estrutura do grafo" if pt else "Graph structure"
+    parts.append(f"\n[S6] {s6}: {n_nodes} nodes, {n_edges} edges")
+    if state.knowledge_graph_edges:
+        edge_types: dict[str, int] = {}
+        for e in state.knowledge_graph_edges:
+            et = e.get("type", "unknown")
+            edge_types[et] = edge_types.get(et, 0) + 1
+        summary = ", ".join(f"{k}={v}" for k, v in edge_types.items())
+        parts.append(f"  Edge types: {summary}")
+
+    # Section 7: Negative knowledge
+    if state.negative_knowledge:
+        s7 = "Conhecimento negativo" if pt else "Negative knowledge"
+        parts.append(f"\n[S7] {s7}:")
+        for nk in state.negative_knowledge:
+            text = nk.get("claim_text", "")[:120]
+            reason = nk.get("rejection_reason", "")[:80]
+            parts.append(f"  - {text} (reason: {reason})")
+
+    # Sections 8-9: Gaps
+    if state.gaps:
+        s89 = "Lacunas" if pt else "Gaps"
+        parts.append(f"\n[S8-9] {s89}:")
+        for gap in state.gaps:
+            parts.append(f"  - {gap[:120]}")
+
+    # Section 10: Rounds
+    s10 = "Rodadas" if pt else "Rounds"
+    parts.append(f"\n[S10] {s10}: {state.current_round + 1}")
+
+    return "\n".join(parts) + "\n\n"

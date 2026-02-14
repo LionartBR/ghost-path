@@ -20,6 +20,7 @@ from app.core.domain_types import Locale, Phase
 from app.core.forge_state import ForgeState
 from app.core.language_strings import get_phase_prefix
 from app.core import format_messages_pt_br as _pt_br
+from app.core import phase_digest as _digest
 
 
 def _labels(locale: Locale) -> dict[str, str]:
@@ -50,53 +51,8 @@ def _labels(locale: Locale) -> dict[str, str]:
     }
 
 
-def _build_phase1_context(
-    state: ForgeState,
-    locale: Locale,
-    selected_reframings: list[int] | None = None,
-    confirmed_assumptions: list[int] | None = None,
-) -> str:
-    """Compact Phase 1 summary for Phase 2 context injection.
-
-    Pure function — no IO. Uses selection indices (not state flags) because
-    this runs BEFORE _apply_user_input sets selected/confirmed flags.
-    Limits output to ~150 tokens to prevent context explosion.
-    """
-    pt = locale == Locale.PT_BR
-    parts: list[str] = []
-
-    if state.fundamentals:
-        label = "Fundamentos:" if pt else "Fundamentals:"
-        items = ", ".join(state.fundamentals[:5])
-        parts.append(f"{label} {items}")
-
-    if selected_reframings and state.reframings:
-        label = "Reformulações selecionadas:" if pt else "Selected reframings:"
-        parts.append(label)
-        for idx in selected_reframings:
-            if idx < len(state.reframings):
-                text = state.reframings[idx].get("text", "")
-                if text:
-                    parts.append(f"  - {text}")
-
-    if confirmed_assumptions and state.assumptions:
-        label = "Pressupostos confirmados:" if pt else "Confirmed assumptions:"
-        parts.append(label)
-        for idx in confirmed_assumptions[:5]:
-            if idx < len(state.assumptions):
-                text = state.assumptions[idx].get("text", "")
-                if text:
-                    parts.append(f"  - {text}")
-
-    if not parts:
-        return ""
-
-    header = (
-        "Achados da Fase 1 (use para derivar domínios de analogia):"
-        if pt else
-        "Phase 1 findings (use these to derive cross-domain analogy sources):"
-    )
-    return f"\n{header}\n" + "\n".join(parts) + "\n"
+# Re-export for backward compat (tests import from this module)
+_build_phase1_context = _digest.build_phase1_context
 
 
 def format_user_input(
@@ -159,7 +115,14 @@ def format_user_input(
 
         case "explore_review":
             parts = [locale_prefix, f"\n{lbl['reviewed_exploration']}"]
-            if starred_analogies:
+            if forge_state:
+                ctx = _digest.build_phase2_context(
+                    forge_state, locale, starred_analogies,
+                )
+                if ctx:
+                    parts.append(ctx)
+            elif starred_analogies:
+                # Fallback: raw indices only when no digest available
                 parts.append(f"{lbl['starred_analogies']} {starred_analogies}")
             if suggested_domains:
                 parts.append(f"{lbl['suggested_domains']} {suggested_domains}")
@@ -175,6 +138,10 @@ def format_user_input(
 
         case "claims_review":
             parts = [locale_prefix, f"\n{lbl['reviewed_claims']}"]
+            if forge_state:
+                ctx = _digest.build_phase3_context(forge_state, locale)
+                if ctx:
+                    parts.append(ctx)
             if claim_feedback:
                 for fb in claim_feedback:
                     idx = fb.claim_index if hasattr(fb, "claim_index") else fb.get("claim_index", 0)
@@ -200,21 +167,27 @@ def format_user_input(
 
         case "verdicts":
             parts = [locale_prefix, f"\n{lbl['rendered_verdicts']}"]
+            if forge_state:
+                ctx = _digest.build_phase4_context(
+                    forge_state, locale, verdicts,
+                )
+                if ctx:
+                    parts.append(ctx)
+            # Verdict details (reason/qualification/merge) not in digest
             if verdicts:
                 for v in verdicts:
-                    idx = v.claim_index if hasattr(v, "claim_index") else v.get("claim_index", 0)
-                    vrd = v.verdict if hasattr(v, "verdict") else v.get("verdict", "")
-                    parts.append(lbl['claim_n'].format(idx=idx))
-                    parts.append(f"  {vrd}")
                     reason = getattr(v, "rejection_reason", None) or (v.get("rejection_reason") if isinstance(v, dict) else None)
-                    if reason:
-                        parts.append(f"{lbl['reason']} {reason}")
                     qual = getattr(v, "qualification", None) or (v.get("qualification") if isinstance(v, dict) else None)
-                    if qual:
-                        parts.append(f"{lbl['qualification']} {qual}")
                     merge = getattr(v, "merge_with_claim_id", None) or (v.get("merge_with_claim_id") if isinstance(v, dict) else None)
-                    if merge:
-                        parts.append(f"{lbl['merge_with']} {merge}")
+                    if reason or qual or merge:
+                        idx = v.claim_index if hasattr(v, "claim_index") else v.get("claim_index", 0)
+                        parts.append(lbl['claim_n'].format(idx=idx))
+                        if reason:
+                            parts.append(f"{lbl['reason']} {reason}")
+                        if qual:
+                            parts.append(f"{lbl['qualification']} {qual}")
+                        if merge:
+                            parts.append(f"{lbl['merge_with']} {merge}")
             instr = _pt_br.VERDICTS_INSTRUCTION if pt else (
                 "Proceed to Phase 5 (BUILD). Add accepted/qualified claims to "
                 "the knowledge graph, analyze gaps, and present the build review."
@@ -226,6 +199,7 @@ def format_user_input(
             return _format_build_decision(
                 locale_prefix, locale, decision,
                 deep_dive_claim_id, user_insight, user_evidence_urls,
+                forge_state,
             )
 
     fallback = _pt_br.UNKNOWN_INPUT if pt else "Unknown user input type."
@@ -235,6 +209,7 @@ def format_user_input(
 def _format_build_decision(
     prefix: str, locale: Locale, decision: str | None,
     claim_id: str | None, insight: str | None, urls: list[str] | None,
+    forge_state: ForgeState | None = None,
 ) -> str:
     """Format build_decision variant. Extracted to keep format_user_input under 50 lines."""
     pt = locale == Locale.PT_BR
@@ -245,7 +220,10 @@ def _format_build_decision(
             "get_negative_knowledge first (Rule #10), and reference "
             "at least one previous claim (Rule #9)."
         )
-        return f"{prefix}\n\n{body}"
+        ctx = ""
+        if forge_state:
+            ctx = _digest.build_continue_context(forge_state, locale)
+        return f"{prefix}\n\n{ctx}{body}"
     elif decision == "deep_dive":
         tmpl = _pt_br.BUILD_DEEP_DIVE if pt else (
             "The user wants to deep-dive into claim {claim_id}. "
@@ -260,7 +238,10 @@ def _format_build_decision(
             "Knowledge Document with all 10 sections using "
             "generate_knowledge_document."
         )
-        return f"{prefix}\n\n{body}"
+        ctx = ""
+        if forge_state:
+            ctx = _digest.build_crystallize_context(forge_state, locale)
+        return f"{prefix}\n\n{ctx}{body}"
     elif decision == "add_insight":
         tmpl = _pt_br.BUILD_INSIGHT if pt else (
             'The user wants to add their own insight:\n'
