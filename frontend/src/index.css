@@ -39,6 +39,36 @@ body {
   animation: fade-in 0.2s ease-out;
 }
 
+/* TrizMascot bob/jump animations */
+@keyframes mascot-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes mascot-bob-slow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-2px) rotate(3deg); }
+}
+
+@keyframes mascot-jump {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-10px); }
+  60% { transform: translateY(-3px); }
+  80% { transform: translateY(-6px); }
+}
+
+.animate-mascot-bob {
+  animation: mascot-bob 0.7s ease-in-out infinite;
+}
+
+.animate-mascot-bob-slow {
+  animation: mascot-bob-slow 1.2s ease-in-out infinite;
+}
+
+.animate-mascot-jump {
+  animation: mascot-jump 0.4s ease-out infinite;
+}
+
 
 /* Agent markdown — scoped overrides so ReactMarkdown inherits panel context */
 .agent-markdown > *:first-child {

@@ -15,6 +15,7 @@ import BuildDecision from "../components/BuildDecision";
 import KnowledgeGraph from "../components/KnowledgeGraph";
 import KnowledgeDocument from "../components/KnowledgeDocument";
 import LanguageSwitcher from "../components/LanguageSwitcher";
+import { TrizMascot } from "../components/TrizMascot";
 import type { Phase, UserInput } from "../types";
 
 export function SessionPage() {
@@ -139,10 +140,12 @@ export function SessionPage() {
               <KnowledgeDocument markdown={stream.knowledgeDocument} />
             )}
 
-            {/* Waiting state */}
+            {/* Waiting state — ASCII mascot with mouse interaction */}
             {showNothing && stream.isStreaming && (
               <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8 text-center">
-                <div className="w-10 h-10 border-3 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4 animate-spin" />
+                <div className="flex justify-center mb-4">
+                  <TrizMascot />
+                </div>
                 <p className="text-gray-500 text-sm">{t("agent.working")}</p>
               </div>
             )}
