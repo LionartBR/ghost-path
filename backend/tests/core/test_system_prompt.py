@@ -82,3 +82,38 @@ def test_language_instruction_includes_adaptive_rule():
     prompt = build_system_prompt(Locale.PT_BR)
     # Should mention following the user's language if they switch
     assert "idioma" in prompt.lower() or "language" in prompt.lower()
+
+
+# --- PT_BR fully translated prompt --------------------------------------------
+
+
+def test_pt_br_prompt_uses_translated_base():
+    prompt = build_system_prompt(Locale.PT_BR)
+    # Should contain Portuguese content, NOT English base
+    assert "Motor de Criacao de Conhecimento" in prompt
+    assert "Metodo Dialetico" in prompt
+    assert "Falseabilidade" in prompt
+    # English base content should NOT be present
+    assert "Knowledge Creation Engine" not in prompt
+    assert "Dialectical Method (Core Pattern)" not in prompt
+
+
+def test_pt_br_prompt_keeps_tool_names_in_english():
+    prompt = build_system_prompt(Locale.PT_BR)
+    # Tool names are API identifiers — must stay in English
+    assert "decompose_to_fundamentals" in prompt
+    assert "find_antithesis" in prompt
+    assert "web_search" in prompt
+    assert "generate_knowledge_document" in prompt
+
+
+def test_en_prompt_still_uses_english_base():
+    prompt = build_system_prompt(Locale.EN)
+    assert "Knowledge Creation Engine" in prompt
+    assert "Dialectical Method (Core Pattern)" in prompt
+
+
+def test_other_locales_still_use_english_base():
+    for locale in [Locale.ES, Locale.FR, Locale.DE, Locale.ZH]:
+        prompt = build_system_prompt(locale)
+        assert "Knowledge Creation Engine" in prompt

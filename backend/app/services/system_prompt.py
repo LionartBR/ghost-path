@@ -22,6 +22,7 @@ Design Decisions:
 
 from app.core.domain_types import Locale
 from app.core.language_strings import get_bookend_closing
+from app.services.system_prompt_pt_br import BASE_PROMPT_PT_BR
 
 
 _LANGUAGE_INSTRUCTIONS: dict[Locale, str] = {
@@ -358,15 +359,16 @@ Show the reasoning chain — thesis -> antithesis -> synthesis. Be direct, no fl
 def build_system_prompt(locale: Locale = Locale.EN) -> str:
     """Build system prompt with language bookend for the given locale.
 
-    Bookend pattern: language rule prepended (primacy) AND appended (recency)
-    as XML blocks so Claude follows it throughout the session. The closing
-    reminder reinforces the instruction after ~260 lines of English content.
+    For PT_BR: uses fully translated prompt (BASE_PROMPT_PT_BR) — eliminates
+    English context dominance that causes language drift.
+    For other locales: bookend pattern (language rule at top AND bottom).
     """
     instruction = _LANGUAGE_INSTRUCTIONS[locale]
     closing = get_bookend_closing(locale)
+    base = BASE_PROMPT_PT_BR if locale == Locale.PT_BR else _BASE_PROMPT
     return (
         f"<language_rule>\n{instruction}\n</language_rule>\n\n"
-        f"{_BASE_PROMPT}\n\n"
+        f"{base}\n\n"
         f"<language_rule_reminder>\n{closing}\n</language_rule_reminder>"
     )
 
