@@ -1,0 +1,2 @@
+- O contexto do modelo é zerado a cada nova etapa (critico) - deveria carregar o contexto das conversas/etapas anteriores.
+- Na fase de Explorar, as analogias são sempre parecidas em todos os problemas... por que? 
