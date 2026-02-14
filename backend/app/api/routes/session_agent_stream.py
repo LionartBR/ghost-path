@@ -31,7 +31,7 @@ from app.infrastructure.anthropic_client import ResilientAnthropicClient
 from app.schemas.session import UserInput
 from app.services.agent_runner import AgentRunner
 from app.core.forge_state import ForgeState
-from app.core.domain_types import Phase, SessionStatus
+from app.core.domain_types import Locale, Phase, SessionStatus
 from app.models.knowledge_claim import KnowledgeClaim
 from app.config import get_settings
 from app.api.routes.session_lifecycle import (
@@ -39,6 +39,7 @@ from app.api.routes.session_lifecycle import (
 )
 from app.models.session import Session as SessionModel
 from app.core.language_strings import get_phase_prefix
+from app.services.translate_review import translate_review_event
 from app.core.format_messages import (
     format_user_input as _format_user_input_pure,
     build_initial_stream_message,
@@ -87,9 +88,10 @@ def _build_resume_review_event(state: ForgeState) -> dict | None:
 
     Extends _build_review_event (which skips DECOMPOSE) so reconnect
     can re-emit the correct review for any phase.
+    Translates to user's locale if not EN.
     """
     if state.current_phase == Phase.DECOMPOSE:
-        return {
+        event = {
             "type": "review_decompose",
             "data": {
                 "fundamentals": state.fundamentals,
@@ -97,6 +99,9 @@ def _build_resume_review_event(state: ForgeState) -> dict | None:
                 "reframings": state.reframings,
             },
         }
+        if state.locale != Locale.EN:
+            event = translate_review_event(event, state.locale)
+        return event
     return _build_review_event(state)
 
 
@@ -415,10 +420,12 @@ def _build_review_event(state: ForgeState) -> dict | None:
 
     After the agent finishes working in phase X, we emit the review event
     for that phase so the frontend can render the appropriate review UI.
+    Translates to user's locale if not EN.
     """
+    event = None
     match state.current_phase:
         case Phase.EXPLORE:
-            return {
+            event = {
                 "type": "review_explore",
                 "data": {
                     "morphological_box": state.morphological_box,
@@ -428,17 +435,17 @@ def _build_review_event(state: ForgeState) -> dict | None:
                 },
             }
         case Phase.SYNTHESIZE:
-            return {
+            event = {
                 "type": "review_claims",
                 "data": {"claims": state.current_round_claims},
             }
         case Phase.VALIDATE:
-            return {
+            event = {
                 "type": "review_verdicts",
                 "data": {"claims": state.current_round_claims},
             }
         case Phase.BUILD:
-            return {
+            event = {
                 "type": "review_build",
                 "data": {
                     "graph": {
@@ -453,8 +460,11 @@ def _build_review_event(state: ForgeState) -> dict | None:
             }
         case Phase.CRYSTALLIZE:
             if state.knowledge_document_markdown:
-                return {
+                event = {
                     "type": "knowledge_document",
                     "data": state.knowledge_document_markdown,
                 }
-    return None
+
+    if event and state.locale != Locale.EN:
+        event = translate_review_event(event, state.locale)
+    return event

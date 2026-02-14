@@ -23,6 +23,7 @@ from app.models.session import Session as SessionModel
 from app.schemas.session import SessionCreate, SessionResponse
 from app.core.forge_state import ForgeState
 from app.core.detect_language import detect_locale
+from app.core.domain_types import Locale
 from app.core.errors import ResourceNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -61,7 +62,11 @@ async def create_session(
 ):
     """Create a new TRIZ session."""
     try:
-        locale, confidence = detect_locale(body.problem)
+        if body.locale:
+            locale = Locale(body.locale)
+            confidence = 1.0  # user-selected = maximum confidence
+        else:
+            locale, confidence = detect_locale(body.problem)
         session = SessionModel(
             problem=body.problem, status="decomposing",
             locale=locale.value, locale_confidence=confidence,

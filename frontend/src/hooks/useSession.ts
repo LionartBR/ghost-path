@@ -6,7 +6,7 @@ import { createSession, getSession } from "../api/client";
 import type { Session } from "../types";
 
 export function useSession() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +15,7 @@ export function useSession() {
     setLoading(true);
     setError(null);
     try {
-      const s = await createSession(problem);
+      const s = await createSession(problem, i18n.language);
       setSession(s);
       return s;
     } catch (err) {
@@ -26,7 +26,7 @@ export function useSession() {
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [t, i18n.language]);
 
   const load = useCallback(async (id: string) => {
     setLoading(true);
