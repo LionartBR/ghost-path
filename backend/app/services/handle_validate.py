@@ -2,7 +2,7 @@
 
 Invariants:
     - attempt_falsification enforces web_search gate (Rule #15)
-    - check_novelty enforces web_search gate
+    - check_novelty has no web_search gate (only Rules #5/#6 require it before score_claim)
     - score_claim enforces falsification AND novelty done first (Rules #5, #6)
     - All scores are agent-computed, 0-1 range
 
@@ -65,11 +65,7 @@ class ValidateHandlers:
     async def check_novelty(
         self, session: object, input_data: dict,
     ) -> dict:
-        """Verify claim isn't already known. Gate: web_search required."""
-        error = check_web_search(self.state, "novelty")
-        if error:
-            return error
-
+        """Verify claim isn't already known. No web_search gate (Rule #6 only requires it before score_claim)."""
         claim_index = input_data.get("claim_index", 0)
 
         index_error = check_claim_index_valid(self.state, claim_index)
