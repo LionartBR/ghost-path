@@ -30,11 +30,11 @@ const STATUS_CONFIG: Record<string, {
   bgClass: string;
 }> = {
   validated: {
-    border: "border-green-500",
+    border: "border-blue-600",
     icon: "\u2713",
-    iconColor: "text-green-600",
+    iconColor: "text-blue-700",
     textClass: "text-gray-800",
-    bgClass: "bg-green-50/50",
+    bgClass: "bg-blue-50/50",
   },
   proposed: {
     border: "border-blue-500",
@@ -44,18 +44,18 @@ const STATUS_CONFIG: Record<string, {
     bgClass: "bg-blue-50/30",
   },
   rejected: {
-    border: "border-red-400",
+    border: "border-blue-300",
     icon: "\u2717",
-    iconColor: "text-red-500",
+    iconColor: "text-blue-400",
     textClass: "text-gray-400 line-through",
-    bgClass: "bg-red-50/30",
+    bgClass: "bg-blue-50/20",
   },
   qualified: {
-    border: "border-amber-500",
+    border: "border-blue-400",
     icon: "~",
-    iconColor: "text-amber-600",
+    iconColor: "text-blue-500",
     textClass: "text-gray-800",
-    bgClass: "bg-amber-50/30",
+    bgClass: "bg-blue-50/30",
   },
   superseded: {
     border: "border-gray-300",
@@ -65,11 +65,11 @@ const STATUS_CONFIG: Record<string, {
     bgClass: "bg-gray-50/50 opacity-70",
   },
   user_contributed: {
-    border: "border-purple-500",
+    border: "border-blue-500",
     icon: "\u2605",
-    iconColor: "text-purple-600",
+    iconColor: "text-blue-600",
     textClass: "text-gray-800",
-    bgClass: "bg-purple-50/30",
+    bgClass: "bg-blue-50/30",
   },
   gap: {
     border: "border-gray-300 border-dashed",
@@ -83,9 +83,9 @@ const STATUS_CONFIG: Record<string, {
 const DEFAULT_CONFIG = STATUS_CONFIG.proposed;
 
 const CONFIDENCE_BADGE: Record<string, string> = {
-  speculative: "bg-gray-100 text-gray-500",
+  speculative: "bg-blue-50 text-blue-400",
   emerging: "bg-blue-100 text-blue-600",
-  grounded: "bg-green-100 text-green-700",
+  grounded: "bg-blue-100 text-blue-700",
 };
 
 function ClaimNodeInner({ data }: NodeProps) {

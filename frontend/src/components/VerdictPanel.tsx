@@ -10,16 +10,16 @@ interface VerdictPanelProps {
 
 const VERDICT_STYLES: Record<VerdictType, { active: string; inactive: string }> = {
   accept: {
-    active: "bg-green-500 text-white",
-    inactive: "bg-white border border-gray-200 text-gray-600 hover:bg-green-50",
+    active: "bg-blue-600 text-white",
+    inactive: "bg-white border border-gray-200 text-gray-600 hover:bg-blue-50",
   },
   reject: {
-    active: "bg-red-500 text-white",
-    inactive: "bg-white border border-gray-200 text-gray-600 hover:bg-red-50",
+    active: "bg-blue-400 text-white",
+    inactive: "bg-white border border-gray-200 text-gray-600 hover:bg-blue-50",
   },
   qualify: {
-    active: "bg-amber-500 text-white",
-    inactive: "bg-white border border-gray-200 text-gray-600 hover:bg-amber-50",
+    active: "bg-blue-500 text-white",
+    inactive: "bg-white border border-gray-200 text-gray-600 hover:bg-blue-50",
   },
   merge: {
     active: "bg-blue-500 text-white",
@@ -122,7 +122,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                     onChange={(e) =>
                       updateVerdict(i, "rejection_reason", e.target.value)
                     }
-                    className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent placeholder-gray-400"
+                    className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
                   />
                 </div>
               )}
@@ -138,7 +138,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                     onChange={(e) =>
                       updateVerdict(i, "qualification", e.target.value)
                     }
-                    className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder-gray-400"
+                    className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
                   />
                 </div>
               )}
@@ -173,7 +173,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
 
       <button
         onClick={handleSubmit}
-        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-3 px-6 rounded-lg shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/50 transition-all"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm py-3 px-6 rounded-lg shadow-md shadow-blue-200/50 hover:shadow-lg hover:shadow-blue-300/50 transition-all"
       >
         {t("verdicts.submit")}
       </button>

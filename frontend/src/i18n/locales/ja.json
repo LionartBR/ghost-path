@@ -51,6 +51,15 @@
   "explore.submitReview": "レビューを送信 ({{count}}件スター済み)",
   "explore.submitReviewNone": "レビューを送信",
 
+  "synthesize.title": "フェーズ3：統合",
+  "synthesize.description": "対立するアイデアが弁証法的推論を通じて対峙されています。主張はテーゼ、アンチテーゼ、ジンテーゼを経て鍛えられ、それぞれウェブ調査された証拠に基づいています。",
+
+  "validate.title": "フェーズ4：検証",
+  "validate.description": "各主張は反証の試みと新規性の確認に直面します。厳格な精査を生き延びた主張のみが知識グラフにおける位置を獲得します。",
+
+  "crystallize.title": "フェーズ6：結晶化",
+  "crystallize.description": "調査は最終的な知識ドキュメントに凝縮されています — 検証された主張、弁証法的旅程、そして実行可能な洞察を捉えます。",
+
   "claims.title": "フェーズ3: 証拠の検証",
   "claims.description": "各主張の証拠の質をレビューします。証拠が有効かどうかをマークし、反例があれば提供し、欠けている要因を指摘し、追加の証拠源を提案してください。",
   "claims.evidenceValid": "証拠は有効で主張を支持している",

@@ -104,10 +104,10 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
   return (
     <div className="space-y-4">
       {/* -- Fundamentals -- */}
-      <div className="bg-white border border-gray-200/80 border-l-4 border-l-indigo-400 rounded-xl shadow-sm p-5">
+      <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5">
         <button
           onClick={() => setFundamentalsOpen(!fundamentalsOpen)}
-          className="w-full flex items-center gap-2.5 text-sm font-semibold text-indigo-600 uppercase tracking-wide hover:text-indigo-500 transition-colors"
+          className="w-full flex items-center gap-2.5 text-sm font-semibold text-blue-600 uppercase tracking-wide hover:text-blue-500 transition-colors"
         >
           <i className="bi bi-diagram-3 text-base" />
           <span className="flex-1 text-left">
@@ -121,7 +121,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
           <ul className="mt-4 space-y-2">
             {data.fundamentals.map((fundamental, i) => (
               <li key={i} className="text-gray-700 text-sm flex items-start">
-                <span className="text-indigo-400 mr-2 mt-0.5">&bull;</span>
+                <span className="text-blue-400 mr-2 mt-0.5">&bull;</span>
                 {fundamental}
               </li>
             ))}
@@ -130,8 +130,8 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
       </div>
 
       {/* -- Assumptions -- */}
-      <div className="bg-white border border-gray-200/80 border-l-4 border-l-amber-400 rounded-xl shadow-sm p-5">
-        <h3 className="flex items-center gap-2.5 text-sm font-semibold text-amber-600 uppercase tracking-wide mb-4">
+      <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5">
+        <h3 className="flex items-center gap-2.5 text-sm font-semibold text-blue-600 uppercase tracking-wide mb-4">
           <i className="bi bi-patch-question text-base" />
           {t("decompose.assumptions")}
         </h3>
@@ -143,7 +143,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
               {data.assumptions.map((_, i) => {
                 const reviewed = isReviewed(i);
                 const dotColor = reviewed ? "bg-green-500" : "bg-gray-300";
-                const ring = i === currentCard ? "ring-2 ring-amber-400 ring-offset-1" : "";
+                const ring = i === currentCard ? "ring-2 ring-blue-400 ring-offset-1" : "";
                 return (
                   <button
                     key={i}
@@ -164,7 +164,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                 className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
                   isFirstCard
                     ? "text-gray-300 cursor-not-allowed"
-                    : "text-gray-500 hover:bg-amber-50 hover:text-amber-600"
+                    : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
                 }`}
                 aria-label="Previous assumption"
               >
@@ -193,8 +193,8 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                           onClick={() => selectOption(currentCard, optIdx)}
                           className={`w-full px-4 py-2 rounded-md text-xs font-medium transition-all text-left ${
                             selected
-                              ? "bg-amber-500 text-white shadow-sm shadow-amber-200"
-                              : "bg-white border border-gray-200 text-gray-600 hover:border-amber-300 hover:text-amber-600"
+                              ? "bg-blue-500 text-white shadow-sm shadow-blue-200"
+                              : "bg-white border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600"
                           }`}
                         >
                           {option}
@@ -209,8 +209,8 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                       onClick={() => selectOption(currentCard, 0)}
                       className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all inline-flex items-center gap-1.5 ${
                         assumptionResponses.get(currentCard) === 0
-                          ? "bg-green-500 text-white shadow-sm shadow-green-200"
-                          : "bg-white border border-gray-200 text-gray-600 hover:border-green-300 hover:text-green-600"
+                          ? "bg-blue-500 text-white shadow-sm shadow-blue-200"
+                          : "bg-white border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600"
                       }`}
                     >
                       <i className="bi bi-check-lg" />
@@ -220,8 +220,8 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                       onClick={() => selectOption(currentCard, 1)}
                       className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all inline-flex items-center gap-1.5 ${
                         assumptionResponses.get(currentCard) === 1
-                          ? "bg-red-500 text-white shadow-sm shadow-red-200"
-                          : "bg-white border border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-600"
+                          ? "bg-blue-400 text-white shadow-sm shadow-blue-200"
+                          : "bg-white border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600"
                       }`}
                     >
                       <i className="bi bi-x-lg" />
@@ -238,7 +238,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                 className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
                   isLastCard
                     ? "text-gray-300 cursor-not-allowed"
-                    : "text-gray-500 hover:bg-amber-50 hover:text-amber-600"
+                    : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
                 }`}
                 aria-label="Next assumption"
               >
@@ -253,13 +253,13 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
           value={newAssumption}
           onChange={(e) => setNewAssumption(e.target.value)}
           placeholder={t("decompose.addAssumption")}
-          className="mt-4 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+          className="mt-4 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
         />
       </div>
 
       {/* -- Reframings -- */}
-      <div className="bg-white border border-gray-200/80 border-l-4 border-l-violet-400 rounded-xl shadow-sm p-5">
-        <h3 className="flex items-center gap-2.5 text-sm font-semibold text-violet-600 uppercase tracking-wide mb-4">
+      <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5">
+        <h3 className="flex items-center gap-2.5 text-sm font-semibold text-blue-600 uppercase tracking-wide mb-4">
           <i className="bi bi-shuffle text-base" />
           {t("decompose.reframings")}
         </h3>
@@ -269,7 +269,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
               key={i}
               className={`flex items-start p-3 rounded-md border cursor-pointer transition-all ${
                 selectedReframings.has(i)
-                  ? "bg-violet-50 border-violet-200"
+                  ? "bg-blue-50 border-blue-200"
                   : "bg-gray-50 border-gray-100 hover:bg-gray-100"
               }`}
             >
@@ -277,7 +277,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                 type="checkbox"
                 checked={selectedReframings.has(i)}
                 onChange={() => toggleReframing(i)}
-                className="mt-0.5 mr-3 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                className="mt-0.5 mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
               <div>
                 <p className="text-gray-700 text-sm">{reframing.text}</p>
@@ -294,7 +294,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
           value={newReframing}
           onChange={(e) => setNewReframing(e.target.value)}
           placeholder={t("decompose.addReframing")}
-          className="mt-3 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
+          className="mt-3 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
         />
       </div>
 
@@ -302,7 +302,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
       <button
         onClick={handleSubmit}
         disabled={selectedReframings.size === 0}
-        className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/50 transition-all inline-flex items-center justify-center gap-2"
+        className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg shadow-md shadow-blue-200/50 hover:shadow-lg hover:shadow-blue-300/50 transition-all inline-flex items-center justify-center gap-2"
       >
         {t("decompose.submitReview")}
       </button>

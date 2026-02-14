@@ -51,6 +51,15 @@
   "explore.submitReview": "Soumettre la revue ({{count}} marqués)",
   "explore.submitReviewNone": "Soumettre la revue",
 
+  "synthesize.title": "Phase 3 : Synthétiser",
+  "synthesize.description": "Des idées opposées sont confrontées par le raisonnement dialectique. Les affirmations sont forgées à travers thèse, antithèse et synthèse — chacune fondée sur des preuves recherchées sur le web.",
+
+  "validate.title": "Phase 4 : Valider",
+  "validate.description": "Chaque affirmation fait face à des tentatives de falsification et des vérifications de nouveauté. Seules les affirmations qui résistent à l'examen rigoureux gagnent leur place dans le graphe de connaissances.",
+
+  "crystallize.title": "Phase 6 : Cristalliser",
+  "crystallize.description": "L'investigation est distillée en un Document de Connaissances final — capturant les affirmations validées, le parcours dialectique et les perspectives actionnables.",
+
   "claims.title": "Phase 3 : Valider les preuves",
   "claims.description": "Examinez la qualité des preuves de chaque affirmation. Indiquez si les preuves sont valides, fournissez des contre-exemples si vous en connaissez, notez les facteurs manquants ou suggérez des sources de preuves supplémentaires.",
   "claims.evidenceValid": "Les preuves sont valides et soutiennent l'affirmation",

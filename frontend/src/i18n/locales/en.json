@@ -51,6 +51,15 @@
   "explore.submitReview": "Submit Review ({{count}} starred)",
   "explore.submitReviewNone": "Submit Review",
 
+  "synthesize.title": "Phase 3: Synthesize",
+  "synthesize.description": "Opposing ideas are being confronted through dialectical reasoning. Claims are forged through thesis, antithesis, and synthesis — each grounded in web-sourced evidence.",
+
+  "validate.title": "Phase 4: Validate",
+  "validate.description": "Each claim faces attempted falsification and novelty checks. Only claims that survive rigorous scrutiny earn their place in the knowledge graph.",
+
+  "crystallize.title": "Phase 6: Crystallize",
+  "crystallize.description": "The investigation is being distilled into a final Knowledge Document — capturing validated claims, the dialectical journey, and actionable insights.",
+
   "claims.title": "Phase 3: Validate Evidence",
   "claims.description": "Review each claim's evidence quality. Mark whether the evidence is valid, provide counter-examples if you know of any, note missing factors, or suggest additional evidence sources.",
   "claims.evidenceValid": "Evidence is valid and supports the claim",

@@ -10,8 +10,8 @@ const EVIDENCE_TYPE_COLORS: Record<
   string,
   { bg: string; text: string; border: string }
 > = {
-  supporting: { bg: "bg-green-50", text: "text-green-700", border: "border-green-200" },
-  contradicting: { bg: "bg-red-50", text: "text-red-700", border: "border-red-200" },
+  supporting: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
+  contradicting: { bg: "bg-blue-50", text: "text-blue-600", border: "border-blue-200" },
   contextual: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
 };
 
@@ -66,7 +66,7 @@ export default function EvidencePanel({ evidence }: EvidencePanelProps) {
                       href={item.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-indigo-600 hover:text-indigo-500 font-medium text-sm flex-1"
+                      className="text-blue-600 hover:text-blue-500 font-medium text-sm flex-1"
                     >
                       {item.title}
                     </a>

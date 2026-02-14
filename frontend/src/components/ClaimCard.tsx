@@ -9,10 +9,10 @@ interface ClaimCardProps {
 }
 
 const CLAIM_TYPE_BORDER: Record<string, string> = {
-  thesis: "border-l-indigo-500",
-  antithesis: "border-l-rose-500",
-  synthesis: "border-l-teal-500",
-  user_contributed: "border-l-purple-500",
+  thesis: "border-l-blue-500",
+  antithesis: "border-l-blue-400",
+  synthesis: "border-l-blue-600",
+  user_contributed: "border-l-blue-500",
   merged: "border-l-blue-500",
 };
 
@@ -25,17 +25,17 @@ const CLAIM_TYPE_KEY: Record<string, string> = {
 };
 
 const CLAIM_TYPE_COLOR: Record<string, string> = {
-  thesis: "text-indigo-600",
-  antithesis: "text-rose-600",
-  synthesis: "text-teal-600",
-  user_contributed: "text-purple-600",
+  thesis: "text-blue-600",
+  antithesis: "text-blue-500",
+  synthesis: "text-blue-700",
+  user_contributed: "text-blue-600",
   merged: "text-blue-600",
 };
 
 const CONFIDENCE_BADGE: Record<string, string> = {
-  speculative: "bg-amber-50 text-amber-700 border border-amber-200",
-  emerging: "bg-yellow-50 text-yellow-700 border border-yellow-200",
-  grounded: "bg-green-50 text-green-700 border border-green-200",
+  speculative: "bg-blue-50 text-blue-500 border border-blue-200",
+  emerging: "bg-blue-50 text-blue-600 border border-blue-200",
+  grounded: "bg-blue-50 text-blue-700 border border-blue-200",
 };
 
 const CONFIDENCE_KEY: Record<string, string> = {
@@ -45,10 +45,10 @@ const CONFIDENCE_KEY: Record<string, string> = {
 };
 
 const SCORE_COLORS: Record<string, string> = {
-  novelty: "bg-indigo-500",
-  groundedness: "bg-teal-500",
-  falsifiability: "bg-amber-500",
-  significance: "bg-rose-500",
+  novelty: "bg-blue-500",
+  groundedness: "bg-blue-500",
+  falsifiability: "bg-blue-500",
+  significance: "bg-blue-500",
 };
 
 const SCORE_KEY: Record<string, string> = {
@@ -130,7 +130,7 @@ export default function ClaimCard({ claim, index, compact = false }: ClaimCardPr
         {compact && hasDetails && (
           <button
             onClick={() => setDetailsOpen(!detailsOpen)}
-            className="mt-3 text-xs text-indigo-600 hover:text-indigo-500 font-medium"
+            className="mt-3 text-xs text-blue-600 hover:text-blue-500 font-medium"
           >
             {detailsOpen ? t("common.hide") : t("common.show")} {t("common.details")}
           </button>
@@ -159,7 +159,7 @@ export default function ClaimCard({ claim, index, compact = false }: ClaimCardPr
               <div className="mt-4">
                 <button
                   onClick={() => setExpanded(!expanded)}
-                  className="text-sm text-indigo-600 hover:text-indigo-500 font-medium"
+                  className="text-sm text-blue-600 hover:text-blue-500 font-medium"
                 >
                   {expanded ? t("common.hide") : t("common.show")} {t("evidence.title")} ({claim.evidence.length})
                 </button>
@@ -171,7 +171,7 @@ export default function ClaimCard({ claim, index, compact = false }: ClaimCardPr
                           href={ev.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-indigo-600 hover:text-indigo-500 text-sm font-medium"
+                          className="text-blue-600 hover:text-blue-500 text-sm font-medium"
                         >
                           {ev.title}
                         </a>

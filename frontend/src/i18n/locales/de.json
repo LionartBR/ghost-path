@@ -51,6 +51,15 @@
   "explore.submitReview": "Überprüfung absenden ({{count}} markiert)",
   "explore.submitReviewNone": "Überprüfung absenden",
 
+  "synthesize.title": "Phase 3: Synthetisieren",
+  "synthesize.description": "Gegensätzliche Ideen werden durch dialektisches Denken konfrontiert. Behauptungen werden durch These, Antithese und Synthese geschmiedet — jede auf webrecherchierten Belegen basierend.",
+
+  "validate.title": "Phase 4: Validieren",
+  "validate.description": "Jede Behauptung wird der Falsifizierung und Neuheitsprüfung unterzogen. Nur Behauptungen, die einer rigorosen Prüfung standhalten, verdienen ihren Platz im Wissensgraphen.",
+
+  "crystallize.title": "Phase 6: Kristallisieren",
+  "crystallize.description": "Die Untersuchung wird in ein finales Wissensdokument destilliert — validierte Behauptungen, der dialektische Weg und umsetzbare Erkenntnisse werden erfasst.",
+
   "claims.title": "Phase 3: Belege validieren",
   "claims.description": "Überprüfen Sie die Qualität der Belege für jede Behauptung. Markieren Sie, ob die Belege gültig sind, geben Sie Gegenbeispiele an, falls Sie welche kennen, notieren Sie fehlende Faktoren oder schlagen Sie zusätzliche Belegquellen vor.",
   "claims.evidenceValid": "Belege sind gültig und unterstützen die Behauptung",

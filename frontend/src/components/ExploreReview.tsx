@@ -104,8 +104,8 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
       )}
 
       {/* ── Analogies ── */}
-      <div className="bg-white border border-gray-200/80 border-l-4 border-l-teal-400 rounded-xl shadow-sm p-5">
-        <h3 className="flex items-center gap-2.5 text-sm font-semibold text-teal-600 uppercase tracking-wide mb-4">
+      <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5">
+        <h3 className="flex items-center gap-2.5 text-sm font-semibold text-blue-600 uppercase tracking-wide mb-4">
           <i className="bi bi-globe2 text-base" />
           {t("explore.analogies")}
         </h3>
@@ -115,7 +115,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
               key={i}
               className={`p-4 rounded-lg border transition-all ${
                 starredAnalogies.has(i)
-                  ? "bg-teal-50 border-teal-300"
+                  ? "bg-blue-50 border-blue-300"
                   : "bg-gray-50 border-gray-200 hover:border-gray-300"
               }`}
             >
@@ -125,7 +125,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
                   onClick={() => toggleStar(i)}
                   className={`text-sm font-medium px-2 py-0.5 rounded transition-colors inline-flex items-center gap-1 ${
                     starredAnalogies.has(i)
-                      ? "text-teal-600 bg-teal-100"
+                      ? "text-blue-600 bg-blue-100"
                       : "text-gray-400 hover:text-gray-600"
                   }`}
                 >
@@ -148,15 +148,15 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
           value={newDomain}
           onChange={(e) => setNewDomain(e.target.value)}
           placeholder={t("explore.suggestDomain")}
-          className="mt-3 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent"
+          className="mt-3 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
         />
       </div>
 
       {/* ── Contradictions ── */}
-      <div className="bg-white border border-gray-200/80 border-l-4 border-l-rose-400 rounded-xl shadow-sm p-5">
+      <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5">
         <button
           onClick={() => setContradictionsOpen(!contradictionsOpen)}
-          className="w-full flex items-center gap-2.5 text-sm font-semibold text-rose-600 uppercase tracking-wide hover:text-rose-500 transition-colors"
+          className="w-full flex items-center gap-2.5 text-sm font-semibold text-blue-600 uppercase tracking-wide hover:text-blue-500 transition-colors"
         >
           <i className="bi bi-arrow-left-right text-base" />
           <span className="flex-1 text-left">
@@ -171,11 +171,11 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
             {data.contradictions.map((contradiction, i) => (
               <div key={i} className="p-3 bg-gray-50 rounded-md border border-gray-100">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded text-xs font-medium">
+                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs font-medium">
                     {contradiction.property_a}
                   </span>
                   <i className="bi bi-arrow-left-right text-gray-400 text-xs" />
-                  <span className="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded text-xs font-medium">
+                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs font-medium">
                     {contradiction.property_b}
                   </span>
                 </div>

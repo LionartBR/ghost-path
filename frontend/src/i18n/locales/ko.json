@@ -51,6 +51,15 @@
   "explore.submitReview": "검토 제출 ({{count}}개 별표)",
   "explore.submitReviewNone": "검토 제출",
 
+  "synthesize.title": "3단계: 종합",
+  "synthesize.description": "상반된 아이디어가 변증법적 추론을 통해 대면하고 있습니다. 주장은 정립, 반정립, 종합을 거쳐 단련되며, 각각 웹 조사 증거에 기반합니다.",
+
+  "validate.title": "4단계: 검증",
+  "validate.description": "각 주장은 반증 시도와 참신성 검사에 직면합니다. 엄격한 정밀 조사를 통과한 주장만이 지식 그래프에서 자리를 얻습니다.",
+
+  "crystallize.title": "6단계: 결정화",
+  "crystallize.description": "조사가 최종 지식 문서로 응축되고 있습니다 — 검증된 주장, 변증법적 여정, 실행 가능한 통찰을 담아냅니다.",
+
   "claims.title": "3단계: 증거 검증",
   "claims.description": "각 주장의 증거 품질을 검토하세요. 증거가 유효한지 표시하고, 반례가 있다면 제공하며, 누락된 요소를 기록하거나 추가 증거 출처를 제안하세요.",
   "claims.evidenceValid": "증거가 유효하며 주장을 뒷받침함",

@@ -51,6 +51,15 @@
   "explore.submitReview": "提交审查（{{count}} 个已标星）",
   "explore.submitReviewNone": "提交审查",
 
+  "synthesize.title": "阶段3：综合",
+  "synthesize.description": "对立观点正在通过辩证推理进行对抗。主张通过正题、反题和合题被锻造——每一个都基于网络搜索的证据。",
+
+  "validate.title": "阶段4：验证",
+  "validate.description": "每个主张都面临证伪尝试和新颖性检查。只有经受住严格审查的主张才能在知识图谱中占有一席之地。",
+
+  "crystallize.title": "阶段6：结晶",
+  "crystallize.description": "调查正在被提炼为最终的知识文档——捕捉已验证的主张、辩证旅程和可操作的洞见。",
+
   "claims.title": "阶段3：验证证据",
   "claims.description": "审查每个主张的证据质量。标记证据是否有效，如果您知道反例请提供，注明综合中缺失的因素，或建议额外的证据来源。",
   "claims.evidenceValid": "证据有效并支持该主张",

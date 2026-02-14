@@ -51,6 +51,15 @@
   "explore.submitReview": "Enviar Revisión ({{count}} destacadas)",
   "explore.submitReviewNone": "Enviar Revisión",
 
+  "synthesize.title": "Fase 3: Sintetizar",
+  "synthesize.description": "Ideas opuestas están siendo confrontadas mediante razonamiento dialéctico. Las afirmaciones se forjan a través de tesis, antítesis y síntesis — cada una fundamentada en evidencia investigada en la web.",
+
+  "validate.title": "Fase 4: Validar",
+  "validate.description": "Cada afirmación enfrenta intentos de falsificación y verificaciones de novedad. Solo las afirmaciones que sobreviven al escrutinio riguroso ganan su lugar en el grafo de conocimiento.",
+
+  "crystallize.title": "Fase 6: Cristalizar",
+  "crystallize.description": "La investigación está siendo destilada en un Documento de Conocimiento final — capturando afirmaciones validadas, el recorrido dialéctico y perspectivas accionables.",
+
   "claims.title": "Fase 3: Validar Evidencia",
   "claims.description": "Revisa la calidad de la evidencia de cada afirmación. Marca si la evidencia es válida, proporciona contraejemplos si conoces alguno, señala factores faltantes o sugiere fuentes de evidencia adicionales.",
   "claims.evidenceValid": "La evidencia es válida y respalda la afirmación",
