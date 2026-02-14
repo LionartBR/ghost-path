@@ -102,3 +102,34 @@ BUILD_INSIGHT = (
 
 UNKNOWN_BUILD = "Decisão de construção desconhecida."
 UNKNOWN_INPUT = "Tipo de entrada desconhecido."
+
+# --- Instruções de retomada de sessão (resume) --------------------------------
+
+RESUME_EXPLORE = (
+    "Continue a Fase 2 (EXPLORE). Construa uma caixa morfológica, "
+    "busque >= 2 domínios distantes por analogias (use web_search primeiro), "
+    "identifique contradições e mapeie o possível adjacente."
+)
+
+RESUME_SYNTHESIZE = (
+    "Continue a Fase 3 (SYNTHESIZE). Para cada direção promissora, "
+    "declare uma tese (com evidências), encontre antítese (use web_search), "
+    "depois crie uma síntese. Gere até 3 afirmações nesta rodada."
+)
+
+RESUME_VALIDATE = (
+    "Continue a Fase 4 (VALIDATE). Para cada afirmação, tente falsificá-la "
+    "(use web_search para refutar), verifique novidade (use web_search), "
+    "depois pontue cada afirmação."
+)
+
+RESUME_BUILD = (
+    "Continue a Fase 5 (BUILD). Adicione afirmações aceitas/qualificadas "
+    "ao grafo de conhecimento, analise lacunas e apresente a revisão de construção."
+)
+
+RESUME_CRYSTALLIZE = (
+    "Continue a Fase 6 (CRYSTALLIZE). Gere o Documento "
+    "de Conhecimento final com todas as 10 seções usando "
+    "generate_knowledge_document."
+)

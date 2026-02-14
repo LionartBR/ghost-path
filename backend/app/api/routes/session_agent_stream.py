@@ -42,6 +42,7 @@ from app.core.language_strings import get_phase_prefix
 from app.core.format_messages import (
     format_user_input as _format_user_input_pure,
     build_initial_stream_message,
+    build_resume_message,
 )
 
 logger = logging.getLogger(__name__)
@@ -76,39 +77,80 @@ def _get_or_restore_forge_state(
     return state
 
 
+def _done_event(error: bool = False, awaiting_input: bool = False) -> dict:
+    """SSE done event — mirrors agent_runner._done_event for route-level use."""
+    return {"type": "done", "data": {"error": error, "awaiting_input": awaiting_input}}
+
+
+def _build_resume_review_event(state: ForgeState) -> dict | None:
+    """Build review event covering ALL phases (including DECOMPOSE).
+
+    Extends _build_review_event (which skips DECOMPOSE) so reconnect
+    can re-emit the correct review for any phase.
+    """
+    if state.current_phase == Phase.DECOMPOSE:
+        return {
+            "type": "review_decompose",
+            "data": {
+                "fundamentals": state.fundamentals,
+                "assumptions": state.assumptions,
+                "reframings": state.reframings,
+            },
+        }
+    return _build_review_event(state)
+
+
 @router.get("/{session_id}/stream")
 async def stream_session(
     session_id: UUID, db: AsyncSession = Depends(get_db),
 ):
-    """Initial SSE stream: triggers Phase 1 (DECOMPOSE)."""
+    """SSE stream — reconnects paused sessions or starts agent work."""
     session = await get_session_or_404(session_id, db)
     if session.status == "cancelled":
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, detail="Session is cancelled",
         )
     forge_state = _get_or_restore_forge_state(session_id, session)
-    runner = _create_runner(db)
 
     async def event_generator():
         try:
+            # === RECONNECT: session paused for user review ===
+            # Re-emit the review event so frontend renders the correct UI
+            # without re-running the agent. ADR: zero-cost reconnect.
+            if forge_state.awaiting_user_input:
+                review = _build_resume_review_event(forge_state)
+                if review:
+                    yield _sse_line(review)
+                yield _sse_line(_done_event(awaiting_input=True))
+                return
+
+            # === NEW or RESUMED session: run agent ===
             prefix = get_phase_prefix(forge_state.locale, session.problem)
-            message = build_initial_stream_message(
-                prefix, session.problem, locale=forge_state.locale,
-            )
+            if (session.message_history
+                    and forge_state.current_phase != Phase.DECOMPOSE):
+                message = build_resume_message(
+                    prefix, forge_state.current_phase,
+                    session.problem, forge_state.locale,
+                )
+            else:
+                message = build_initial_stream_message(
+                    prefix, session.problem, locale=forge_state.locale,
+                )
+
+            runner = _create_runner(db)
             async for event in runner.run(session, message, forge_state):
                 yield _sse_line(event)
 
-            # After agent finishes Phase 1, emit review event
-            if forge_state.current_phase == Phase.DECOMPOSE:
-                review_event = {
-                    "type": "review_decompose",
-                    "data": {
-                        "fundamentals": forge_state.fundamentals,
-                        "assumptions": forge_state.assumptions,
-                        "reframings": forge_state.reframings,
-                    },
-                }
-                yield _sse_line(review_event)
+            # After agent finishes, emit review + set awaiting flag
+            review = _build_resume_review_event(forge_state)
+            if review:
+                forge_state.awaiting_user_input = True
+                session.forge_state_snapshot = forge_state.to_snapshot()
+                try:
+                    await db.commit()
+                except Exception as exc:
+                    logger.error("Failed to save awaiting state: %s", exc)
+                yield _sse_line(review)
         except asyncio.CancelledError:
             logger.info("Client disconnected from stream (session=%s)", session_id)
             return
@@ -143,9 +185,15 @@ async def send_user_input(
             async for event in runner.run(session, message, forge_state):
                 yield _sse_line(event)
 
-            # Emit phase-appropriate review event
+            # Emit review + set awaiting flag for session resume
             review = _build_review_event(forge_state)
             if review:
+                forge_state.awaiting_user_input = True
+                session.forge_state_snapshot = forge_state.to_snapshot()
+                try:
+                    await db.commit()
+                except Exception as exc:
+                    logger.error("Failed to save awaiting state: %s", exc)
                 yield _sse_line(review)
         except asyncio.CancelledError:
             logger.info("Client disconnected from user-input stream (session=%s)", session_id)
@@ -228,6 +276,8 @@ async def _apply_user_input(
     body: UserInput, state: ForgeState, session, db: AsyncSession,
 ) -> None:
     """Apply user input to ForgeState, sync to DB, reset history on phase change."""
+    state.awaiting_user_input = False
+    state.awaiting_input_type = None
     match body.type:
         case "decompose_review":
             if body.selected_reframings:
