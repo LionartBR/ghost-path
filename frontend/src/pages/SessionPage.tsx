@@ -160,7 +160,7 @@ export function SessionPage() {
           {/* Right: Knowledge Graph sidebar */}
           {showGraph && (
             <div className="lg:col-span-1">
-              <div className="sticky top-6">
+              <div className="sticky top-20" style={{ height: "calc(100vh - 8rem)" }}>
                 <KnowledgeGraph data={stream.buildReview!.graph} />
               </div>
             </div>
