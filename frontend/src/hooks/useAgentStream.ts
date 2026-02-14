@@ -41,6 +41,10 @@ interface AgentStreamState {
   isStreaming: boolean;
   activityItems: ActivityItem[];
   toolErrors: { tool: string; error_code: string; message: string }[];
+  /* ADR: pendingClear defers activityItems reset until the first new
+     agent_text arrives, so phase explanation messages stay visible
+     while the user waits for the agent to respond. */
+  pendingClear: boolean;
 
   // Phase review data
   decomposeReview: DecomposeReviewData | null;
@@ -62,6 +66,7 @@ const initialState: AgentStreamState = {
   isStreaming: false,
   activityItems: [],
   toolErrors: [],
+  pendingClear: false,
   decomposeReview: null,
   exploreReview: null,
   claimsReview: null,
@@ -95,24 +100,31 @@ export function useAgentStream(sessionId: string | null) {
       case "agent_text": {
         const chunk = event.data as string;
         setState((s) => {
-          const items = s.activityItems;
+          /* If a clear is pending (user just submitted input), flush old
+             items now — the new agent text replaces them naturally. */
+          const items = s.pendingClear ? [] : s.activityItems;
+          const cleared = s.pendingClear ? false : s.pendingClear;
           const last = items.length > 0 ? items[items.length - 1] : null;
           if (last && last.kind === "text") {
             const merged = [...items];
             merged[merged.length - 1] = { kind: "text", text: last.text + chunk };
-            return { ...s, activityItems: merged };
+            return { ...s, activityItems: merged, pendingClear: cleared };
           }
-          return { ...s, activityItems: [...items, { kind: "text", text: chunk }] };
+          return { ...s, activityItems: [...items, { kind: "text", text: chunk }], pendingClear: cleared };
         });
         break;
       }
 
       case "tool_call": {
         const tc = event.data as { tool: string; input_preview: string };
-        setState((s) => ({
-          ...s,
-          activityItems: [...s.activityItems, { kind: "tool_call", ...tc }],
-        }));
+        setState((s) => {
+          const items = s.pendingClear ? [] : s.activityItems;
+          return {
+            ...s,
+            activityItems: [...items, { kind: "tool_call", ...tc }],
+            pendingClear: false,
+          };
+        });
         break;
       }
 
@@ -294,7 +306,7 @@ export function useAgentStream(sessionId: string | null) {
         buildReview: null,
         completionData: null,
         awaitingInput: false,
-        activityItems: [],
+        pendingClear: true,
         toolErrors: [],
         error: null,
         phaseTransition:
