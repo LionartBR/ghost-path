@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ProblemInput } from "../components/ProblemInput";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import { useSession } from "../hooks/useSession";
-import { listSessions } from "../api/client";
+import { listSessions, deleteSession } from "../api/client";
 import type { Session } from "../types";
 
 const STATUS_COLORS: Record<
@@ -35,6 +35,7 @@ export function HomePage() {
   const { loading, error, create } = useSession();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [exampleIndex, setExampleIndex] = useState(0);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadSessions();
@@ -60,6 +61,21 @@ export function HomePage() {
     const session = await create(problem);
     if (session) {
       navigate(`/session/${session.id}`);
+    }
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, sessionId: string) => {
+    e.stopPropagation();
+    if (confirmingId === sessionId) {
+      setConfirmingId(null);
+      const snapshot = sessions;
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      deleteSession(sessionId).catch(() => setSessions(snapshot));
+    } else {
+      setConfirmingId(sessionId);
+      setTimeout(() => {
+        setConfirmingId((cur) => (cur === sessionId ? null : cur));
+      }, 3000);
     }
   };
 
@@ -145,14 +161,35 @@ export function HomePage() {
                       <p className="text-sm text-gray-700 line-clamp-2 leading-snug group-hover:text-gray-900 transition-colors">
                         {session.problem}
                       </p>
-                      <span
-                        className={`ml-3 shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${colors.bg} ${colors.text}`}
-                      >
+                      <div className="ml-3 shrink-0 flex items-center gap-1.5">
                         <span
-                          className={`w-1.5 h-1.5 rounded-full ${colors.dot}`}
-                        />
-                        {t(`status.${session.status}`)}
-                      </span>
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${colors.bg} ${colors.text}`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${colors.dot}`}
+                          />
+                          {t(`status.${session.status}`)}
+                        </span>
+                        {confirmingId === session.id ? (
+                          <button
+                            onClick={(e) => handleDeleteClick(e, session.id)}
+                            className="animate-pulse px-2 py-0.5 rounded-full text-xs font-medium
+                                       bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                          >
+                            {t("sessions.confirmDelete")}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => handleDeleteClick(e, session.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity
+                                       w-6 h-6 flex items-center justify-center rounded-full
+                                       text-gray-400 hover:text-red-500 hover:bg-red-50"
+                            aria-label={t("sessions.delete")}
+                          >
+                            &times;
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <p className="text-xs text-gray-400 mt-1">
                       {new Date(session.created_at).toLocaleString()}

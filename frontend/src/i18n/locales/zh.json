@@ -124,6 +124,8 @@
   "common.error": "错误",
 
   "sessions.recent": "最近的会话",
+  "sessions.delete": "删除会话",
+  "sessions.confirmDelete": "删除？",
   "sessions.backToHome": "返回首页",
   "sessions.backToSession": "返回会话",
   "sessions.loadingDocument": "正在加载知识文档...",

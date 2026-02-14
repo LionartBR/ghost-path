@@ -124,6 +124,8 @@
   "common.error": "Error",
 
   "sessions.recent": "Recent Sessions",
+  "sessions.delete": "Delete session",
+  "sessions.confirmDelete": "Delete?",
   "sessions.backToHome": "Back to Home",
   "sessions.backToSession": "Back to Session",
   "sessions.loadingDocument": "Loading knowledge document...",

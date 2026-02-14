@@ -124,6 +124,8 @@
   "common.error": "Ошибка",
 
   "sessions.recent": "Недавние сессии",
+  "sessions.delete": "Удалить сессию",
+  "sessions.confirmDelete": "Удалить?",
   "sessions.backToHome": "Вернуться на главную",
   "sessions.backToSession": "Вернуться к сессии",
   "sessions.loadingDocument": "Загрузка документа знаний...",
