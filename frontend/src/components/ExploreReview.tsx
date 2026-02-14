@@ -48,6 +48,54 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
   return (
     <div className="space-y-4">
 
+      {/* ── Analogies ── */}
+      <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5">
+        <h3 className="flex items-center gap-2.5 text-sm font-semibold text-blue-600 uppercase tracking-wide mb-4">
+          <i className="bi bi-globe2 text-base" />
+          {t("explore.analogies")}
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {data.analogies.map((analogy, i) => (
+            <div
+              key={i}
+              className={`p-4 rounded-lg border transition-all ${
+                starredAnalogies.has(i)
+                  ? "bg-blue-50 border-blue-300"
+                  : "bg-gray-50 border-gray-200 hover:border-gray-300"
+              }`}
+            >
+              <div className="flex justify-between items-start mb-2">
+                <h4 className="font-semibold text-gray-900 text-sm">{analogy.domain}</h4>
+                <button
+                  onClick={() => toggleStar(i)}
+                  className={`text-sm font-medium px-2 py-0.5 rounded transition-colors inline-flex items-center gap-1 ${
+                    starredAnalogies.has(i)
+                      ? "text-blue-600 bg-blue-100"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  <i className={`bi ${starredAnalogies.has(i) ? "bi-star-fill" : "bi-star"}`} />
+                  {starredAnalogies.has(i) ? t("explore.starred") : t("explore.star")}
+                </button>
+              </div>
+              <p className="text-gray-600 text-sm mb-2">{analogy.description}</p>
+              {analogy.semantic_distance && (
+                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-flex items-center gap-1">
+                  <i className="bi bi-rulers text-[10px]" />
+                  {analogy.semantic_distance}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+        <input
+          type="text"
+          value={newDomain}
+          onChange={(e) => setNewDomain(e.target.value)}
+          placeholder={t("explore.suggestDomain")}
+          className="mt-3 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+        />
+      </div>
 
       {/* ── Morphological Box ── */}
       {data.morphological_box && (
@@ -102,55 +150,6 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
           )}
         </div>
       )}
-
-      {/* ── Analogies ── */}
-      <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5">
-        <h3 className="flex items-center gap-2.5 text-sm font-semibold text-blue-600 uppercase tracking-wide mb-4">
-          <i className="bi bi-globe2 text-base" />
-          {t("explore.analogies")}
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {data.analogies.map((analogy, i) => (
-            <div
-              key={i}
-              className={`p-4 rounded-lg border transition-all ${
-                starredAnalogies.has(i)
-                  ? "bg-blue-50 border-blue-300"
-                  : "bg-gray-50 border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <div className="flex justify-between items-start mb-2">
-                <h4 className="font-semibold text-gray-900 text-sm">{analogy.domain}</h4>
-                <button
-                  onClick={() => toggleStar(i)}
-                  className={`text-sm font-medium px-2 py-0.5 rounded transition-colors inline-flex items-center gap-1 ${
-                    starredAnalogies.has(i)
-                      ? "text-blue-600 bg-blue-100"
-                      : "text-gray-400 hover:text-gray-600"
-                  }`}
-                >
-                  <i className={`bi ${starredAnalogies.has(i) ? "bi-star-fill" : "bi-star"}`} />
-                  {starredAnalogies.has(i) ? t("explore.starred") : t("explore.star")}
-                </button>
-              </div>
-              <p className="text-gray-600 text-sm mb-2">{analogy.description}</p>
-              {analogy.semantic_distance && (
-                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-flex items-center gap-1">
-                  <i className="bi bi-rulers text-[10px]" />
-                  {analogy.semantic_distance}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-        <input
-          type="text"
-          value={newDomain}
-          onChange={(e) => setNewDomain(e.target.value)}
-          placeholder={t("explore.suggestDomain")}
-          className="mt-3 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-        />
-      </div>
 
       {/* ── Contradictions ── */}
       <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5">
