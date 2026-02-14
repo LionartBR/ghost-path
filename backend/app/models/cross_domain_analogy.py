@@ -27,7 +27,8 @@ class CrossDomainAnalogy(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
     )
     session_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=False,
+        UUID(as_uuid=True), ForeignKey("sessions.id", ondelete="CASCADE"),
+        nullable=False,
     )
     source_domain: Mapped[str] = mapped_column(String(200), nullable=False)
     target_application: Mapped[str] = mapped_column(Text, nullable=False)

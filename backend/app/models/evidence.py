@@ -28,10 +28,13 @@ class Evidence(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
     )
     claim_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("knowledge_claims.id"), nullable=False,
+        UUID(as_uuid=True),
+        ForeignKey("knowledge_claims.id", ondelete="CASCADE"),
+        nullable=False,
     )
     session_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=False,
+        UUID(as_uuid=True), ForeignKey("sessions.id", ondelete="CASCADE"),
+        nullable=False,
     )
     source_url: Mapped[str] = mapped_column(String(2000), nullable=False)
     source_title: Mapped[str | None] = mapped_column(String(500), nullable=True)
