@@ -148,7 +148,7 @@ class AgentRunner:
                     yield sse
 
                 if response.stop_reason == "pause_turn":
-                    serialized = [b.model_dump() for b in response.content]
+                    serialized = [b.model_dump(exclude_none=True) for b in response.content]
                     messages.append({"role": "assistant", "content": serialized})
                     continue
 
@@ -175,7 +175,7 @@ class AgentRunner:
                         if not has_tool_use:
                             logger.warning("Language retry %d/%d",
                                 language_retries, self.MAX_LANGUAGE_RETRIES)
-                            serialized = [b.model_dump() for b in response.content]
+                            serialized = [b.model_dump(exclude_none=True) for b in response.content]
                             messages.append({"role": "assistant", "content": serialized})
                             messages.append({"role": "user", "content": lang_error["message"]})
                             continue
@@ -188,7 +188,7 @@ class AgentRunner:
                     yield _done_event(error=False)
                     return
 
-                serialized = [b.model_dump() for b in response.content]
+                serialized = [b.model_dump(exclude_none=True) for b in response.content]
                 messages.append({"role": "assistant", "content": serialized})
                 tool_results = []
                 should_pause = False
