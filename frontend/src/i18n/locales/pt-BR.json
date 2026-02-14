@@ -30,7 +30,7 @@
   "problemInput.minChars": "mínimo de {{count}} caracteres",
 
   "decompose.title": "Fase 1: Decompor",
-  "decompose.description": "Seu problema foi decomposto em elementos irredutíveis. Revise os fundamentos, confirme ou rejeite os pressupostos ocultos identificados e selecione pelo menos uma reformulação alternativa do problema para guiar a exploração.",
+  "decompose.description": "O agente decompõe seu problema em elementos irredutíveis, pesquisa o estado da arte, identifica pressupostos ocultos e gera reformulações alternativas para sua revisão.",
   "decompose.fundamentals": "Fundamentos",
   "decompose.assumptions": "Pressupostos",
   "decompose.reframings": "Reformulações",
@@ -41,7 +41,7 @@
   "decompose.submitReview": "Enviar Revisão",
 
   "explore.title": "Fase 2: Explorar",
-  "explore.description": "O espaço do problema foi mapeado em domínios distantes. Destaque pelo menos uma analogia que ressoe com seu problema, revise a caixa morfológica e as contradições, e opcionalmente sugira novos domínios para pesquisar.",
+  "explore.description": "O agente mapeia o espaço do problema em domínios distantes, buscando analogias estruturais, contradições e possibilidades adjacentes.",
   "explore.morphBox": "Caixa Morfológica",
   "explore.analogies": "Analogias",
   "explore.contradictions": "Contradições",
