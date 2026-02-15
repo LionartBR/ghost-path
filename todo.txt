@@ -1,0 +1,1 @@
+quando chega na fase 4, validar os botões 'combinar', 'qualificar' não permitem o usuário combinar nem qualificar nada. Isso causa o erro Stream failed: 400
