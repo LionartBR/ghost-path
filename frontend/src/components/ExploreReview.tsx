@@ -35,6 +35,8 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const analogiesCardRef = useRef<HTMLDivElement>(null);
+  const [analogiesDone, setAnalogiesDone] = useState(false);
+  const [analogiesCollapsed, setAnalogiesCollapsed] = useState(false);
 
   // Backward compat: star toggle for analogies without resonance data
   const [starredAnalogies, setStarredAnalogies] = useState<Set<number>>(new Set());
@@ -53,6 +55,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
   );
 
   const totalAnalogies = data.analogies.length;
+  const allAnalogiesReviewed = totalAnalogies > 0 && (analogyResponses.size + customArgTexts.size) >= totalAnalogies;
   const isLastCard = currentCard >= totalAnalogies - 1;
   const isFirstCard = currentCard <= 0;
 
@@ -83,14 +86,21 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
       } else {
         next.set(analogyIndex, optionIndex);
       }
+
+      const totalAnswered = next.size + customArgTexts.size;
+      if (totalAnswered >= totalAnalogies) {
+        autoAdvanceTimer.current = setTimeout(() => {
+          setAnalogiesDone(true);
+          setAnalogiesCollapsed(true);
+        }, 400);
+      } else if (analogyIndex < totalAnalogies - 1) {
+        autoAdvanceTimer.current = setTimeout(() => goNext(), 300);
+      }
+
       return next;
     });
     analogiesCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-    if (analogyIndex < totalAnalogies - 1) {
-      autoAdvanceTimer.current = setTimeout(() => goNext(), 300);
-    }
-  }, [totalAnalogies, goNext]);
+  }, [totalAnalogies, goNext, customArgTexts.size]);
 
   // Custom argument submission for analogies
   const submitCustomArg = useCallback((cardIndex: number) => {
@@ -100,10 +110,13 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
     const optCount = data.analogies[cardIndex]?.resonance_options?.length ?? 2;
     setAnalogyResponses(prev => { const next = new Map(prev); next.set(cardIndex, optCount); return next; });
     updateMap(setShowCustomArgInput, cardIndex, false);
-    if (cardIndex < totalAnalogies - 1) {
+    const totalAnswered = analogyResponses.size + customArgTexts.size + 1;
+    if (totalAnswered >= totalAnalogies) {
+      setTimeout(() => { setAnalogiesDone(true); setAnalogiesCollapsed(true); }, 400);
+    } else if (cardIndex < totalAnalogies - 1) {
       setTimeout(() => goNext(), 300);
     }
-  }, [customArgInput, data.analogies, totalAnalogies, goNext]);
+  }, [customArgInput, data.analogies, analogyResponses.size, customArgTexts.size, totalAnalogies, goNext]);
 
   const toggleStar = (index: number) => {
     setStarredAnalogies((prev) => {
@@ -150,15 +163,32 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
     <div className="space-y-4">
 
       {/* -- Analogies -- */}
+      {analogiesCollapsed ? (
+        <div
+          onClick={() => { setAnalogiesCollapsed(false); setAnalogiesDone(false); }}
+          className="bg-white border border-gray-200/80 border-l-4 border-l-green-500 rounded-xl shadow-sm p-4 cursor-pointer hover:bg-green-50/30 transition-colors animate-fade-in"
+        >
+          <div className="flex items-center gap-2.5">
+            <i className="bi bi-patch-check-fill text-green-500 text-base" />
+            <span className="text-sm font-semibold text-green-600 uppercase tracking-wide flex-1">
+              {t("explore.analogies")} ({totalAnalogies}/{totalAnalogies})
+            </span>
+            <span className="text-xs text-gray-400 flex items-center gap-1">
+              <i className="bi bi-pencil text-[10px]" />
+              {t("decompose.edit")}
+            </span>
+          </div>
+        </div>
+      ) : (
       <div ref={analogiesCardRef} className={`scroll-mt-4 bg-white border border-gray-200/80 border-l-4 rounded-xl shadow-sm p-5 transition-all ${
         resonatedCount > 0 || customArgTexts.size > 0 ? "border-l-green-500" : "border-l-gray-300"
-      }`}>
+      } ${analogiesDone ? "animate-fade-in" : ""}`}>
         <h3 className={`flex items-center gap-2.5 text-sm font-semibold uppercase tracking-wide mb-4 ${
           resonatedCount > 0 || customArgTexts.size > 0 ? "text-green-600" : "text-gray-400"
         }`}>
           <i className="bi bi-globe2 text-base" />
           {t("explore.analogies")}
-          {(resonatedCount > 0 || customArgTexts.size > 0) && (
+          {allAnalogiesReviewed && (
             <span className="ml-auto text-xs text-green-500 font-normal flex items-center gap-1">
               <i className="bi bi-check-circle-fill text-[11px]" />
             </span>
@@ -341,6 +371,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
           </div>
         )}
       </div>
+      )}
 
       {/* -- Morphological Box -- */}
       {data.morphological_box && (
