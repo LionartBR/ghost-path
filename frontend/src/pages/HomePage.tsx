@@ -36,11 +36,13 @@ export function HomePage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [exampleIndex, setExampleIndex] = useState(0);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [sessionsError, setSessionsError] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     listSessions()
       .then((data) => { if (!cancelled) setSessions(data.sessions); })
-      .catch(() => { /* silently ignore — empty state is fine */ });
+      .catch(() => { if (!cancelled) setSessionsError(true); });
     return () => { cancelled = true; };
   }, []);
 
@@ -129,7 +131,12 @@ export function HomePage() {
           )}
         </div>
 
-        {/* Sessions silently fail — no error shown when backend unreachable or no sessions */}
+        {/* Only show error if fetch actually failed — empty list is not an error */}
+        {sessionsError && sessions.length === 0 && (
+          <div className="mt-8 w-full bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+            <p className="text-red-600 text-sm">{t("errors.loadingSessions")}</p>
+          </div>
+        )}
 
         {/* Recent sessions */}
         {sessions.length > 0 && (

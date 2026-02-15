@@ -24,7 +24,13 @@ export async function listSessions(): Promise<{
   sessions: Session[];
   pagination: { limit: number; offset: number };
 }> {
-  const res = await fetch(`${API_BASE}/sessions`);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/sessions`);
+  } catch {
+    // Network error (backend not running yet) — treat as empty, not error
+    return { sessions: [], pagination: { limit: 10, offset: 0 } };
+  }
   if (!res.ok) throw new Error(`Failed to list sessions: ${res.status}`);
   return res.json() as Promise<{ sessions: Session[]; pagination: { limit: number; offset: number } }>;
 }
