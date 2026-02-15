@@ -28,10 +28,6 @@ from anthropic import (
 )
 from anthropic.types import TextBlockParam
 from anthropic.types.beta import BetaTextBlockParam
-from anthropic.lib.streaming import (
-    AsyncMessageStreamManager,
-    BetaAsyncMessageStreamManager,
-)
 
 from app.core.errors import AnthropicAPIError, ErrorContext
 
@@ -95,50 +91,14 @@ class ResilientAnthropicClient:
                     tools=tools,
                     messages=messages,
                 )
-                # Log cache metrics when available
-                usage = response.usage
-                cache_read = getattr(usage, "cache_read_input_tokens", 0)
-                cache_create = getattr(usage, "cache_creation_input_tokens", 0)
-                logger.info(
-                    "Anthropic API success",
-                    extra={
-                        "attempt": attempt + 1,
-                        "input_tokens": usage.input_tokens,
-                        "output_tokens": usage.output_tokens,
-                        "cache_read_input_tokens": cache_read,
-                        "cache_creation_input_tokens": cache_create,
-                    },
-                )
+                self._log_success(response, attempt)
                 return response
 
             except RateLimitError as e:
-                retry_after_ms = self._extract_retry_after(e)
-                if attempt >= self.max_retries:
-                    raise AnthropicAPIError(
-                        "Rate limit exceeded after retries",
-                        "rate_limit",
-                        retry_after_ms=retry_after_ms,
-                        context=context,
-                    )
-                delay = retry_after_ms or self._backoff(attempt)
-                logger.warning(
-                    f"Rate limit hit, retry after {delay}ms "
-                    f"(attempt {attempt + 1})",
-                )
-                await asyncio.sleep(delay / 1000)
+                await self._handle_rate_limit(e, attempt, context)
 
             except (APIConnectionError, InternalServerError) as e:
-                if attempt >= self.max_retries:
-                    raise AnthropicAPIError(
-                        f"Transient failure after {self.max_retries} retries: {e}",
-                        "connection_error",
-                        context=context,
-                    )
-                delay = self._backoff(attempt)
-                logger.warning(
-                    f"Transient error, retry after {delay}ms: {e}",
-                )
-                await asyncio.sleep(delay / 1000)
+                await self._handle_transient_error(e, attempt, context)
 
             except APITimeoutError:
                 raise AnthropicAPIError(
@@ -177,18 +137,10 @@ class ResilientAnthropicClient:
         CancelledError (BaseException) passes through uncaught.
         """
         try:
-            cm: AsyncMessageStreamManager | BetaAsyncMessageStreamManager  # type: ignore[type-arg]
-            if self.betas:
-                cm = self.client.beta.messages.stream(
-                    model=model, max_tokens=max_tokens,
-                    system=system, tools=tools, messages=messages,
-                    betas=self.betas,
-                )
-            else:
-                cm = self.client.messages.stream(
-                    model=model, max_tokens=max_tokens,
-                    system=system, tools=tools, messages=messages,
-                )
+            cm = self._create_stream_manager(
+                model=model, max_tokens=max_tokens,
+                system=system, tools=tools, messages=messages,
+            )
             async with cm as stream:
                 yield stream
         except RateLimitError as e:
@@ -220,6 +172,75 @@ class ResilientAnthropicClient:
                 **kwargs, betas=self.betas,
             )
         return await self.client.messages.create(**kwargs)
+
+    def _log_success(self, response, attempt: int) -> None:
+        """Log successful API call with cache metrics."""
+        usage = response.usage
+        cache_read = getattr(usage, "cache_read_input_tokens", 0)
+        cache_create = getattr(usage, "cache_creation_input_tokens", 0)
+        logger.info(
+            "Anthropic API success",
+            extra={
+                "attempt": attempt + 1,
+                "input_tokens": usage.input_tokens,
+                "output_tokens": usage.output_tokens,
+                "cache_read_input_tokens": cache_read,
+                "cache_creation_input_tokens": cache_create,
+            },
+        )
+
+    async def _handle_rate_limit(
+        self, e: RateLimitError, attempt: int, context: ErrorContext | None,
+    ) -> None:
+        """Handle rate limit error with retry or raise."""
+        retry_after_ms = self._extract_retry_after(e)
+        if attempt >= self.max_retries:
+            raise AnthropicAPIError(
+                "Rate limit exceeded after retries",
+                "rate_limit",
+                retry_after_ms=retry_after_ms,
+                context=context,
+            )
+        delay = retry_after_ms or self._backoff(attempt)
+        logger.warning(
+            f"Rate limit hit, retry after {delay}ms (attempt {attempt + 1})",
+        )
+        await asyncio.sleep(delay / 1000)
+
+    async def _handle_transient_error(
+        self, e: Exception, attempt: int, context: ErrorContext | None,
+    ) -> None:
+        """Handle transient errors with retry or raise."""
+        if attempt >= self.max_retries:
+            raise AnthropicAPIError(
+                f"Transient failure after {self.max_retries} retries: {e}",
+                "connection_error",
+                context=context,
+            )
+        delay = self._backoff(attempt)
+        logger.warning(f"Transient error, retry after {delay}ms: {e}")
+        await asyncio.sleep(delay / 1000)
+
+    def _create_stream_manager(
+        self,
+        *,
+        model: str,
+        max_tokens: int,
+        system: SystemParam,
+        tools: list,
+        messages: list,
+    ):
+        """Create stream manager (beta or standard endpoint)."""
+        if self.betas:
+            return self.client.beta.messages.stream(
+                model=model, max_tokens=max_tokens,
+                system=system, tools=tools, messages=messages,
+                betas=self.betas,
+            )
+        return self.client.messages.stream(
+            model=model, max_tokens=max_tokens,
+            system=system, tools=tools, messages=messages,
+        )
 
     def _backoff(self, attempt: int) -> int:
         """Exponential backoff with ±25% jitter."""

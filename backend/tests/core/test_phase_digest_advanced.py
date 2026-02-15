@@ -17,8 +17,8 @@ from app.core.forge_state import ForgeState
 from app.core.phase_digest import (
     build_phase4_context,
     build_continue_context,
-    build_crystallize_context,
 )
+from app.core.phase_digest_crystallize import build_crystallize_context
 
 
 # ---------------------------------------------------------------------------

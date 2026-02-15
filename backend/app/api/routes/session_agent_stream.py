@@ -14,21 +14,23 @@ Design Decisions:
 import asyncio
 import logging
 import os
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse, FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.database import get_db
+from app.core.domain_types import SessionId
 from app.schemas.session import UserInput
 from app.api.routes.session_lifecycle import _forge_states, get_session_or_404
 from app.api.routes.session_stream_helpers import (
     get_or_restore_forge_state, build_stream_message,
     format_user_input, apply_user_input,
-    build_resume_review_event, build_review_event,
     create_runner, sse_line, done_event, patch_snapshot_awaiting,
     SSE_HEADERS,
+)
+from app.api.routes.review_events import (
+    build_resume_review_event, build_review_event,
 )
 
 logger = logging.getLogger(__name__)
@@ -37,8 +39,8 @@ router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])
 
 @router.get("/{session_id}/stream")
 async def stream_session(
-    session_id: UUID, db: AsyncSession = Depends(get_db),
-):
+    session_id: SessionId, db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
     """SSE stream — reconnects paused sessions or starts agent work."""
     session = await get_session_or_404(session_id, db)
     if session.status == "cancelled":
@@ -51,7 +53,6 @@ async def stream_session(
 
     async def event_generator():
         try:
-            # Reconnect: re-emit review event without re-running agent
             if forge_state.awaiting_user_input:
                 review = build_resume_review_event(forge_state, session)
                 if review:
@@ -86,10 +87,10 @@ async def stream_session(
 
 @router.post("/{session_id}/user-input")
 async def send_user_input(
-    session_id: UUID,
+    session_id: SessionId,
     body: UserInput,
     db: AsyncSession = Depends(get_db),
-):
+) -> StreamingResponse:
     """Send user input — dispatches to phase-appropriate processing."""
     session = await get_session_or_404(session_id, db)
     if session.status == "cancelled":
@@ -132,7 +133,7 @@ async def send_user_input(
 
 
 @router.get("/{session_id}/document")
-async def download_document(session_id: UUID):
+async def download_document(session_id: SessionId) -> FileResponse:
     """Download the Knowledge Document as a .md file."""
     import tempfile
     specs_dir = os.path.join(tempfile.gettempdir(), "triz", "specs")

@@ -8,55 +8,60 @@ Design Decisions:
     - Anthropic streaming API for real-time text/tool delivery (ADR: Day 4 polish)
     - get_final_message() for post-processing (avoids manual block reconstruction)
     - Language enforcement after stream (trade-off: user may briefly see wrong text)
-    - Pure helpers extracted to agent_runner_helpers.py (ADR: ExMA 400-line limit)
+    - Pure helpers extracted to agent_runner_helpers.py (ADR: ExMA ~7 methods / class)
 """
 
 import asyncio
 import json
 import logging
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
+from app.core.domain_types import SessionId
 from app.services.tool_dispatch import ToolDispatch, PAUSE_TOOLS
 from app.core.forge_state import ForgeState
 from app.core.repository_protocols import SessionLike
-from app.services.tools_registry import get_phase_tools
-from app.services.system_prompt import build_system_prompt
-from app.core.enforce_language import check_response_language
 from app.infrastructure.anthropic_client import ResilientAnthropicClient
 from app.core.errors import TrizError, AgentLoopExceededError, ErrorContext
-from app.core.domain_types import Locale
 from app.services.agent_runner_helpers import (
     done_event, tool_result_event, unexpected_error_event,
     get_context_usage, has_tool_use, serialize_content,
     process_stream_event, record_web_searches,
     with_system_cache, with_tools_cache, with_message_cache,
+    check_language, account_tokens, format_directives,
+    build_messages, save_state,
 )
+from app.services.tools_registry import get_phase_tools
+from app.services.system_prompt import build_system_prompt
 
 logger = logging.getLogger(__name__)
 
 
 class AgentRunner:
-    """Async agentic loop — streams SSE events for the TRIZ pipeline."""
+    """Async agentic loop — streams SSE events for the TRIZ pipeline.
+
+    Methods: __init__, run, _iteration_loop, _stream_api_call,
+    _execute_tool_blocks, _execute_tool_safe (6 methods — ExMA ~7 limit).
+    Helpers extracted to agent_runner_helpers.py.
+    """
 
     MAX_ITERATIONS = 50
     MAX_LANGUAGE_RETRIES = 2
 
     def __init__(
-        self, db: AsyncSession, anthropic_client: ResilientAnthropicClient,
-    ):
+        self, db, anthropic_client: ResilientAnthropicClient,
+    ) -> None:
         self.client = anthropic_client
         self.model = "claude-opus-4-6"
         self.db = db
 
     async def run(
-        self, session, user_message: str, forge_state: ForgeState,
+        self, session: SessionLike, user_message: str,
+        forge_state: ForgeState,
     ):
-        """Async generator yielding SSE events with real-time streaming."""
+        """Async generator yielding SSE events."""
         system = build_system_prompt(forge_state.locale)
-        messages = self._build_messages(session, user_message)
+        messages = build_messages(session, user_message)
         ctx = ErrorContext(session_id=str(session.id))
-        dispatch = ToolDispatch(self.db, forge_state, session.id)
+        dispatch = ToolDispatch(self.db, forge_state, SessionId(session.id))
 
         try:
             async for event in self._iteration_loop(
@@ -78,73 +83,68 @@ class AgentRunner:
     ):
         """Main iteration loop — yields SSE events."""
         lang_retries = 0
-
         for _ in range(self.MAX_ITERATIONS):
             if forge_state.cancelled:
                 yield {"type": "agent_text", "data": "Session cancelled."}
                 yield done_event(error=False)
                 return
-
             self._last_response = None
             async for sse in self._stream_api_call(
                 system, messages, forge_state, ctx,
             ):
                 yield sse
             if self._last_response is None:
-                return  # error/cancel events already yielded
+                return
             response = self._last_response
-
-            self._account_tokens(session, response)
+            account_tokens(session, response)
             yield {"type": "context_usage", "data": get_context_usage(session)}
             for sse in record_web_searches(response.content, dispatch):
                 yield sse
-
             serialized = serialize_content(response)
             if response.stop_reason == "pause_turn":
                 messages.append({"role": "assistant", "content": serialized})
                 continue
-
-            action, nudge = self._check_language(
-                response, forge_state, lang_retries,
+            action, nudge = check_language(
+                response, forge_state, lang_retries, self.MAX_LANGUAGE_RETRIES,
             )
             if action == "retry":
                 lang_retries += 1
                 messages.append({"role": "assistant", "content": serialized})
                 messages.append({"role": "user", "content": nudge})
                 continue
-
             if not has_tool_use(response):
-                await self._save_state(session, messages, forge_state)
+                await save_state(session, messages, forge_state, self.db)
                 yield done_event(error=False)
                 return
-
             messages.append({"role": "assistant", "content": serialized})
-            tool_msgs, pause, events = await self._execute_tool_blocks(
-                dispatch, session, response.content, nudge,
-            )
-            for sse in events:
+            async for sse in self._process_tools(
+                dispatch, session, forge_state, response, messages, nudge,
+            ):
                 yield sse
-            # Inject research directives from user (explore_more / skip_domain)
-            directives = forge_state.consume_research_directives()
-            if directives:
-                tool_msgs.append({
-                    "type": "text",
-                    "text": self._format_directives(directives),
-                })
-            messages.append({"role": "user", "content": tool_msgs})
-
-            if pause:
-                await self._save_state(session, messages, forge_state)
-                yield done_event(error=False, awaiting_input=True)
-                return
-
-        # Max iterations exceeded
-        error = AgentLoopExceededError(self.MAX_ITERATIONS, ctx)
-        yield error.to_sse_event()
+                if sse.get("type") == "done":
+                    return
+        yield AgentLoopExceededError(self.MAX_ITERATIONS, ctx).to_sse_event()
         yield done_event(error=True)
 
+    async def _process_tools(
+        self, dispatch, session, forge_state, response, messages, nudge,
+    ):
+        """Execute tools, inject directives, handle pause."""
+        tool_msgs, pause, events = await self._execute_tool_blocks(
+            dispatch, session, response.content, nudge,
+        )
+        for sse in events:
+            yield sse
+        directives = forge_state.consume_research_directives()
+        if directives:
+            tool_msgs.append({"type": "text", "text": format_directives(directives)})
+        messages.append({"role": "user", "content": tool_msgs})
+        if pause:
+            await save_state(session, messages, forge_state, self.db)
+            yield done_event(error=False, awaiting_input=True)
+
     async def _stream_api_call(self, system, messages, forge_state, ctx):
-        """Async generator: yields SSE text events, sets self._last_response."""
+        """Yields SSE text events, sets self._last_response."""
         try:
             text_lstrip = True
             async with self.client.stream_message(
@@ -177,41 +177,13 @@ class AgentRunner:
             yield e.to_sse_event()
             yield done_event(error=True)
 
-    def _check_language(self, response, forge_state, retries):
-        """Check response language. Returns (action, nudge_message)."""
-        if retries >= self.MAX_LANGUAGE_RETRIES:
-            return None, None
-        if forge_state.locale == Locale.EN:
-            return None, None
-
-        text_blocks = [
-            b.text for b in response.content
-            if getattr(b, "type", None) == "text"
-        ]
-        if not text_blocks:
-            return None, None
-
-        lang_error = check_response_language(
-            "".join(text_blocks), forge_state.locale,
-        )
-        if not lang_error:
-            return None, None
-
-        if not has_tool_use(response):
-            logger.warning("Language retry %d/%d",
-                retries + 1, self.MAX_LANGUAGE_RETRIES)
-            return "retry", lang_error["message"]
-
-        logger.warning("Language nudge %d/%d",
-            retries + 1, self.MAX_LANGUAGE_RETRIES)
-        return "nudge", lang_error["message"]
-
     async def _execute_tool_blocks(
-        self, dispatch, session, content_blocks, lang_nudge,
-    ):
-        """Execute tool_use blocks. Returns (msgs, should_pause, events)."""
-        tool_results = []
-        sse_events = []
+        self, dispatch: ToolDispatch, session: SessionLike,
+        content_blocks, lang_nudge: str | None,
+    ) -> tuple[list, bool, list]:
+        """Execute tool_use blocks. Returns (msgs, pause, events)."""
+        tool_results: list[dict] = []
+        sse_events: list[dict] = []
         should_pause = False
 
         for block in content_blocks:
@@ -233,36 +205,6 @@ class AgentRunner:
             tool_results.append({"type": "text", "text": lang_nudge})
         return tool_results, should_pause, sse_events
 
-    def _account_tokens(self, session, response):
-        """Add token usage from response to session (total + directional).
-
-        With prompt caching, Anthropic splits input tokens into three buckets:
-        - input_tokens: non-cached input (billed at base rate)
-        - cache_creation_input_tokens: tokens written to cache (billed at 1.25x)
-        - cache_read_input_tokens: tokens read from cache (billed at 0.1x)
-        All three represent real input sent to the model (including system prompt
-        and tool definitions), so all must be counted.
-        """
-        usage = response.usage
-        cache_create = getattr(usage, "cache_creation_input_tokens", 0) or 0
-        cache_read = getattr(usage, "cache_read_input_tokens", 0) or 0
-        inp = usage.input_tokens + cache_create + cache_read
-        out = usage.output_tokens
-        session.total_tokens_used += inp + out
-        session.total_input_tokens += inp
-        session.total_output_tokens += out
-        session.total_cache_creation_tokens += cache_create
-        session.total_cache_read_tokens += cache_read
-
-    async def _save_state(self, session, messages, forge_state):
-        """Save message history + ForgeState snapshot. Never crashes."""
-        try:
-            session.message_history = messages
-            session.forge_state_snapshot = forge_state.to_snapshot()
-            await self.db.commit()
-        except Exception as e:
-            logger.error("Failed to save state: %s", e)
-
     async def _execute_tool_safe(
         self, dispatch: ToolDispatch, session: SessionLike,
         tool_name: str, tool_input: dict,
@@ -281,24 +223,3 @@ class AgentRunner:
                 "status": "error", "error_code": "TOOL_EXECUTION_ERROR",
                 "message": f"Internal error executing {tool_name}",
             }
-
-    @staticmethod
-    def _format_directives(directives: list[dict]) -> str:
-        """Format research directives as natural language for agent context."""
-        parts = ["[RESEARCH DIRECTOR] The user has provided guidance:"]
-        for d in directives:
-            dtype = d.get("directive_type", "")
-            domain = d.get("domain", "")
-            if dtype == "explore_more":
-                parts.append(f"- User wants MORE depth on '{domain}'")
-            elif dtype == "skip_domain":
-                parts.append(f"- User wants to SKIP '{domain}'")
-            else:
-                parts.append(f"- User directive: {dtype} on '{domain}'")
-        return "\n".join(parts)
-
-    def _build_messages(self, session: SessionLike, user_message: str) -> list:
-        """Build message array from history + new user message."""
-        messages = list(session.message_history or [])
-        messages.append({"role": "user", "content": user_message})
-        return messages

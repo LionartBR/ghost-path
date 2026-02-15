@@ -12,6 +12,7 @@ Design Decisions:
 """
 
 from app.core.forge_state import ForgeState
+from app.core.forge_state_snapshot import forge_state_to_snapshot, forge_state_from_snapshot
 from app.core.domain_types import Phase, Locale
 
 
@@ -20,8 +21,8 @@ from app.core.domain_types import Phase, Locale
 def test_roundtrip_default_state():
     """Default ForgeState survives roundtrip with all fields intact."""
     original = ForgeState()
-    snapshot = original.to_snapshot()
-    restored = ForgeState.from_snapshot(snapshot)
+    snapshot = forge_state_to_snapshot(original)
+    restored = forge_state_from_snapshot(snapshot)
 
     assert restored.current_phase == original.current_phase
     assert restored.current_round == original.current_round
@@ -88,8 +89,8 @@ def test_roundtrip_populated_state():
     # web_search tracking
     state.web_searches_this_phase = [{"query": "test", "result_summary": "3 results"}]
 
-    snapshot = state.to_snapshot()
-    restored = ForgeState.from_snapshot(snapshot)
+    snapshot = forge_state_to_snapshot(state)
+    restored = forge_state_from_snapshot(snapshot)
 
     # Phase tracking
     assert restored.current_phase == Phase.VALIDATE
@@ -152,7 +153,7 @@ def test_to_snapshot_produces_json_safe_dict():
     state.novelty_checked = {1, 2}
     state.current_phase = Phase.BUILD
 
-    snapshot = state.to_snapshot()
+    snapshot = forge_state_to_snapshot(state)
 
     # Must serialize to JSON without error
     json_str = json.dumps(snapshot)
@@ -174,7 +175,7 @@ def test_to_snapshot_captures_all_dataclass_fields():
     from dataclasses import fields as dc_fields
 
     state = ForgeState()
-    snapshot = state.to_snapshot()
+    snapshot = forge_state_to_snapshot(state)
 
     # Get all dataclass field names (excludes @property)
     field_names = {f.name for f in dc_fields(ForgeState)}
@@ -191,7 +192,7 @@ def test_to_snapshot_captures_all_dataclass_fields():
 
 def test_from_snapshot_with_empty_dict_returns_defaults():
     """Empty dict produces a valid ForgeState with all defaults."""
-    restored = ForgeState.from_snapshot({})
+    restored = forge_state_from_snapshot({})
 
     assert restored.current_phase == Phase.DECOMPOSE
     assert restored.current_round == 0
@@ -204,7 +205,7 @@ def test_from_snapshot_with_empty_dict_returns_defaults():
 
 def test_from_snapshot_with_partial_dict_fills_defaults():
     """Snapshot with some fields fills the rest from defaults."""
-    restored = ForgeState.from_snapshot({
+    restored = forge_state_from_snapshot({
         "current_phase": "explore",
         "current_round": 1,
         "fundamentals": ["f1"],
@@ -221,7 +222,7 @@ def test_from_snapshot_with_partial_dict_fills_defaults():
 
 def test_from_snapshot_restores_sets_from_lists():
     """Lists in snapshot are converted back to sets for set-typed fields."""
-    restored = ForgeState.from_snapshot({
+    restored = forge_state_from_snapshot({
         "antitheses_searched": [0, 2, 1],
         "falsification_attempted": [0],
         "novelty_checked": [1, 2],
@@ -246,8 +247,8 @@ def test_computed_properties_correct_after_roundtrip():
     state.antitheses_searched = {0, 1, 2}
     state.current_round = 4  # MAX_ROUNDS_PER_SESSION - 1
 
-    snapshot = state.to_snapshot()
-    restored = ForgeState.from_snapshot(snapshot)
+    snapshot = forge_state_to_snapshot(state)
+    restored = forge_state_from_snapshot(snapshot)
 
     assert restored.claims_in_round == 3
     assert restored.claims_remaining == 0

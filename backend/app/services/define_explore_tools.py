@@ -25,7 +25,8 @@ Example for 'personal transportation':
 - Form factor: [two-wheel, four-wheel, single-track, flying]
 - Ownership: [individual, shared, subscription, on-demand]
 
-Minimum 3 parameters with 3 values each. This systematic mapping ensures comprehensive exploration of the solution space, preventing fixation on conventional combinations.""",
+Minimum 3 parameters with 3 values each. This systematic mapping ensures comprehensive
+exploration of the solution space, preventing fixation on conventional combinations.""",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -49,7 +50,10 @@ Minimum 3 parameters with 3 values each. This systematic mapping ensures compreh
                         },
                         "required": ["name", "values"]
                     },
-                    "description": "List of parameters with their possible values — minimum 3 parameters required for meaningful exploration",
+                    "description": (
+                        "List of parameters with their possible values — "
+                        "minimum 3 parameters required for meaningful exploration"
+                    ),
                     "minItems": 3
                 }
             },
@@ -60,22 +64,31 @@ Minimum 3 parameters with 3 values each. This systematic mapping ensures compreh
         "name": "search_cross_domain",
         "description": """Find structural analogies in a semantically distant domain.
 
-CRITICAL: You MUST use web_search to research the source domain BEFORE calling this tool. This ensures analogies are grounded in real-world patterns, not training data.
+CRITICAL: You MUST use web_search to research the source domain BEFORE calling this tool.
+This ensures analogies are grounded in real-world patterns, not training data.
 
-The tool maps patterns from one domain to another based on structural similarity, not surface features. Semantic distance matters:
+The tool maps patterns from one domain to another based on structural similarity,
+not surface features. Semantic distance matters:
 - near: same industry, different application (automotive → aerospace)
 - medium: different industry, similar constraints (supply chain → blood distribution)
 - far: completely different domain with no obvious surface similarity to the problem
 
-The further the semantic distance, the more non-obvious the insight. Focus on HOW the source domain solves analogous problems (mechanisms, principles, trade-offs), not what it looks like.
+The further the semantic distance, the more non-obvious the insight. Focus on HOW the source
+domain solves analogous problems (mechanisms, principles, trade-offs), not what it looks like.
 
-RESONANCE ASSESSMENT: You MUST generate a resonance_prompt (question probing the structural connection) and resonance_options (3-4 options from 'no connection' to 'deep structural match'). Option 0 must always be a 'no structural connection' variant. The user's selection tells Phase 3 WHY this analogy resonated, not just that it did.""",
+RESONANCE ASSESSMENT: You MUST generate a resonance_prompt (question probing the structural
+connection) and resonance_options (3-4 options from 'no connection' to 'deep structural match').
+Option 0 must always be a 'no structural connection' variant. The user's selection tells Phase 3
+WHY this analogy resonated, not just that it did.""",
         "input_schema": {
             "type": "object",
             "properties": {
                 "source_domain": {
                     "type": "string",
-                    "description": "The domain to borrow structural patterns from — derive from Phase 1 fundamentals, assumptions, or reframings rather than defaulting to generic domains"
+                    "description": (
+                        "The domain to borrow structural patterns from — derive from Phase 1 "
+                        "fundamentals, assumptions, or reframings rather than defaulting to generic domains"
+                    )
                 },
                 "target_application": {
                     "type": "string",
@@ -83,7 +96,10 @@ RESONANCE ASSESSMENT: You MUST generate a resonance_prompt (question probing the
                 },
                 "analogy_description": {
                     "type": "string",
-                    "description": "Detailed explanation of the structural similarity — what patterns map from source to target and why?"
+                    "description": (
+                        "Detailed explanation of the structural similarity — "
+                        "what patterns map from source to target and why?"
+                    )
                 },
                 "semantic_distance": {
                     "type": "string",
@@ -95,24 +111,39 @@ RESONANCE ASSESSMENT: You MUST generate a resonance_prompt (question probing the
                     "items": {
                         "type": "string"
                     },
-                    "description": "Key findings from web_search about the source domain — mechanisms, patterns, or principles that will be mapped",
+                    "description": (
+                        "Key findings from web_search about the source domain — mechanisms, "
+                        "patterns, or principles that will be mapped"
+                    ),
                     "minItems": 1
                 },
                 "resonance_prompt": {
                     "type": "string",
-                    "description": "A question probing the structural connection between this analogy and the user's problem. Example: 'Do you see a parallel between ant colony pheromone coordination and your microservices routing challenge?'"
+                    "description": (
+                        "A question probing the structural connection between this analogy and the user's "
+                        "problem. Example: 'Do you see a parallel between ant colony pheromone coordination "
+                        "and your microservices routing challenge?'"
+                    )
                 },
                 "resonance_options": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     },
-                    "description": "3-4 options from 'no connection' to 'deep structural match'. Option 0 MUST be a 'no connection' variant. Example: ['No structural connection', 'Surface similarity only', 'Partial structural match — coordination mechanism applies', 'Deep structural match — pheromone trail ≈ service mesh routing']",
+                    "description": (
+                        "3-4 options from 'no connection' to 'deep structural match'. Option 0 MUST be "
+                        "a 'no connection' variant. Example: ['No structural connection', "
+                        "'Surface similarity only', 'Partial structural match — coordination mechanism applies', "
+                        "'Deep structural match — pheromone trail ≈ service mesh routing']"
+                    ),
                     "minItems": 3,
                     "maxItems": 4
                 }
             },
-            "required": ["source_domain", "target_application", "analogy_description", "semantic_distance", "key_findings", "resonance_prompt", "resonance_options"]
+            "required": [
+                "source_domain", "target_application", "analogy_description",
+                "semantic_distance", "key_findings", "resonance_prompt", "resonance_options"
+            ]
         }
     },
     {
@@ -124,7 +155,9 @@ A technical contradiction exists when improving one property degrades another:
 - Speed vs. Safety (faster systems have less reaction time)
 - Precision vs. Cost (tighter tolerances require expensive manufacturing)
 
-TRIZ identifies contradictions to apply inventive principles that resolve them (separation in time, space, scale, or condition). Not all trade-offs are contradictions — only include pairs where improvement in A directly causes degradation in B within current paradigm.""",
+TRIZ identifies contradictions to apply inventive principles that resolve them (separation in
+time, space, scale, or condition). Not all trade-offs are contradictions — only include pairs
+where improvement in A directly causes degradation in B within current paradigm.""",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -148,9 +181,12 @@ TRIZ identifies contradictions to apply inventive principles that resolve them (
         "name": "map_adjacent_possible",
         "description": """Identify what becomes possible one step beyond current capabilities.
 
-The 'adjacent possible' (Stuart Kauffman) is the set of innovations that are just within reach — they require existing capabilities plus one new enabler. Not science fiction, not current state of art, but the next logical step.
+The 'adjacent possible' (Stuart Kauffman) is the set of innovations that are just within
+reach — they require existing capabilities plus one new enabler. Not science fiction, not
+current state of art, but the next logical step.
 
-Example: Given GPS + smartphones + payment systems, the adjacent possible includes ride-sharing (requires one new element: real-time matching algorithm).
+Example: Given GPS + smartphones + payment systems, the adjacent possible includes ride-sharing
+(requires one new element: real-time matching algorithm).
 
 Focus on:
 - What current capability serves as foundation
@@ -172,7 +208,10 @@ Focus on:
                     "items": {
                         "type": "string"
                     },
-                    "description": "List of prerequisites that must exist for this adjacent possibility to be realized",
+                    "description": (
+                        "List of prerequisites that must exist for this adjacent possibility "
+                        "to be realized"
+                    ),
                     "minItems": 1
                 }
             },

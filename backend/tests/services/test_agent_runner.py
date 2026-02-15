@@ -426,8 +426,8 @@ async def test_format_directives_skip_domain(
     test_db, seed_session, mock_dispatch,
 ):
     """Skip directive formatted correctly."""
-    runner = AgentRunner(test_db, MockAnthropicClient([]))
-    text = runner._format_directives([
+    from app.services.agent_runner_helpers import format_directives
+    text = format_directives([
         {"directive_type": "skip_domain", "query": "skip", "domain": "cooking"},
     ])
     assert "SKIP 'cooking'" in text

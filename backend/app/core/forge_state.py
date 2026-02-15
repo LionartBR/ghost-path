@@ -13,7 +13,6 @@ Design Decisions:
 """
 
 from dataclasses import dataclass, field
-from typing import ClassVar
 
 from app.core.domain_types import Locale, Phase, MAX_ROUNDS_PER_SESSION
 
@@ -146,7 +145,7 @@ class ForgeState:
     # === Phase 6: Crystallize ===
     knowledge_document_markdown: str | None = None
 
-    # --- Phase transition helpers ---------------------------------------------
+    # --- Mutation methods --------------------------------------------------------
 
     def transition_to(self, phase: Phase) -> None:
         """Move to a new phase. Resets web_search tracking."""
@@ -156,7 +155,7 @@ class ForgeState:
     def add_research_directive(
         self, directive_type: str, query: str, domain: str,
     ) -> None:
-        """Queue a user research directive for injection between agent iterations."""
+        """Queue a user research directive for injection."""
         self.research_directives.append({
             "directive_type": directive_type,
             "query": query,
@@ -164,129 +163,19 @@ class ForgeState:
         })
 
     def consume_research_directives(self) -> list[dict]:
-        """Return queued directives and clear the list. Atomic read-and-clear."""
+        """Return queued directives and clear the list."""
         directives = self.research_directives
         self.research_directives = []
         return directives
 
-    def record_web_search(self, query: str, result_summary: str) -> None:
+    def record_web_search(self, query: str, summary: str) -> None:
         """Record a web_search call for enforcement tracking."""
         self.web_searches_this_phase.append({
-            "query": query,
-            "result_summary": result_summary,
+            "query": query, "result_summary": summary,
         })
 
-    # --- Snapshot (serialization / deserialization) ---------------------------
-
-    def to_snapshot(self) -> dict:
-        """Serialize ForgeState to JSON-safe dict. Pure, no IO.
-
-        Sets are converted to sorted lists; Enums to their .value strings.
-        """
-        return {
-            "current_phase": self.current_phase.value,
-            "current_round": self.current_round,
-            "locale": self.locale.value,
-            "locale_confidence": self.locale_confidence,
-            "web_searches_this_phase": self.web_searches_this_phase,
-            # Phase 1
-            "fundamentals": self.fundamentals,
-            "state_of_art_researched": self.state_of_art_researched,
-            "assumptions": self.assumptions,
-            "reframings": self.reframings,
-            "user_added_assumptions": self.user_added_assumptions,
-            "user_added_reframings": self.user_added_reframings,
-            # Phase 2
-            "morphological_box": self.morphological_box,
-            "cross_domain_analogies": self.cross_domain_analogies,
-            "cross_domain_search_count": self.cross_domain_search_count,
-            "contradictions": self.contradictions,
-            "adjacent_possible": self.adjacent_possible,
-            # Phase 3
-            "current_round_claims": self.current_round_claims,
-            "theses_stated": self.theses_stated,
-            "antitheses_searched": sorted(self.antitheses_searched),
-            "user_added_claims": self.user_added_claims,
-            # Phase 4
-            "falsification_attempted": sorted(self.falsification_attempted),
-            "novelty_checked": sorted(self.novelty_checked),
-            # Phase 5
-            "knowledge_graph_nodes": self.knowledge_graph_nodes,
-            "knowledge_graph_edges": self.knowledge_graph_edges,
-            "negative_knowledge": self.negative_knowledge,
-            "gaps": self.gaps,
-            "negative_knowledge_consulted": self.negative_knowledge_consulted,
-            "previous_claims_referenced": self.previous_claims_referenced,
-            # Deep-dive
-            "deep_dive_active": self.deep_dive_active,
-            "deep_dive_target_claim_id": self.deep_dive_target_claim_id,
-            # Phase 6
-            "knowledge_document_markdown": self.knowledge_document_markdown,
-            # Pause state (persisted for session resume — ADR: reconnect
-            # must re-emit the correct review event without re-running agent)
-            "awaiting_user_input": self.awaiting_user_input,
-            "awaiting_input_type": self.awaiting_input_type,
-            # Research directives (ephemeral, but persisted for crash recovery)
-            "research_directives": self.research_directives,
-        }
-
-    # Field mappings for snapshot deserialization (ADR: DRY over 60+ manual lines)
-    _SIMPLE_FIELDS: ClassVar[dict[str, object]] = {
-        "current_round": 0, "locale_confidence": 0.0,
-        "web_searches_this_phase": [], "fundamentals": [],
-        "state_of_art_researched": False, "assumptions": [],
-        "reframings": [], "user_added_assumptions": [],
-        "user_added_reframings": [], "cross_domain_analogies": [],
-        "cross_domain_search_count": 0, "contradictions": [],
-        "adjacent_possible": [], "current_round_claims": [],
-        "theses_stated": 0, "user_added_claims": [],
-        "knowledge_graph_nodes": [],
-        "knowledge_graph_edges": [], "negative_knowledge": [],
-        "gaps": [], "negative_knowledge_consulted": False,
-        "previous_claims_referenced": False, "deep_dive_active": False,
-        "awaiting_user_input": False, "research_directives": [],
-    }
-    _NULLABLE_FIELDS: ClassVar[tuple[str, ...]] = (
-        "morphological_box", "deep_dive_target_claim_id",
-        "knowledge_document_markdown", "awaiting_input_type",
-    )
-    _SET_FIELDS: ClassVar[tuple[str, ...]] = (
-        "antitheses_searched", "falsification_attempted", "novelty_checked",
-    )
-
-    @classmethod
-    def from_snapshot(cls, data: dict) -> "ForgeState":
-        """Reconstruct ForgeState from snapshot dict. Pure, no IO.
-
-        Missing keys fall back to ForgeState defaults. Lists are converted
-        back to sets for set-typed fields.
-        """
-        state = cls()
-        if not data:
-            return state
-
-        # Enum fields (need explicit conversion)
-        phase_val = data.get("current_phase")
-        if phase_val:
-            state.current_phase = Phase(phase_val)
-        locale_val = data.get("locale")
-        if locale_val:
-            state.locale = Locale(locale_val)
-
-        # Bulk restore: simple, nullable, and set fields
-        for key, default in cls._SIMPLE_FIELDS.items():
-            setattr(state, key, data.get(key, default))
-        for key in cls._NULLABLE_FIELDS:
-            setattr(state, key, data.get(key))
-        for key in cls._SET_FIELDS:
-            setattr(state, key, set(data.get(key, [])))
-
-        return state
-
-    # --- Per-round reset (called when BUILD -> SYNTHESIZE) --------------------
-
     def reset_for_new_round(self) -> None:
-        """Reset per-round flags. Cumulative state (graph, negative knowledge) persists."""
+        """Reset per-round flags. Graph + negative knowledge persist."""
         self.current_round += 1
         self.current_round_claims = []
         self.theses_stated = 0
@@ -297,4 +186,3 @@ class ForgeState:
         self.previous_claims_referenced = False
         self.web_searches_this_phase = []
         self.user_added_claims = []
-        # NOTE: knowledge_graph_*, negative_knowledge, gaps PERSIST across rounds

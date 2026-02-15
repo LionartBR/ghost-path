@@ -17,10 +17,10 @@ Design Decisions:
 """
 
 import logging
-from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.domain_types import SessionId
 from app.core.forge_state import ForgeState
 from app.core.repository_protocols import SessionLike
 from app.services.handle_decompose import DecomposeHandlers
@@ -37,15 +37,59 @@ logger = logging.getLogger(__name__)
 PAUSE_TOOLS = frozenset({"generate_knowledge_document"})
 
 
+def _build_handler_registry(
+    decompose: DecomposeHandlers,
+    explore: ExploreHandlers,
+    synthesize: SynthesizeHandlers,
+    validate: ValidateHandlers,
+    build: BuildHandlers,
+    crystallize: CrystallizeHandlers,
+    cross_cutting: CrossCuttingHandlers,
+) -> dict:
+    """Build tool name -> handler mapping. Explicit, not auto-discovered."""
+    return {
+        # Phase 1: DECOMPOSE (4 tools)
+        "decompose_to_fundamentals": decompose.decompose_to_fundamentals,
+        "map_state_of_art": decompose.map_state_of_art,
+        "extract_assumptions": decompose.extract_assumptions,
+        "reframe_problem": decompose.reframe_problem,
+        # Phase 2: EXPLORE (4 tools)
+        "build_morphological_box": explore.build_morphological_box,
+        "search_cross_domain": explore.search_cross_domain,
+        "identify_contradictions": explore.identify_contradictions,
+        "map_adjacent_possible": explore.map_adjacent_possible,
+        # Phase 3: SYNTHESIZE (3 tools)
+        "state_thesis": synthesize.state_thesis,
+        "find_antithesis": synthesize.find_antithesis,
+        "create_synthesis": synthesize.create_synthesis,
+        # Phase 4: VALIDATE (3 tools)
+        "attempt_falsification": validate.attempt_falsification,
+        "check_novelty": validate.check_novelty,
+        "score_claim": validate.score_claim,
+        # Phase 5: BUILD (3 tools)
+        "add_to_knowledge_graph": build.add_to_knowledge_graph,
+        "analyze_gaps": build.analyze_gaps,
+        "get_negative_knowledge": build.get_negative_knowledge,
+        # Phase 6: CRYSTALLIZE (1 tool)
+        "generate_knowledge_document": crystallize.generate_knowledge_document,
+        # Cross-cutting (3 tools)
+        "get_session_status": cross_cutting.get_session_status,
+        "submit_user_insight": cross_cutting.submit_user_insight,
+        "recall_phase_context": cross_cutting.recall_phase_context,
+    }
+
+
 class ToolDispatch:
     """Routes tool_name -> handler. Explicit registration, no auto-discovery."""
 
     def __init__(
         self, db: AsyncSession, state: ForgeState,
-        session_id: UUID | None = None,
+        session_id: SessionId | None = None,
     ):
         self._session_id = session_id
         self._db = db
+        self._state = state
+        # Instantiate all phase handlers
         decompose = DecomposeHandlers(db, state)
         explore = ExploreHandlers(db, state)
         synthesize = SynthesizeHandlers(db, state)
@@ -53,46 +97,10 @@ class ToolDispatch:
         build = BuildHandlers(db, state)
         crystallize = CrystallizeHandlers(db, state)
         cross_cutting = CrossCuttingHandlers(db, state)
-
-        self._state = state
-
-        # ADR: every mapping explicit — adding a tool requires editing this dict
-        self._handlers = {
-            # Phase 1: DECOMPOSE (4 tools)
-            "decompose_to_fundamentals": decompose.decompose_to_fundamentals,
-            "map_state_of_art": decompose.map_state_of_art,
-            "extract_assumptions": decompose.extract_assumptions,
-            "reframe_problem": decompose.reframe_problem,
-
-            # Phase 2: EXPLORE (4 tools)
-            "build_morphological_box": explore.build_morphological_box,
-            "search_cross_domain": explore.search_cross_domain,
-            "identify_contradictions": explore.identify_contradictions,
-            "map_adjacent_possible": explore.map_adjacent_possible,
-
-            # Phase 3: SYNTHESIZE (3 tools)
-            "state_thesis": synthesize.state_thesis,
-            "find_antithesis": synthesize.find_antithesis,
-            "create_synthesis": synthesize.create_synthesis,
-
-            # Phase 4: VALIDATE (3 tools)
-            "attempt_falsification": validate.attempt_falsification,
-            "check_novelty": validate.check_novelty,
-            "score_claim": validate.score_claim,
-
-            # Phase 5: BUILD (3 tools)
-            "add_to_knowledge_graph": build.add_to_knowledge_graph,
-            "analyze_gaps": build.analyze_gaps,
-            "get_negative_knowledge": build.get_negative_knowledge,
-
-            # Phase 6: CRYSTALLIZE (1 tool)
-            "generate_knowledge_document": crystallize.generate_knowledge_document,
-
-            # Cross-cutting (3 tools)
-            "get_session_status": cross_cutting.get_session_status,
-            "submit_user_insight": cross_cutting.submit_user_insight,
-            "recall_phase_context": cross_cutting.recall_phase_context,
-        }
+        # Build explicit tool -> handler mapping
+        self._handlers = _build_handler_registry(
+            decompose, explore, synthesize, validate, build, crystallize, cross_cutting,
+        )
 
     def record_web_search(self, query: str, result_summary: str) -> None:
         """Intercept web_search calls for enforcement tracking.

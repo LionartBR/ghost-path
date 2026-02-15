@@ -12,18 +12,14 @@ Design Decisions:
       detect() calls are serialized. Safe for FastAPI async handlers.
 """
 
-import logging
-
 from app.core.domain_types import Locale
-
-logger = logging.getLogger(__name__)
 
 try:
     from langdetect import detect_langs, DetectorFactory
     DetectorFactory.seed = 0  # Deterministic: must be set BEFORE any detect() call
     _LANGDETECT_AVAILABLE = True
 except ImportError:
-    logger.warning("langdetect not installed — language detection disabled, defaulting to EN")
+    # ADR: no logging in core — caller can check _LANGDETECT_AVAILABLE if needed
     _LANGDETECT_AVAILABLE = False
 
 # langdetect code -> Locale mapping

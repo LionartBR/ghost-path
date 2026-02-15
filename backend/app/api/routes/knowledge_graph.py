@@ -10,14 +10,14 @@ Design Decisions:
 """
 
 import logging
-from uuid import UUID
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.database import get_db
 from app.schemas.graph import GraphData, GraphNode, GraphEdge, ClaimNodeData, ClaimScores
-from app.core.forge_state import ForgeState
+from app.core.domain_types import SessionId
+from app.core.forge_state_snapshot import forge_state_from_snapshot
 from app.api.routes.session_lifecycle import (
     _forge_states, get_session_or_404,
 )
@@ -28,15 +28,15 @@ router = APIRouter(prefix="/api/v1/sessions", tags=["knowledge-graph"])
 
 @router.get("/{session_id}/graph", response_model=GraphData)
 async def get_knowledge_graph(
-    session_id: UUID, db: AsyncSession = Depends(get_db),
-):
+    session_id: SessionId, db: AsyncSession = Depends(get_db),
+) -> GraphData:
     """Get current Knowledge Graph for React Flow rendering."""
     session = await get_session_or_404(session_id, db)
 
     # Try in-memory first, fall back to DB snapshot
     forge_state = _forge_states.get(session_id)
     if not forge_state and session.forge_state_snapshot:
-        forge_state = ForgeState.from_snapshot(session.forge_state_snapshot)
+        forge_state = forge_state_from_snapshot(session.forge_state_snapshot)
         _forge_states[session_id] = forge_state
 
     if not forge_state:

@@ -11,11 +11,10 @@ Design Decisions:
     - No DB write: directives are transient steering signals, not persisted state
 """
 
-from uuid import UUID
-
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
+from app.core.domain_types import SessionId
 from app.api.routes.session_lifecycle import _forge_states
 
 router = APIRouter(prefix="/api/v1/sessions", tags=["research-directive"])
@@ -32,8 +31,8 @@ class ResearchDirective(BaseModel):
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def send_research_directive(
-    session_id: UUID, body: ResearchDirective,
-):
+    session_id: SessionId, body: ResearchDirective,
+) -> dict:
     """Queue a research directive for injection between agent iterations."""
     forge_state = _forge_states.get(session_id)
     if not forge_state:

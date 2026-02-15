@@ -137,63 +137,86 @@ class UserInput(BaseModel):
     @model_validator(mode="after")
     def validate_type_fields(self):
         if self.type == "decompose_review":
-            # ADR: reframing_responses (new) OR selected_reframings (backward compat)
-            has_resonance = (
-                self.reframing_responses
-                and any(r.selected_option > 0 for r in self.reframing_responses)
-            )
-            has_selection = (
-                (self.selected_reframings and len(self.selected_reframings) > 0)
-                or (self.added_reframings and len(self.added_reframings) > 0)
-            )
-            if not (has_resonance or has_selection):
-                raise ValueError(
-                    "decompose_review requires >= 1 reframing with resonance "
-                    "(selected_option > 0) or >= 1 selected/added reframing",
-                )
-
+            _validate_decompose_review(self)
         elif self.type == "explore_review":
-            # ADR: analogy_responses (new) OR starred_analogies (backward compat)
-            has_resonance = (
-                self.analogy_responses
-                and any(r.selected_option > 0 for r in self.analogy_responses)
-            )
-            has_starred = (
-                self.starred_analogies and len(self.starred_analogies) > 0
-            )
-            if not (has_resonance or has_starred):
-                raise ValueError(
-                    "explore_review requires >= 1 analogy with resonance "
-                    "(selected_option > 0) or >= 1 starred analogy",
-                )
-
+            _validate_explore_review(self)
         elif self.type == "claims_review":
-            has_responses = (
-                self.claim_responses and len(self.claim_responses) > 0
-            )
-            has_feedback = (
-                self.claim_feedback and len(self.claim_feedback) > 0
-            )
-            has_custom = (
-                self.added_claims
-                and any(c.strip() for c in self.added_claims)
-            )
-            if not (has_responses or has_feedback or has_custom):
-                raise ValueError(
-                    "claims_review requires claim_responses, "
-                    "claim_feedback, or added_claims",
-                )
-
+            _validate_claims_review(self)
         elif self.type == "verdicts":
-            if not self.verdicts:
-                raise ValueError("verdicts requires verdicts list")
-
+            _validate_verdicts(self)
         elif self.type == "build_decision":
-            if not self.decision:
-                raise ValueError("build_decision requires decision field")
-            if self.decision == "deep_dive" and not self.deep_dive_claim_id:
-                raise ValueError("deep_dive requires deep_dive_claim_id")
-            if self.decision == "add_insight" and not self.user_insight:
-                raise ValueError("add_insight requires user_insight")
-
+            _validate_build_decision(self)
         return self
+
+
+# --- Validation helpers -------------------------------------------------------
+
+
+def _validate_decompose_review(user_input: "UserInput") -> None:
+    """Validate decompose_review fields."""
+    # ADR: reframing_responses (new) OR selected_reframings (backward compat)
+    has_resonance = (
+        user_input.reframing_responses
+        and any(r.selected_option > 0 for r in user_input.reframing_responses)
+    )
+    has_selection = (
+        (user_input.selected_reframings and len(user_input.selected_reframings) > 0)
+        or (user_input.added_reframings and len(user_input.added_reframings) > 0)
+    )
+    if not (has_resonance or has_selection):
+        raise ValueError(
+            "decompose_review requires >= 1 reframing with resonance "
+            "(selected_option > 0) or >= 1 selected/added reframing",
+        )
+
+
+def _validate_explore_review(user_input: "UserInput") -> None:
+    """Validate explore_review fields."""
+    # ADR: analogy_responses (new) OR starred_analogies (backward compat)
+    has_resonance = (
+        user_input.analogy_responses
+        and any(r.selected_option > 0 for r in user_input.analogy_responses)
+    )
+    has_starred = (
+        user_input.starred_analogies and len(user_input.starred_analogies) > 0
+    )
+    if not (has_resonance or has_starred):
+        raise ValueError(
+            "explore_review requires >= 1 analogy with resonance "
+            "(selected_option > 0) or >= 1 starred analogy",
+        )
+
+
+def _validate_claims_review(user_input: "UserInput") -> None:
+    """Validate claims_review fields."""
+    has_responses = (
+        user_input.claim_responses and len(user_input.claim_responses) > 0
+    )
+    has_feedback = (
+        user_input.claim_feedback and len(user_input.claim_feedback) > 0
+    )
+    has_custom = (
+        user_input.added_claims
+        and any(c.strip() for c in user_input.added_claims)
+    )
+    if not (has_responses or has_feedback or has_custom):
+        raise ValueError(
+            "claims_review requires claim_responses, "
+            "claim_feedback, or added_claims",
+        )
+
+
+def _validate_verdicts(user_input: "UserInput") -> None:
+    """Validate verdicts fields."""
+    if not user_input.verdicts:
+        raise ValueError("verdicts requires verdicts list")
+
+
+def _validate_build_decision(user_input: "UserInput") -> None:
+    """Validate build_decision fields."""
+    if not user_input.decision:
+        raise ValueError("build_decision requires decision field")
+    if user_input.decision == "deep_dive" and not user_input.deep_dive_claim_id:
+        raise ValueError("deep_dive requires deep_dive_claim_id")
+    if user_input.decision == "add_insight" and not user_input.user_insight:
+        raise ValueError("add_insight requires user_insight")

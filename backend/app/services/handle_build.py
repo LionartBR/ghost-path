@@ -27,24 +27,11 @@ class BuildHandlers:
         self.db = db
         self.state = state
 
-    async def add_to_knowledge_graph(
-        self, session: SessionLike, input_data: dict,
+    def _build_graph_node(
+        self, claim_data: dict, claim_index: int, verdict: str, input_data: dict,
     ) -> dict:
-        """Add validated claim + edges to knowledge graph."""
-        claim_index = input_data.get("claim_index", 0)
-        edges = input_data.get("edges", [])
-
-        # Read verdict from claim buffer (set by user in _apply_user_input)
-        claim_data = self.state.current_round_claims[claim_index]
-        verdict = claim_data.get("verdict", "accept")
-
-        # Pure gate check: claim index valid + verdict is accept/qualify
-        error = validate_graph_addition(self.state, claim_index, verdict)
-        if error:
-            return error
-
-        # Add node to graph
-        node = {
+        """Build a knowledge graph node from claim data."""
+        return {
             "id": claim_data.get("claim_id", f"claim-{claim_index}-r{self.state.current_round}"),
             "claim_text": claim_data.get("claim_text", ""),
             "confidence": claim_data.get("confidence", "speculative"),
@@ -52,14 +39,16 @@ class BuildHandlers:
             "round_created": self.state.current_round,
             "qualification": claim_data.get("qualification") or input_data.get("qualification"),
         }
-        self.state.knowledge_graph_nodes.append(node)
 
-        # Add edges to ForgeState + persist to DB
+    async def _persist_edges(
+        self, session: SessionLike, node_id: str, claim_data: dict, edges: list,
+    ) -> None:
+        """Add edges to ForgeState and persist to DB."""
         for edge in edges:
             target_id = edge.get("target_claim_id", "")
             edge_type = edge.get("edge_type", "supports")
             edge_data = {
-                "source": node["id"],
+                "source": node_id,
                 "target": target_id,
                 "type": edge_type,
             }
@@ -77,6 +66,29 @@ class BuildHandlers:
                     ))
                 except (ValueError, KeyError):
                     pass  # Skip invalid UUIDs
+
+    async def add_to_knowledge_graph(
+        self, session: SessionLike, input_data: dict,
+    ) -> dict:
+        """Add validated claim + edges to knowledge graph."""
+        claim_index = input_data.get("claim_index", 0)
+        edges = input_data.get("edges", [])
+
+        # Read verdict from claim buffer (set by user in _apply_user_input)
+        claim_data = self.state.current_round_claims[claim_index]
+        verdict = claim_data.get("verdict", "accept")
+
+        # Pure gate check: claim index valid + verdict is accept/qualify
+        error = validate_graph_addition(self.state, claim_index, verdict)
+        if error:
+            return error
+
+        # Add node to graph
+        node = self._build_graph_node(claim_data, claim_index, verdict, input_data)
+        self.state.knowledge_graph_nodes.append(node)
+
+        # Add edges to ForgeState + persist to DB
+        await self._persist_edges(session, node["id"], claim_data, edges)
 
         return {
             "status": "ok",

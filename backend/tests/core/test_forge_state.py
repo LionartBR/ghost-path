@@ -10,6 +10,7 @@ Tests cover:
 """
 
 from app.core.forge_state import ForgeState
+from app.core.forge_state_snapshot import forge_state_to_snapshot, forge_state_from_snapshot
 from app.core.domain_types import Locale, Phase
 
 
@@ -284,7 +285,7 @@ def test_cancelled_not_in_snapshot():
     """Cancelled flag is transient — not persisted to snapshot."""
     state = ForgeState()
     state.cancelled = True
-    snapshot = state.to_snapshot()
+    snapshot = forge_state_to_snapshot(state)
     assert "cancelled" not in snapshot
 
 
@@ -292,8 +293,8 @@ def test_cancelled_defaults_false_on_restore():
     """Restored state always has cancelled=False (resumable after restart)."""
     state = ForgeState()
     state.cancelled = True
-    snapshot = state.to_snapshot()
-    restored = ForgeState.from_snapshot(snapshot)
+    snapshot = forge_state_to_snapshot(state)
+    restored = forge_state_from_snapshot(snapshot)
     assert restored.cancelled is False
 
 
@@ -304,7 +305,7 @@ def test_snapshot_includes_awaiting_user_input():
     state = ForgeState()
     state.awaiting_user_input = True
     state.awaiting_input_type = "decompose_review"
-    snapshot = state.to_snapshot()
+    snapshot = forge_state_to_snapshot(state)
     assert snapshot["awaiting_user_input"] is True
     assert snapshot["awaiting_input_type"] == "decompose_review"
 
@@ -314,8 +315,8 @@ def test_snapshot_restores_awaiting_user_input():
     state = ForgeState()
     state.awaiting_user_input = True
     state.awaiting_input_type = "explore_review"
-    snapshot = state.to_snapshot()
-    restored = ForgeState.from_snapshot(snapshot)
+    snapshot = forge_state_to_snapshot(state)
+    restored = forge_state_from_snapshot(snapshot)
     assert restored.awaiting_user_input is True
     assert restored.awaiting_input_type == "explore_review"
 
@@ -323,7 +324,7 @@ def test_snapshot_restores_awaiting_user_input():
 def test_snapshot_restores_awaiting_defaults_when_missing():
     """Old snapshots without awaiting fields should default gracefully."""
     snapshot = {"current_phase": "decompose", "current_round": 0}
-    restored = ForgeState.from_snapshot(snapshot)
+    restored = forge_state_from_snapshot(snapshot)
     assert restored.awaiting_user_input is False
     assert restored.awaiting_input_type is None
 
@@ -364,7 +365,7 @@ def test_consume_research_directives_empty_returns_empty():
 def test_research_directives_in_snapshot():
     state = ForgeState()
     state.add_research_directive("explore_more", "test query", "domain")
-    snapshot = state.to_snapshot()
+    snapshot = forge_state_to_snapshot(state)
     assert snapshot["research_directives"] == [
         {"directive_type": "explore_more", "query": "test query", "domain": "domain"},
     ]
@@ -373,8 +374,8 @@ def test_research_directives_in_snapshot():
 def test_research_directives_restored_from_snapshot():
     state = ForgeState()
     state.add_research_directive("explore_more", "test query", "domain")
-    snapshot = state.to_snapshot()
-    restored = ForgeState.from_snapshot(snapshot)
+    snapshot = forge_state_to_snapshot(state)
+    restored = forge_state_from_snapshot(snapshot)
     assert len(restored.research_directives) == 1
     assert restored.research_directives[0]["query"] == "test query"
 
@@ -382,5 +383,5 @@ def test_research_directives_restored_from_snapshot():
 def test_research_directives_default_on_old_snapshot():
     """Old snapshots without research_directives field default to empty list."""
     snapshot = {"current_phase": "decompose", "current_round": 0}
-    restored = ForgeState.from_snapshot(snapshot)
+    restored = forge_state_from_snapshot(snapshot)
     assert restored.research_directives == []

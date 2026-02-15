@@ -1,9 +1,8 @@
-"""Session Stream Helpers — user input processing, state sync, review events, and SSE wiring.
+"""Session Stream Helpers — user input processing, state sync, and SSE wiring.
 
 Invariants:
     - apply_user_input mutates ForgeState + triggers phase transition (never commits)
     - sync_state_to_db mirrors ForgeState phase/round/status to Session for observability
-    - build_review_event returns the correct SSE review event for current phase
     - update_claim_verdict persists user verdict to KnowledgeClaim (never crashes)
 
 Design Decisions:
@@ -11,30 +10,25 @@ Design Decisions:
     - All SSE wiring helpers live here (client, runner, format) so routes stay thin
     - Pure match-case dispatch: no inheritance, no polymorphism
     - update_claim_verdict never crashes: errors logged, not raised (user flow > data consistency)
+    - Review event builders moved to review_events.py (ADR: keep files < 400 lines)
 """
 
 import json
 import logging
-import uuid as uuid_mod
-from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.domain_types import Locale, Phase, SessionStatus
 from app.core.forge_state import ForgeState
+from app.core import forge_state_snapshot as _snap
 from app.core.language_strings import get_phase_prefix
 from app.core.format_messages import (
     format_user_input as _format_user_input_pure,
-    build_initial_stream_message,
-    build_resume_message,
+    build_initial_stream_message, build_resume_message,
 )
 from app.models.session import Session as SessionModel
-from app.models.knowledge_claim import KnowledgeClaim
 from app.schemas.session import UserInput
-from app.infrastructure.anthropic_client import ResilientAnthropicClient
-from app.services.agent_runner import AgentRunner
-from app.config import get_settings
 
 
 logger = logging.getLogger(__name__)
@@ -60,7 +54,7 @@ def get_or_restore_forge_state(
     if session_id in forge_states:
         state = forge_states[session_id]
     elif session.forge_state_snapshot:
-        state = ForgeState.from_snapshot(session.forge_state_snapshot)
+        state = _snap.forge_state_from_snapshot(session.forge_state_snapshot)
         forge_states[session_id] = state
         logger.info("Restored ForgeState from DB snapshot (session=%s)", session_id)
     else:
@@ -107,11 +101,14 @@ def patch_snapshot_awaiting(session) -> None:
 
 # -- Runner + message helpers --------------------------------------------------
 
-_anthropic_client: ResilientAnthropicClient | None = None
+_anthropic_client = None  # Lazy: ResilientAnthropicClient singleton
 
 
-def create_runner(db: AsyncSession) -> AgentRunner:
+def create_runner(db: AsyncSession):
     """Create AgentRunner with shared Anthropic client singleton."""
+    from app.infrastructure.anthropic_client import ResilientAnthropicClient
+    from app.services.agent_runner import AgentRunner
+    from app.config import get_settings
     global _anthropic_client
     if _anthropic_client is None:
         settings = get_settings()
@@ -170,133 +167,6 @@ def build_stream_message(session, forge_state: ForgeState) -> str:
     )
 
 
-# -- Review event builders -----------------------------------------------------
-
-def _to_react_flow_graph(state: ForgeState) -> dict:
-    """Transform flat ForgeState nodes/edges into React Flow format.
-
-    ADR: knowledge_graph_nodes are stored as flat dicts in ForgeState,
-    but the frontend expects React Flow format with nested 'data' object.
-    The /graph endpoint does this via Pydantic schemas; SSE events need
-    the same transform inline.
-    """
-    nodes = []
-    for n in state.knowledge_graph_nodes:
-        scores = n.get("scores", {})
-        nodes.append({
-            "id": n.get("id", ""),
-            "type": n.get("status", "proposed"),
-            "data": {
-                "claim_text": n.get("claim_text", ""),
-                "confidence": n.get("confidence"),
-                "scores": {
-                    "novelty": scores.get("novelty"),
-                    "groundedness": scores.get("groundedness"),
-                    "falsifiability": scores.get("falsifiability"),
-                    "significance": scores.get("significance"),
-                },
-                "qualification": n.get("qualification"),
-                "rejection_reason": n.get("rejection_reason"),
-                "evidence_count": n.get("evidence_count", 0),
-                "round_created": n.get("round_created", 0),
-            },
-        })
-    edges = [
-        {
-            "id": f"edge-{i}",
-            "source": e.get("source", ""),
-            "target": e.get("target", ""),
-            "type": e.get("type", "supports"),
-        }
-        for i, e in enumerate(state.knowledge_graph_edges)
-    ]
-    return {"nodes": nodes, "edges": edges}
-
-
-def build_resume_review_event(
-    state: ForgeState, session=None,
-) -> dict | None:
-    """Build review event covering ALL phases (including DECOMPOSE).
-
-    Extends build_review_event (which skips DECOMPOSE) so reconnect
-    can re-emit the correct review for any phase.
-    """
-    if state.current_phase == Phase.DECOMPOSE:
-        return {
-            "type": "review_decompose",
-            "data": {
-                "fundamentals": state.fundamentals,
-                "assumptions": state.assumptions,
-                "reframings": state.reframings,
-            },
-        }
-    return build_review_event(state, session)
-
-
-def build_review_event(state: ForgeState, session=None) -> dict | None:
-    """Build the appropriate review SSE event based on current phase."""
-    event = None
-    match state.current_phase:
-        case Phase.EXPLORE:
-            event = {
-                "type": "review_explore",
-                "data": {
-                    "morphological_box": state.morphological_box,
-                    "analogies": state.cross_domain_analogies,
-                    "contradictions": state.contradictions,
-                    "adjacent": state.adjacent_possible,
-                },
-            }
-        case Phase.SYNTHESIZE:
-            event = {
-                "type": "review_claims",
-                "data": {"claims": state.current_round_claims},
-            }
-        case Phase.VALIDATE:
-            event = {
-                "type": "review_verdicts",
-                "data": {"claims": state.current_round_claims},
-            }
-        case Phase.BUILD:
-            event = {
-                "type": "review_build",
-                "data": {
-                    "graph": _to_react_flow_graph(state),
-                    "gaps": state.gaps,
-                    "negative_knowledge": state.negative_knowledge,
-                    "round": state.current_round,
-                    "max_rounds_reached": state.max_rounds_reached,
-                },
-            }
-        case Phase.CRYSTALLIZE:
-            if state.knowledge_document_markdown:
-                from app.core.session_stats import compute_session_stats
-                stats = compute_session_stats(state)
-                if session:
-                    stats["total_tokens_used"] = getattr(
-                        session, "total_tokens_used", 0,
-                    )
-                    created = getattr(session, "created_at", None)
-                    resolved = getattr(session, "resolved_at", None)
-                    if created and resolved:
-                        stats["duration_seconds"] = int(
-                            (resolved - created).total_seconds(),
-                        )
-                event = {
-                    "type": "knowledge_document",
-                    "data": {
-                        "markdown": state.knowledge_document_markdown,
-                        "stats": stats,
-                        "graph": _to_react_flow_graph(state),
-                        "problem": (
-                            getattr(session, "problem", "")
-                            if session else ""
-                        ),
-                    },
-                }
-    return event
-
-
 # -- User input processing -----------------------------------------------------
 
 async def apply_user_input(
@@ -309,58 +179,20 @@ async def apply_user_input(
         case "decompose_review":
             _apply_decompose(body, state)
             state.transition_to(Phase.EXPLORE)
-            session.message_history = []
-            await sync_state_to_db(session, state, db)
         case "explore_review":
-            if body.analogy_responses:
-                for a_resp in body.analogy_responses:
-                    idx = a_resp.analogy_index
-                    if idx < len(state.cross_domain_analogies):
-                        analogy = state.cross_domain_analogies[idx]
-                        if a_resp.selected_option > 0:
-                            analogy["starred"] = True
-                            options = analogy.get("resonance_options", [])
-                            opt_idx = a_resp.selected_option
-                            if opt_idx < len(options):
-                                analogy["user_resonance"] = options[opt_idx]
-                            analogy["selected_resonance_option"] = opt_idx
-            elif body.starred_analogies:
-                for idx in body.starred_analogies:
-                    if idx < len(state.cross_domain_analogies):
-                        state.cross_domain_analogies[idx]["starred"] = True
+            _apply_explore(body, state)
             state.transition_to(Phase.SYNTHESIZE)
-            session.message_history = []
-            await sync_state_to_db(session, state, db)
         case "claims_review":
-            if body.claim_responses:
-                for c_resp in body.claim_responses:
-                    idx = c_resp.claim_index
-                    if idx < len(state.current_round_claims):
-                        state.current_round_claims[idx][
-                            "user_resonance"
-                        ] = c_resp.selected_option
-            if body.added_claims:
-                state.user_added_claims = [
-                    c.strip() for c in body.added_claims if c.strip()
-                ]
+            _apply_claims(body, state)
             state.transition_to(Phase.VALIDATE)
-            session.message_history = []
-            await sync_state_to_db(session, state, db)
         case "verdicts":
             await _apply_verdicts(body, state, db)
-            all_rejected = (
-                body.verdicts
-                and all(v.verdict == "reject" for v in body.verdicts)
-            )
-            if all_rejected and not state.max_rounds_reached:
-                state.reset_for_new_round()
-                state.transition_to(Phase.SYNTHESIZE)
-            else:
-                state.transition_to(Phase.BUILD)
-            session.message_history = []
-            await sync_state_to_db(session, state, db)
+            _apply_verdict_transition(body, state)
         case "build_decision":
             await _apply_build_decision(body, state, session, db)
+            return  # build_decision handles its own sync
+    session.message_history = []
+    await sync_state_to_db(session, state, db)
 
 
 def _apply_decompose(body: UserInput, state: ForgeState) -> None:
@@ -390,6 +222,49 @@ def _apply_decompose(body: UserInput, state: ForgeState) -> None:
             idx = as_resp.assumption_index
             if idx < len(state.assumptions):
                 state.assumptions[idx]["selected_option"] = as_resp.selected_option
+
+
+def _apply_explore(body: UserInput, state: ForgeState) -> None:
+    """Apply explore review selections — analogy resonance or starred indices."""
+    if body.analogy_responses:
+        for a_resp in body.analogy_responses:
+            idx = a_resp.analogy_index
+            if idx < len(state.cross_domain_analogies):
+                analogy = state.cross_domain_analogies[idx]
+                if a_resp.selected_option > 0:
+                    analogy["starred"] = True
+                    options = analogy.get("resonance_options", [])
+                    opt_idx = a_resp.selected_option
+                    if opt_idx < len(options):
+                        analogy["user_resonance"] = options[opt_idx]
+                    analogy["selected_resonance_option"] = opt_idx
+    elif body.starred_analogies:
+        for idx in body.starred_analogies:
+            if idx < len(state.cross_domain_analogies):
+                state.cross_domain_analogies[idx]["starred"] = True
+
+
+def _apply_claims(body: UserInput, state: ForgeState) -> None:
+    """Apply claims review — resonance responses and user-contributed claims."""
+    if body.claim_responses:
+        for c_resp in body.claim_responses:
+            idx = c_resp.claim_index
+            if idx < len(state.current_round_claims):
+                state.current_round_claims[idx]["user_resonance"] = c_resp.selected_option
+    if body.added_claims:
+        state.user_added_claims = [c.strip() for c in body.added_claims if c.strip()]
+
+
+def _apply_verdict_transition(body: UserInput, state: ForgeState) -> None:
+    """Determine phase transition after verdicts — reject-all loops back."""
+    all_rejected = (
+        body.verdicts and all(v.verdict == "reject" for v in body.verdicts)
+    )
+    if all_rejected and not state.max_rounds_reached:
+        state.reset_for_new_round()
+        state.transition_to(Phase.SYNTHESIZE)
+    else:
+        state.transition_to(Phase.BUILD)
 
 
 async def _apply_verdicts(
@@ -428,6 +303,7 @@ async def _apply_build_decision(
         state.deep_dive_active = True
         state.deep_dive_target_claim_id = body.deep_dive_claim_id
     elif body.decision == "resolve":
+        from datetime import datetime, timezone
         session.resolved_at = datetime.now(timezone.utc)
         state.transition_to(Phase.CRYSTALLIZE)
         session.message_history = []
@@ -444,13 +320,15 @@ async def update_claim_verdict(
     if not claim_id:
         return
     try:
+        import uuid as _uuid
+        from app.models.knowledge_claim import KnowledgeClaim
         _VERDICT_TO_STATUS = {
             "accept": "validated", "reject": "rejected",
             "qualify": "qualified", "merge": "superseded",
         }
         result = await db.execute(
             select(KnowledgeClaim).where(
-                KnowledgeClaim.id == uuid_mod.UUID(claim_id),
+                KnowledgeClaim.id == _uuid.UUID(claim_id),
             ),
         )
         db_claim = result.scalar_one_or_none()
@@ -482,7 +360,7 @@ async def sync_state_to_db(
     session.current_phase = phase_list.index(state.current_phase) + 1
     session.current_round = state.current_round
     session.status = _PHASE_TO_STATUS[state.current_phase].value
-    session.forge_state_snapshot = state.to_snapshot()
+    session.forge_state_snapshot = _snap.forge_state_to_snapshot(state)
     try:
         await db.commit()
     except Exception as e:

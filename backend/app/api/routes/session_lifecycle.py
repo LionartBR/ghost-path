@@ -23,7 +23,7 @@ from app.models.session import Session as SessionModel
 from app.schemas.session import SessionCreate, SessionResponse
 from app.core.forge_state import ForgeState
 from app.core.detect_language import detect_locale
-from app.core.domain_types import Locale
+from app.core.domain_types import Locale, SessionId
 from app.core.errors import ResourceNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ _forge_states: dict[UUID, ForgeState] = {}
 
 
 async def get_session_or_404(
-    session_id: UUID, db: AsyncSession,
+    session_id: SessionId, db: AsyncSession,
 ) -> SessionModel:
     """Get session or raise 404. Exported for agent_stream."""
     result = await db.execute(
@@ -59,7 +59,7 @@ async def get_session_or_404(
 )
 async def create_session(
     body: SessionCreate, db: AsyncSession = Depends(get_db),
-):
+) -> SessionResponse:
     """Create a new TRIZ session."""
     try:
         if body.locale:
@@ -86,7 +86,7 @@ async def create_session(
             locale=session.locale,
         )
     except Exception as e:
-        _forge_states.pop(session.id, None)  # cleanup on commit failure
+        _forge_states.pop(session.id, None)
         logger.error(f"Failed to create session: {e}", exc_info=True)
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -100,7 +100,7 @@ async def list_sessions(
     offset: int = Query(0, ge=0),
     status_filter: str | None = Query(None, alias="status"),
     db: AsyncSession = Depends(get_db),
-):
+) -> dict:
     """List sessions with pagination."""
     query = select(SessionModel).order_by(
         SessionModel.created_at.desc(),
@@ -133,8 +133,8 @@ async def list_sessions(
 
 @router.get("/{session_id}")
 async def get_session(
-    session_id: UUID, db: AsyncSession = Depends(get_db),
-):
+    session_id: SessionId, db: AsyncSession = Depends(get_db),
+) -> dict:
     """Get session details."""
     session = await get_session_or_404(session_id, db)
     return {
@@ -152,43 +152,46 @@ async def get_session(
     }
 
 
-async def _delete_session_in_background(session_id: UUID) -> None:
-    """Background task: delete session and cascade all associated data.
+async def _delete_session_in_background(session_id: SessionId) -> None:
+    """Background task: delete session and cascade all data.
 
-    Uses its own DB session — the request session is already closed when this runs.
-    ADR: fire-and-forget is acceptable for hackathon (no retry, no dead-letter queue).
+    Uses its own DB session — request session is closed when this runs.
+    ADR: fire-and-forget acceptable for hackathon.
     """
     from app.infrastructure.database import db_manager
 
     if not db_manager:
-        logger.error(f"Cannot delete session {session_id}: database not initialized")
+        logger.error("Cannot delete session %s: DB not init", session_id)
         return
 
     try:
         async with db_manager.session() as db:
             result = await db.execute(
-                select(SessionModel).where(SessionModel.id == session_id),
+                select(SessionModel).where(
+                    SessionModel.id == session_id,
+                ),
             )
             session = result.scalar_one_or_none()
             if not session:
-                logger.warning(f"Session {session_id} already deleted (background cleanup)")
+                logger.warning("Session %s already deleted", session_id)
                 return
             await db.delete(session)
             await db.commit()
-            logger.info(f"Session {session_id} deleted in background")
+            logger.info("Session %s deleted in background", session_id)
     except Exception as e:
-        logger.error(f"Failed to delete session {session_id}: {e}", exc_info=True)
+        logger.error("Failed to delete session %s: %s", session_id, e,
+            exc_info=True)
 
 
 @router.delete(
     "/{session_id}", status_code=status.HTTP_202_ACCEPTED,
 )
 async def delete_session(
-    session_id: UUID,
+    session_id: SessionId,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
-):
-    """Accept session deletion. ForgeState cleaned immediately, DB cascade runs in background."""
+) -> None:
+    """Accept deletion. ForgeState cleaned now, DB cascade in background."""
     await get_session_or_404(session_id, db)
     _forge_states.pop(session_id, None)
     background_tasks.add_task(_delete_session_in_background, session_id)
@@ -196,9 +199,9 @@ async def delete_session(
 
 @router.post("/{session_id}/cancel")
 async def cancel_session(
-    session_id: UUID, db: AsyncSession = Depends(get_db),
-):
-    """Cancel an active session. Sets ForgeState flag for immediate loop termination."""
+    session_id: SessionId, db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Cancel active session. Sets ForgeState flag for loop termination."""
     session = await get_session_or_404(session_id, db)
     if session.status == "cancelled":
         raise HTTPException(
@@ -211,8 +214,6 @@ async def cancel_session(
             detail="Cannot cancel a completed session",
         )
 
-    # Set cancellation flag — immediate effect if agent loop is running
-    # (shared reference: _forge_states[id] IS the same object the runner holds)
     if session_id in _forge_states:
         _forge_states[session_id].cancelled = True
 
