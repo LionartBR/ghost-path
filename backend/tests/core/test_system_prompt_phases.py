@@ -300,3 +300,52 @@ def test_phase_prompt_shorter_than_full():
         assert len(scoped) < len(full), (
             f"Phase {phase.value} prompt ({len(scoped)}) not shorter than full ({len(full)})"
         )
+
+
+# --- Per-phase WORKING_DOCUMENT shows only current phase mapping ---------------
+
+
+def test_decompose_working_document_shows_only_problem_context():
+    """DECOMPOSE sees only its own section mapping, not all 6 phases."""
+    prompt = build_system_prompt(Locale.EN, Phase.DECOMPOSE)
+    assert '"problem_context"' in prompt
+    assert '"cross_domain_patterns"' not in prompt
+    assert '"core_insight"' not in prompt
+    assert '"implementation_guide"' not in prompt
+
+
+def test_synthesize_working_document_shows_only_synthesis_sections():
+    prompt = build_system_prompt(Locale.EN, Phase.SYNTHESIZE)
+    assert '"core_insight"' in prompt
+    assert '"reasoning_chain"' in prompt
+    assert '"evidence_base"' in prompt
+    assert '"problem_context"' not in prompt
+    assert '"implementation_guide"' not in prompt
+
+
+def test_crystallize_working_document_shows_implementation_guide():
+    prompt = build_system_prompt(Locale.EN, Phase.CRYSTALLIZE)
+    assert '"implementation_guide"' in prompt
+    assert '"next_frontiers"' in prompt
+    assert "actionable steps" in prompt
+    assert '"problem_context"' not in prompt
+
+
+def test_crystallize_includes_research_archive():
+    """CRYSTALLIZE has recall tools — RESEARCH_ARCHIVE section should be present."""
+    prompt = build_system_prompt(Locale.EN, Phase.CRYSTALLIZE)
+    assert "<research_archive>" in prompt
+
+
+def test_pt_br_decompose_working_document_scoped():
+    """PT_BR also gets per-phase working document."""
+    prompt = build_system_prompt(Locale.PT_BR, Phase.DECOMPOSE)
+    assert '"problem_context"' in prompt
+    assert '"cross_domain_patterns"' not in prompt
+
+
+def test_pt_br_crystallize_working_document_scoped():
+    prompt = build_system_prompt(Locale.PT_BR, Phase.CRYSTALLIZE)
+    assert '"implementation_guide"' in prompt
+    assert '"next_frontiers"' in prompt
+    assert '"problem_context"' not in prompt

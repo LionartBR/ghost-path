@@ -89,34 +89,66 @@ para montar o artefato final.
 Ferramentas: generate_knowledge_document, update_working_document"""
 
 # ---------------------------------------------------------------------------
-# Working Document
+# Working Document — per-phase split (ADR: only current phase's mapping shown)
 # ---------------------------------------------------------------------------
 
-WORKING_DOCUMENT = """\
+_WORKING_DOC_HEADER = """\
 <working_document>
 ## Documento de Conhecimento em Construção
 
 Você mantém um documento vivo ao longo da investigação. O sistema impõe \
 isso — você não pode completar uma fase sem chamar update_working_document \
-pelo menos uma vez.
+pelo menos uma vez."""
 
-Mapeamento fase-seção:
-- Após completar ferramentas de DECOMPOSE: escreva "problem_context"
-- Após completar ferramentas de EXPLORE: escreva "cross_domain_patterns", inicie "technical_details"
-- Após completar ferramentas de SYNTHESIZE: escreva "core_insight", "reasoning_chain", "evidence_base"
-- Após completar ferramentas de VALIDATE: atualize "evidence_base", escreva "boundaries"
-- Após completar ferramentas de BUILD: atualize "technical_details", atualize "boundaries"
-- Em CRYSTALLIZE: escreva "implementation_guide", "next_frontiers", refine tudo
-
+_WORKING_DOC_TONE = """
 Tom do documento: este é um artefato de conhecimento, não um diário de processo. \
 Escreva "Descobrimos que X porque Y" não "Na Fase 2, exploramos...". \
 Cada seção deve responder: qual é o novo conhecimento, por que importa, \
 e o que o leitor pode FAZER com ele.
-
-A seção "implementation_guide" é crítica — dê ao leitor passos concretos \
-e acionáveis: o que fazer primeiro, quais ferramentas/recursos precisa, \
-quais marcos mirar, e quais armadilhas evitar.
 </working_document>"""
+
+WORKING_DOCUMENT_DECOMPOSE = (
+    _WORKING_DOC_HEADER
+    + '\n\nNesta fase: escreva "problem_context".'
+    + _WORKING_DOC_TONE
+)
+
+WORKING_DOCUMENT_EXPLORE = (
+    _WORKING_DOC_HEADER
+    + '\n\nNesta fase: escreva "cross_domain_patterns", inicie "technical_details".'
+    + _WORKING_DOC_TONE
+)
+
+WORKING_DOCUMENT_SYNTHESIZE = (
+    _WORKING_DOC_HEADER
+    + '\n\nNesta fase: escreva "core_insight", "reasoning_chain", "evidence_base".'
+    + _WORKING_DOC_TONE
+)
+
+WORKING_DOCUMENT_VALIDATE = (
+    _WORKING_DOC_HEADER
+    + '\n\nNesta fase: atualize "evidence_base", escreva "boundaries".'
+    + _WORKING_DOC_TONE
+)
+
+WORKING_DOCUMENT_BUILD = (
+    _WORKING_DOC_HEADER
+    + '\n\nNesta fase: atualize "technical_details", atualize "boundaries".'
+    + _WORKING_DOC_TONE
+)
+
+WORKING_DOCUMENT_CRYSTALLIZE = (
+    _WORKING_DOC_HEADER
+    + '\n\nNesta fase: escreva "implementation_guide", "next_frontiers", '
+    + "refine todas as seções existentes."
+    + '\n\nA seção "implementation_guide" é crítica — dê ao leitor passos concretos '
+    + "e acionáveis: o que fazer primeiro, quais ferramentas/recursos precisa, "
+    + "quais marcos mirar, e quais armadilhas evitar."
+    + _WORKING_DOC_TONE
+)
+
+# Backward compat — full version for _assemble_full (phase=None)
+WORKING_DOCUMENT = WORKING_DOCUMENT_CRYSTALLIZE
 
 # ---------------------------------------------------------------------------
 # Enforcement rules (per-phase)
@@ -238,23 +270,19 @@ RESEARCH_ARCHIVE = """\
 <research_archive>
 ## Arquivo de Pesquisa
 
-Cada chamada research() é arquivada. Você tem duas formas de acessar pesquisas passadas:
+Cada chamada research() é arquivada. A cada transição de fase seu histórico de \
+mensagens é limpo, então você DEVE ativamente recuperar pesquisas anteriores — \
+elas não são injetadas automaticamente.
 
-1. **Resumos de fase** (automático): A cada transição de fase, você recebe um resumo \
-compacto das pesquisas da fase anterior. Isto já está no seu contexto — nenhuma ação \
-necessária.
+**Início de cada fase**: chame recall_phase_context(artifact="web_searches") para \
+obter resumos compactos (~150 chars cada) de todas as pesquisas anteriores. Custa \
+~20 tokens por entrada e dá o panorama do que já foi pesquisado.
 
-2. **search_research_archive** (sob demanda): Busque pesquisas passadas por palavra-chave, \
-fase ou propósito. Use quando precisar de detalhes completos de uma busca específica ou \
-padrões entre fases.
+**Quando precisar de detalhes completos**: use search_research_archive(keywords, \
+phase, purpose) para recuperar resumos completos com fontes. Cada resultado é \
+~300 tokens, limite padrão é 3 resultados (~900 tokens).
 
-CUSTO DE TOKENS: Cada resultado de busca é ~300 tokens. Limite padrão é 3 resultados \
-(~900 tokens). Sempre verifique o resumo de fase primeiro — se a informação está lá, \
-não busque.
-
-recall_phase_context(artifact="web_searches") retorna resumos compactos de todas as \
-pesquisas. Para detalhes completos com filtragem por palavra-chave, use \
-search_research_archive.
+IMPORTANTE: Não re-pesquise tópicos já cobertos — recupere primeiro, depois preencha lacunas.
 </research_archive>"""
 
 DIALECTICAL_METHOD = """\

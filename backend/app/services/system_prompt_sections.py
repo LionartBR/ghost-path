@@ -88,34 +88,67 @@ directions). Then call generate_knowledge_document to assemble the final artifac
 Tools: generate_knowledge_document, update_working_document"""
 
 # ---------------------------------------------------------------------------
-# Working Document (included in all phases — each phase writes sections)
+# Working Document — per-phase split (ADR: only current phase's mapping shown)
+# Savings: ~580 chars/call (~145 tokens/call) vs monolithic version
 # ---------------------------------------------------------------------------
 
-WORKING_DOCUMENT = """\
+_WORKING_DOC_HEADER = """\
 <working_document>
 ## Working Knowledge Document
 
 You maintain a living document throughout the investigation. The system \
 enforces this — you cannot complete a phase without calling \
-update_working_document at least once.
+update_working_document at least once."""
 
-Phase-to-section mapping:
-- After completing DECOMPOSE tools: write "problem_context"
-- After completing EXPLORE tools: write "cross_domain_patterns", start "technical_details"
-- After completing SYNTHESIZE tools: write "core_insight", "reasoning_chain", "evidence_base"
-- After completing VALIDATE tools: update "evidence_base", write "boundaries"
-- After completing BUILD tools: update "technical_details", update "boundaries"
-- In CRYSTALLIZE: write "implementation_guide", "next_frontiers", polish all
-
+_WORKING_DOC_TONE = """
 Document tone: this is a knowledge artifact, not a process journal. \
 Write "We discovered that X because Y" not "In Phase 2, we explored...". \
 Every section should answer: what is the new knowledge, why does it matter, \
 and what can the reader DO with it.
-
-The "implementation_guide" section is critical — give the reader concrete, \
-actionable steps: what to do first, what tools/resources they need, what \
-milestones to aim for, and what pitfalls to avoid.
 </working_document>"""
+
+WORKING_DOCUMENT_DECOMPOSE = (
+    _WORKING_DOC_HEADER
+    + '\n\nIn this phase: write "problem_context".'
+    + _WORKING_DOC_TONE
+)
+
+WORKING_DOCUMENT_EXPLORE = (
+    _WORKING_DOC_HEADER
+    + '\n\nIn this phase: write "cross_domain_patterns", start "technical_details".'
+    + _WORKING_DOC_TONE
+)
+
+WORKING_DOCUMENT_SYNTHESIZE = (
+    _WORKING_DOC_HEADER
+    + '\n\nIn this phase: write "core_insight", "reasoning_chain", "evidence_base".'
+    + _WORKING_DOC_TONE
+)
+
+WORKING_DOCUMENT_VALIDATE = (
+    _WORKING_DOC_HEADER
+    + '\n\nIn this phase: update "evidence_base", write "boundaries".'
+    + _WORKING_DOC_TONE
+)
+
+WORKING_DOCUMENT_BUILD = (
+    _WORKING_DOC_HEADER
+    + '\n\nIn this phase: update "technical_details", update "boundaries".'
+    + _WORKING_DOC_TONE
+)
+
+WORKING_DOCUMENT_CRYSTALLIZE = (
+    _WORKING_DOC_HEADER
+    + '\n\nIn this phase: write "implementation_guide", "next_frontiers", '
+    + "polish all existing sections."
+    + '\n\nThe "implementation_guide" section is critical — give the reader concrete, '
+    + "actionable steps: what to do first, what tools/resources they need, what "
+    + "milestones to aim for, and what pitfalls to avoid."
+    + _WORKING_DOC_TONE
+)
+
+# Backward compat — full version for _assemble_full (phase=None)
+WORKING_DOCUMENT = WORKING_DOCUMENT_CRYSTALLIZE
 
 # ---------------------------------------------------------------------------
 # Enforcement rules — split per phase (assembler wraps in <enforcement_rules>)
@@ -237,21 +270,19 @@ RESEARCH_ARCHIVE = """\
 <research_archive>
 ## Research Archive
 
-Every research() call is archived. You have two ways to access past research:
+Every research() call is archived. At each phase transition your message history \
+is cleared, so you MUST actively recall past research — it is not injected \
+automatically.
 
-1. **Phase digests** (automatic): At each phase transition, you receive a compact \
-summary of the previous phase's research. This is already in your context — no \
-action needed.
+**Start of each phase**: call recall_phase_context(artifact="web_searches") to get \
+compact summaries (~150 chars each) of all past research. This costs ~20 tokens \
+per entry and gives you the landscape of what was already searched.
 
-2. **search_research_archive** (on-demand): Search past research by keyword, phase, \
-or purpose. Use when you need full details of a specific past search or cross-phase \
-patterns.
+**When you need full detail**: use search_research_archive(keywords, phase, purpose) \
+to retrieve complete summaries with sources. Each result is ~300 tokens, default \
+limit is 3 results (~900 tokens).
 
-TOKEN COST: Each search result is ~300 tokens. Default limit is 3 results (~900 \
-tokens). Always check your phase digest first — if the info is there, don't search.
-
-recall_phase_context(artifact="web_searches") returns compact summaries of all past \
-research. For full detail with keyword filtering, use search_research_archive.
+IMPORTANT: Do not re-research topics already covered — recall first, then fill gaps.
 </research_archive>"""
 
 DIALECTICAL_METHOD = """\

@@ -146,7 +146,7 @@ def test_system_prompt_contains_research_archive_section():
     prompt = build_system_prompt(Locale.EN)
     assert "<research_archive>" in prompt
     assert "search_research_archive" in prompt
-    assert "Phase digests" in prompt
+    assert "recall_phase_context" in prompt
 
 
 def test_pt_br_prompt_contains_research_archive_section():

@@ -3,13 +3,18 @@
 Invariants:
     - All functions are pure (no IO, no async, no DB)
     - User selection indices used where state flags not yet set (timing rule)
-    - Token budgets: Phase 1-5 ~150-400 tokens, Phase 6 ~1200-1500 tokens
+    - Token budgets: Phase 1 ~50 tokens, Phase 2-5 ~100-300 tokens, Phase 6 ~1200 tokens
     - Empty state -> empty string (except crystallize, which always emits template)
+    - No research digest injection (ADR: agent has recall_phase_context + search_research_archive)
+    - No duplication with user feedback section in same message (ADR: format_messages already
+      includes assumption/reframing/analogy responses — digest adds only NON-DUPLICATED data)
 
 Design Decisions:
     - Extracted from format_messages.py (ADR: ExMA 400-line limit)
     - Progressive compression: earlier phase data shrinks in later digests
     - Sub-functions keep each builder under 50 lines (ADR: ExMA)
+    - Research digests REMOVED — recall tools available from Phase 2 onward,
+      system prompt RESEARCH_ARCHIVE section instructs agent to use them
 """
 
 from typing import Any
@@ -17,7 +22,6 @@ from typing import Any
 from app.core.domain_types import Locale
 from app.core.forge_state import ForgeState
 from app.core import format_messages_pt_br as _pt_br
-from app.core.research_digest import build_research_digest
 
 # Re-export crystallize context builder (used by format_messages.py)
 from app.core.phase_digest_crystallize import build_crystallize_context  # noqa: F401
@@ -34,6 +38,8 @@ def _resp_attr(obj: object, name: str, default: Any = None) -> Any:
 
 # ---------------------------------------------------------------------------
 # Phase 1 context (DECOMPOSE -> EXPLORE)
+# ADR: only fundamentals here — reframings/assumptions already in user feedback
+# section of the same message (format_messages._format_decompose_review)
 # ---------------------------------------------------------------------------
 
 def build_phase1_context(
@@ -44,75 +50,24 @@ def build_phase1_context(
 ) -> str:
     """Compact Phase 1 summary for Phase 2 context injection.
 
-    ADR: reframing_responses (new) preferred over selected_reframings (legacy).
+    Only includes fundamentals — reframings and assumptions are already
+    in the user feedback section of the same transition message.
     """
-    pt = locale == Locale.PT_BR
-    parts: list[str] = []
-    if state.fundamentals:
-        label = "Fundamentos:" if pt else "Fundamentals:"
-        parts.append(f"{label} {', '.join(state.fundamentals[:5])}")
-    _append_reframing_digest(parts, state, pt, reframing_responses, selected_reframings)
-    _append_assumption_digest(parts, state, pt, assumption_responses)
-    if not parts:
+    if not state.fundamentals:
         return ""
+    pt = locale == Locale.PT_BR
+    label = "Fundamentos:" if pt else "Fundamentals:"
     header = (
         _pt_br.DIGEST_PHASE1_HEADER if pt else
         "Phase 1 findings (use these to derive cross-domain analogy sources):"
     )
-    return f"\n{header}\n" + "\n".join(parts) + "\n"
-
-
-def _append_reframing_digest(
-    parts: list, state: ForgeState, pt: bool,
-    responses: list | None, selected: list[int] | None,
-) -> None:
-    """Append reframing digest — new resonance path or legacy index path."""
-    if responses and state.reframings:
-        label = "Respostas às reformulações:" if pt else "Reframing responses:"
-        parts.append(label)
-        for resp in responses:
-            idx = _resp_attr(resp, "reframing_index", 0)
-            opt_idx = _resp_attr(resp, "selected_option", 0)
-            if opt_idx == 0:
-                continue
-            if 0 <= idx < len(state.reframings):
-                r = state.reframings[idx]
-                text = r.get("text", "")[:120]
-                options = r.get("resonance_options", [])
-                opt = options[opt_idx] if opt_idx < len(options) else f"option {opt_idx}"
-                parts.append(f"  - {text}")
-                parts.append(f"    User resonance: '{opt}'")
-    elif selected and state.reframings:
-        label = "Reformulações selecionadas:" if pt else "Selected reframings:"
-        parts.append(label)
-        for idx in selected:
-            if 0 <= idx < len(state.reframings):
-                text = state.reframings[idx].get("text", "")[:120]
-                if text:
-                    parts.append(f"  - {text}")
-
-
-def _append_assumption_digest(
-    parts: list, state: ForgeState, pt: bool, responses: list | None,
-) -> None:
-    """Append assumption responses to parts."""
-    if not (responses and state.assumptions):
-        return
-    label = "Respostas aos pressupostos:" if pt else "Assumption responses:"
-    parts.append(label)
-    for resp in responses[:5]:
-        idx = _resp_attr(resp, "assumption_index", 0)
-        opt_idx = _resp_attr(resp, "selected_option", 0)
-        if 0 <= idx < len(state.assumptions):
-            a = state.assumptions[idx]
-            text = a.get("text", "")
-            options = a.get("options", [])
-            opt = options[opt_idx] if opt_idx < len(options) else f"option {opt_idx}"
-            parts.append(f"  - {text} → {opt}")
+    return f"\n{header}\n{label} {', '.join(state.fundamentals[:5])}\n"
 
 
 # ---------------------------------------------------------------------------
 # Phase 2 context (EXPLORE -> SYNTHESIZE)
+# ADR: selected reframings removed — available via recall_phase_context("decompose", "reframings")
+# ADR: research digest removed — agent has search_research_archive tool
 # ---------------------------------------------------------------------------
 
 def build_phase2_context(
@@ -126,7 +81,6 @@ def build_phase2_context(
     """
     pt = locale == Locale.PT_BR
     parts: list[str] = []
-    _append_selected_reframings_p2(parts, state, pt)
     _append_analogy_digest(parts, state, pt, analogy_responses, starred_analogies)
     _append_contradictions_digest(parts, state, pt)
     _append_morphological_digest(parts, state, pt)
@@ -136,24 +90,7 @@ def build_phase2_context(
         _pt_br.DIGEST_PHASE2_HEADER if pt else
         "Phase 2 findings (use these to derive synthesis directions):"
     )
-    result = f"\n{header}\n" + "\n".join(parts) + "\n"
-    research = build_research_digest(state.research_archive, "decompose", locale)
-    if research:
-        result += research
-    return result
-
-
-def _append_selected_reframings_p2(
-    parts: list, state: ForgeState, pt: bool,
-) -> None:
-    """Append selected reframings (already set in state from decompose_review)."""
-    sel = state.selected_reframings
-    if not sel:
-        return
-    label = "Reformulações selecionadas:" if pt else "Selected reframings:"
-    parts.append(label)
-    for r in sel[:3]:
-        parts.append(f"  - {r.get('text', '')[:120]}")
+    return f"\n{header}\n" + "\n".join(parts) + "\n"
 
 
 def _append_analogy_digest(
@@ -218,7 +155,10 @@ def _append_morphological_digest(
 # ---------------------------------------------------------------------------
 
 def build_phase3_context(state: ForgeState, locale: Locale) -> str:
-    """Phase 3 summary for Phase 4 context."""
+    """Phase 3 summary for Phase 4 context.
+
+    ADR: research digest removed — agent has search_research_archive tool.
+    """
     if not state.current_round_claims:
         return ""
     pt = locale == Locale.PT_BR
@@ -231,11 +171,7 @@ def build_phase3_context(state: ForgeState, locale: Locale) -> str:
         lfc = "Condição de falsificabilidade" if pt else "Falsifiability"
         lev = "evidências" if pt else "evidence items"
         parts.append(f"  [{i}] {text}\n      {lfc}: {fc}\n      {ev_count} {lev}")
-    result = "\n" + "\n".join(parts) + "\n"
-    research = build_research_digest(state.research_archive, "explore", locale)
-    if research:
-        result += research
-    return result
+    return "\n" + "\n".join(parts) + "\n"
 
 
 # ---------------------------------------------------------------------------
@@ -256,7 +192,12 @@ def _build_verdict_map(verdicts: list | None) -> dict[int, str]:
 def build_phase4_context(
     state: ForgeState, locale: Locale, verdicts: list | None = None,
 ) -> str:
-    """Phase 4 summary for Phase 5 context."""
+    """Phase 4 summary for Phase 5 context.
+
+    ADR: research digest removed — agent has search_research_archive tool.
+    Verdicts kept here (not duplicated: user feedback only has verdict type,
+    digest adds scores which are unique).
+    """
     if not state.current_round_claims:
         return ""
     pt = locale == Locale.PT_BR
@@ -278,11 +219,7 @@ def build_phase4_context(
         e = len(state.knowledge_graph_edges)
         lg = "Grafo" if pt else "Graph"
         parts.append(f"  {lg}: {n} nodes, {e} edges")
-    result = "\n" + "\n".join(parts) + "\n"
-    research = build_research_digest(state.research_archive, "synthesize", locale)
-    if research:
-        result += research
-    return result
+    return "\n" + "\n".join(parts) + "\n"
 
 
 # ---------------------------------------------------------------------------
@@ -290,7 +227,10 @@ def build_phase4_context(
 # ---------------------------------------------------------------------------
 
 def build_continue_context(state: ForgeState, locale: Locale) -> str:
-    """Cumulative context for round 2+ synthesis."""
+    """Cumulative context for round 2+ synthesis.
+
+    ADR: research digest removed — agent has search_research_archive tool.
+    """
     pt = locale == Locale.PT_BR
     parts: list[str] = []
     if state.knowledge_graph_nodes:
@@ -315,8 +255,4 @@ def build_continue_context(state: ForgeState, locale: Locale) -> str:
         _pt_br.DIGEST_CONTINUE_HEADER.format(round=rnd) if pt else
         f"Cumulative context (round {rnd}):"
     )
-    result = f"{header}\n" + "\n".join(parts) + "\n"
-    research = build_research_digest(state.research_archive, "build", locale)
-    if research:
-        result += research
-    return result + "\n"
+    return f"{header}\n" + "\n".join(parts) + "\n\n"

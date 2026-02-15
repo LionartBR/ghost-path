@@ -158,7 +158,18 @@ def _format_decompose_review(
                     opt_text = options[opt_idx] if opt_idx < len(options) else f"option {opt_idx}"
                     parts.append(f"  [{idx}] '{text}' → User: '{opt_text}'")
     elif selected:
-        parts.append(f"{lbl['selected_reframings']} {selected}")
+        # ADR: include reframing TEXT (not just indices) since phase digest
+        # no longer duplicates this data
+        parts.append(lbl['selected_reframings'])
+        if forge_state:
+            for idx in selected:
+                if idx < len(forge_state.reframings):
+                    text = forge_state.reframings[idx].get("text", "")[:120]
+                    parts.append(f"  [{idx}] {text}")
+                else:
+                    parts.append(f"  [{idx}]")
+        else:
+            parts.append(f"  {selected}")
     # Suggested domains for Phase 2
     domains = suggested_domains or (forge_state.user_suggested_domains if forge_state else [])
     if domains:
@@ -171,9 +182,11 @@ def _format_decompose_review(
         if ctx:
             parts.append(ctx)
     instr = _pt_br.DECOMPOSE_INSTRUCTION if pt else (
-        "Proceed to Phase 2 (EXPLORE). Build a morphological box, "
-        "search >= 2 distant domains for analogies (use web_search first), "
-        "identify contradictions, and map the adjacent possible."
+        "Proceed to Phase 2 (EXPLORE). Derive cross-domain analogy sources "
+        "from the fundamentals and reframings above. Build a morphological box, "
+        "search >= 2 distant domains for analogies (use research first), "
+        "identify contradictions, and map the adjacent possible. "
+        "Call recall_phase_context to recover any prior research."
     )
     parts.append(instr)
     return "\n".join(parts)
@@ -203,8 +216,9 @@ def _format_explore_review(
         )
     instr = _pt_br.EXPLORE_INSTRUCTION if pt else (
         "Proceed to Phase 3 (SYNTHESIZE). For each promising direction, "
-        "state a thesis (with evidence), find antithesis (use web_search), "
-        "then create a synthesis claim. Generate up to 3 claims this round."
+        "state a thesis (with evidence), find antithesis (use research), "
+        "then create a synthesis claim. Generate up to 3 claims this round. "
+        "Call recall_phase_context to recover prior research before starting."
     )
     parts.append(instr)
     return "\n".join(parts)
@@ -227,8 +241,9 @@ def _format_claims_review(
             _append_claim_feedback(parts, fb, lbl)
     instr = _pt_br.CLAIMS_INSTRUCTION if pt else (
         "Proceed to Phase 4 (VALIDATE). For each claim, attempt "
-        "falsification (use web_search to disprove), check novelty "
-        "(use web_search), then score each claim."
+        "falsification (use research to disprove), check novelty "
+        "(use research), then score each claim. "
+        "Recall prior research before re-searching the same topics."
     )
     parts.append(instr)
     return "\n".join(parts)

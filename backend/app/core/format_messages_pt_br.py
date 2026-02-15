@@ -63,21 +63,25 @@ INITIAL_BODY = (
 )
 
 DECOMPOSE_INSTRUCTION = (
-    "Prossiga para a Fase 2 (EXPLORE). Construa uma caixa morfológica, "
-    "busque >= 2 domínios distantes por analogias (use web_search primeiro), "
-    "identifique contradições e mapeie o possível adjacente."
+    "Prossiga para a Fase 2 (EXPLORE). Derive fontes de analogia cross-domain "
+    "a partir dos fundamentos e reformulações acima. Construa uma caixa morfológica, "
+    "busque >= 2 domínios distantes por analogias (use research primeiro), "
+    "identifique contradições e mapeie o possível adjacente. "
+    "Chame recall_phase_context para recuperar pesquisas anteriores."
 )
 
 EXPLORE_INSTRUCTION = (
     "Prossiga para a Fase 3 (SYNTHESIZE). Para cada direção promissora, "
-    "declare uma tese (com evidências), encontre antítese (use web_search), "
-    "depois crie uma síntese. Gere até 3 afirmações nesta rodada."
+    "declare uma tese (com evidências), encontre antítese (use research), "
+    "depois crie uma síntese. Gere até 3 afirmações nesta rodada. "
+    "Chame recall_phase_context para recuperar pesquisas anteriores antes de começar."
 )
 
 CLAIMS_INSTRUCTION = (
     "Prossiga para a Fase 4 (VALIDATE). Para cada afirmação, tente falsificá-la "
-    "(use web_search para refutar), verifique novidade (use web_search), "
-    "depois pontue cada afirmação."
+    "(use research para refutar), verifique novidade (use research), "
+    "depois pontue cada afirmação. "
+    "Recupere pesquisas anteriores antes de re-pesquisar os mesmos tópicos."
 )
 
 VERDICTS_INSTRUCTION = (

@@ -1,10 +1,11 @@
 """Phase Digest Builders — tests for decompose, explore, and synthesize contexts.
 
 Tests cover:
-    - Phase 1: fundamentals, reframings by index, truncation, PT_BR labels
-    - Phase 2: starred analogies by index, selected reframings, contradictions, morph box
-    - Phase 3: claims with falsifiability, evidence count, truncation
+    - Phase 1: fundamentals only (reframings/assumptions removed — in user feedback)
+    - Phase 2: analogies, contradictions, morph box (selected reframings + research removed)
+    - Phase 3: claims with falsifiability, evidence count, truncation (research removed)
     - Empty state returns empty string for all builders
+    - Research digest injection removed from all phase digests
 
 Design Decisions:
     - Split: phases 1-3 here; phases 4-crystallize in test_phase_digest_advanced.py (ExMA)
@@ -47,17 +48,30 @@ def test_phase1_empty_state_returns_empty():
     assert result == ""
 
 
-def test_phase1_uses_indices_not_state_flags():
+def test_phase1_no_longer_includes_reframings():
+    """Reframings removed from digest — already in user feedback section."""
     state = ForgeState()
+    state.fundamentals = ["element_1"]
     state.reframings = [
         {"text": "Reframing A", "selected": False},
         {"text": "Reframing B", "selected": False},
-        {"text": "Reframing C", "selected": False},
     ]
-    result = build_phase1_context(state, Locale.EN, selected_reframings=[0, 2])
-    assert "Reframing A" in result
-    assert "Reframing C" in result
-    assert "Reframing B" not in result
+    result = build_phase1_context(state, Locale.EN, selected_reframings=[0])
+    assert "Reframing A" not in result
+    assert "element_1" in result
+
+
+def test_phase1_no_longer_includes_assumptions():
+    """Assumptions removed from digest — already in user feedback section."""
+    state = ForgeState()
+    state.fundamentals = ["element_1"]
+    state.assumptions = [
+        {"text": "Users are rational", "options": ["Agree", "Challenge"]},
+    ]
+    responses = [{"assumption_index": 0, "selected_option": 1}]
+    result = build_phase1_context(state, Locale.EN, assumption_responses=responses)
+    assert "Users are rational" not in result
+    assert "element_1" in result
 
 
 def test_phase1_pt_br_labels():
@@ -86,16 +100,17 @@ def test_phase2_includes_starred_analogies_by_index():
     assert "Music" not in result
 
 
-def test_phase2_includes_selected_reframings_from_state():
-    """Reads state.selected_reframings property (already set by prior review)."""
+def test_phase2_no_longer_includes_selected_reframings():
+    """Selected reframings removed — available via recall_phase_context."""
     state = ForgeState()
     state.reframings = [
         {"text": "Selected one", "selected": True},
         {"text": "Not selected", "selected": False},
     ]
+    state.contradictions = [{"property_a": "X", "property_b": "Y"}]
     result = build_phase2_context(state, Locale.EN)
-    assert "Selected one" in result
-    assert "Not selected" not in result
+    assert "Selected one" not in result
+    assert "X" in result  # contradictions still included
 
 
 def test_phase2_includes_contradictions():
@@ -136,17 +151,6 @@ def test_phase2_pt_br():
     result = build_phase2_context(state, Locale.PT_BR)
     assert "Contradições:" in result
     assert "Achados da Fase 2" in result
-
-
-def test_phase2_truncates_reframings_to_3():
-    state = ForgeState()
-    state.reframings = [
-        {"text": f"Reframing {i}", "selected": True} for i in range(10)
-    ]
-    result = build_phase2_context(state, Locale.EN)
-    assert "Reframing 0" in result
-    assert "Reframing 2" in result
-    assert "Reframing 3" not in result
 
 
 def test_phase2_truncates_contradictions_to_3():
@@ -299,12 +303,14 @@ def test_phase3_pt_br():
 
 
 # ---------------------------------------------------------------------------
-# Phase 1 — Reframing Resonance (new path)
+# Phase 1 — Reframing/assumption resonance removed from digest
+# (already in user feedback section of the same transition message)
 # ---------------------------------------------------------------------------
 
-def test_phase1_reframing_responses_included_in_context():
-    """reframing_responses with selected_option > 0 injects resonance text."""
+def test_phase1_reframing_responses_no_longer_in_digest():
+    """reframing_responses removed — they're in user feedback section."""
     state = ForgeState()
+    state.fundamentals = ["core_element"]
     state.reframings = [
         {
             "text": "View as information problem",
@@ -320,41 +326,15 @@ def test_phase1_reframing_responses_included_in_context():
     result = build_phase1_context(
         state, Locale.EN, reframing_responses=responses,
     )
-    assert "View as information problem" in result
-    assert "Completely changes" in result
-    assert "User resonance:" in result
+    assert "core_element" in result
+    assert "View as information problem" not in result
+    assert "User resonance:" not in result
 
 
-def test_phase1_reframing_option_0_excluded_from_context():
-    """reframing_responses with selected_option == 0 are skipped."""
+def test_phase1_selected_reframings_no_longer_in_digest():
+    """Legacy selected_reframings path also removed from digest."""
     state = ForgeState()
-    state.reframings = [
-        {
-            "text": "Zoom out to macro level",
-            "type": "scope_change",
-            "resonance_options": ["No shift", "Partial shift", "Major shift"],
-        },
-        {
-            "text": "Redefine who the stakeholder is",
-            "type": "entity_question",
-            "resonance_options": ["No shift", "Partial shift", "Major shift"],
-        },
-    ]
-    responses = [
-        {"reframing_index": 0, "selected_option": 0},  # skipped
-        {"reframing_index": 1, "selected_option": 1},  # included
-    ]
-    result = build_phase1_context(
-        state, Locale.EN, reframing_responses=responses,
-    )
-    assert "Zoom out" not in result
-    assert "Redefine who" in result
-    assert "Partial shift" in result
-
-
-def test_phase1_selected_reframings_fallback_when_no_responses():
-    """When reframing_responses is None, falls back to selected_reframings path."""
-    state = ForgeState()
+    state.fundamentals = ["core_element"]
     state.reframings = [
         {"text": "Reframing A", "selected": False},
         {"text": "Reframing B", "selected": False},
@@ -362,29 +342,28 @@ def test_phase1_selected_reframings_fallback_when_no_responses():
     result = build_phase1_context(
         state, Locale.EN, selected_reframings=[1],
     )
-    assert "Reframing B" in result
-    assert "Reframing A" not in result
-    assert "User resonance:" not in result
+    assert "core_element" in result
+    assert "Reframing B" not in result
 
 
 # ---------------------------------------------------------------------------
-# Research Digest Injection
+# Research Digest Removed (ADR: agent has recall tools)
 # ---------------------------------------------------------------------------
 
-def test_phase2_includes_phase1_research_digest():
-    """Phase 2 context should include research from decompose phase."""
+def test_phase2_no_longer_includes_research_digest():
+    """Research digest removed — agent has search_research_archive."""
     state = ForgeState()
     state.contradictions = [{"property_a": "X", "property_b": "Y"}]
     state.research_archive = [
         {"query": "TRIZ methods", "summary": "Found methods", "phase": "decompose", "purpose": "state_of_art"},
     ]
     result = build_phase2_context(state, Locale.EN)
-    assert "TRIZ methods" in result
-    assert "Previous phase research:" in result
+    assert "TRIZ methods" not in result
+    assert "Previous phase research:" not in result
 
 
-def test_phase3_includes_phase2_research_digest():
-    """Phase 3 context should include research from explore phase."""
+def test_phase3_no_longer_includes_research_digest():
+    """Research digest removed — agent has search_research_archive."""
     state = ForgeState()
     state.current_round_claims = [
         {"claim_text": "Some claim", "falsifiability_condition": "Cond", "evidence": []},
@@ -393,24 +372,5 @@ def test_phase3_includes_phase2_research_digest():
         {"query": "biology analogy", "summary": "Immune system", "phase": "explore", "purpose": "cross_domain"},
     ]
     result = build_phase3_context(state, Locale.EN)
-    assert "biology analogy" in result
-
-
-def test_phase2_no_research_omits_digest():
-    """Phase 2 with no decompose research should not include research section."""
-    state = ForgeState()
-    state.contradictions = [{"property_a": "X", "property_b": "Y"}]
-    state.research_archive = []
-    result = build_phase2_context(state, Locale.EN)
+    assert "biology analogy" not in result
     assert "Previous phase research:" not in result
-
-
-def test_phase2_research_digest_excludes_other_phases():
-    """Phase 2 should only show decompose research, not explore research."""
-    state = ForgeState()
-    state.contradictions = [{"property_a": "X", "property_b": "Y"}]
-    state.research_archive = [
-        {"query": "explore query", "summary": "Explore data", "phase": "explore", "purpose": "cross_domain"},
-    ]
-    result = build_phase2_context(state, Locale.EN)
-    assert "explore query" not in result
