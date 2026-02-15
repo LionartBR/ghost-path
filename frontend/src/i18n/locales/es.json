@@ -65,8 +65,8 @@
   "claims.description": "Cada afirmación fue forjada por síntesis dialéctica. Evalúe si resuena — ¿abre nuevas direcciones o cambia cómo ve el problema?",
   "claims.evidenceValid": "La evidencia es válida y apoya la afirmación",
   "claims.addClaim": "Agregar su propia afirmación...",
-  "claims.showReasoning": "Mostrar Razonamiento",
-  "claims.hideReasoning": "Ocultar Razonamiento",
+  "claims.showDetails": "Mostrar Detalles",
+  "claims.hideDetails": "Ocultar Detalles",
   "claims.edit": "editar",
   "claims.submit": "Continuar a Validación",
 

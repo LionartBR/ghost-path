@@ -65,8 +65,8 @@
   "claims.description": "Jede Behauptung wurde durch dialektische Synthese geschmiedet. Bewerten Sie, ob sie resoniert — eröffnet sie neue Richtungen oder verändert sie Ihre Sicht auf das Problem?",
   "claims.evidenceValid": "Die Evidenz ist gültig und stützt die Behauptung",
   "claims.addClaim": "Eigene Behauptung hinzufügen...",
-  "claims.showReasoning": "Begründung anzeigen",
-  "claims.hideReasoning": "Begründung ausblenden",
+  "claims.showDetails": "Details anzeigen",
+  "claims.hideDetails": "Details ausblenden",
   "claims.edit": "bearbeiten",
   "claims.submit": "Weiter zur Validierung",
 

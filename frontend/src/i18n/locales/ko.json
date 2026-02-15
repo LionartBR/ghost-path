@@ -65,8 +65,8 @@
   "claims.description": "각 주장은 변증법적 합성을 통해 단조되었습니다. 공명하는지 평가하세요 — 새로운 방향을 열거나 문제를 보는 방식을 바꾸나요?",
   "claims.evidenceValid": "증거가 유효하고 주장을 뒷받침함",
   "claims.addClaim": "자신의 주장 추가...",
-  "claims.showReasoning": "추론 표시",
-  "claims.hideReasoning": "추론 숨기기",
+  "claims.showDetails": "세부 정보 표시",
+  "claims.hideDetails": "세부 정보 숨기기",
   "claims.edit": "편집",
   "claims.submit": "검증으로 계속",
 

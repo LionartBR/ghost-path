@@ -65,8 +65,8 @@
   "claims.description": "Chaque affirmation a été forgée par synthèse dialectique. Évaluez si elle résonne — ouvre-t-elle de nouvelles directions ou change-t-elle votre perception du problème ?",
   "claims.evidenceValid": "L'évidence est valide et soutient l'affirmation",
   "claims.addClaim": "Ajouter votre propre affirmation...",
-  "claims.showReasoning": "Afficher le Raisonnement",
-  "claims.hideReasoning": "Masquer le Raisonnement",
+  "claims.showDetails": "Afficher les Détails",
+  "claims.hideDetails": "Masquer les Détails",
   "claims.edit": "modifier",
   "claims.submit": "Continuer vers la Validation",
 

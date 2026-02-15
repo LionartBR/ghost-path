@@ -65,8 +65,8 @@
   "claims.description": "Each claim was forged through dialectical synthesis. Assess whether it resonates — does it open new directions or shift how you see the problem?",
   "claims.evidenceValid": "Evidence is valid and supports the claim",
   "claims.addClaim": "Add your own claim...",
-  "claims.showReasoning": "Show Reasoning",
-  "claims.hideReasoning": "Hide Reasoning",
+  "claims.showDetails": "Show Details",
+  "claims.hideDetails": "Hide Details",
   "claims.edit": "edit",
   "claims.submit": "Continue to Validation",
 

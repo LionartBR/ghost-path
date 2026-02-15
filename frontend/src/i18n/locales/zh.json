@@ -65,8 +65,8 @@
   "claims.description": "每个主张都是通过辩证综合锻造而成。评估它是否引起共鸣——它是否开辟了新方向或改变了你看待问题的方式？",
   "claims.evidenceValid": "证据有效且支持该主张",
   "claims.addClaim": "添加您自己的主张...",
-  "claims.showReasoning": "显示推理",
-  "claims.hideReasoning": "隐藏推理",
+  "claims.showDetails": "显示详情",
+  "claims.hideDetails": "隐藏详情",
   "claims.edit": "编辑",
   "claims.submit": "继续验证",
 

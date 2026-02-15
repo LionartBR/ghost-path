@@ -65,8 +65,8 @@
   "claims.description": "Ogni affermazione è stata forgiata dalla sintesi dialettica. Valuta se risuona — apre nuove direzioni o cambia come vedi il problema?",
   "claims.evidenceValid": "L'evidenza è valida e supporta l'affermazione",
   "claims.addClaim": "Aggiungi la tua affermazione...",
-  "claims.showReasoning": "Mostra Ragionamento",
-  "claims.hideReasoning": "Nascondi Ragionamento",
+  "claims.showDetails": "Mostra Dettagli",
+  "claims.hideDetails": "Nascondi Dettagli",
   "claims.edit": "modifica",
   "claims.submit": "Continua alla Validazione",
 

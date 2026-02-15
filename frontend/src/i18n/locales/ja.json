@@ -65,8 +65,8 @@
   "claims.description": "各主張は弁証法的合成によって鍛造されました。共鳴するか評価してください — 新しい方向を開くか、問題の見方を変えますか？",
   "claims.evidenceValid": "証拠は有効で主張を裏付けている",
   "claims.addClaim": "独自の主張を追加...",
-  "claims.showReasoning": "推論を表示",
-  "claims.hideReasoning": "推論を非表示",
+  "claims.showDetails": "詳細を表示",
+  "claims.hideDetails": "詳細を非表示",
   "claims.edit": "編集",
   "claims.submit": "検証に進む",
 

@@ -227,7 +227,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                     </p>
                     <div className="text-left max-w-md mx-auto mb-2">
                       <p className="text-gray-700 text-sm leading-relaxed">
-                        {claim.claim_text}
+                        {claim.reasoning || claim.claim_text}
                       </p>
                     </div>
 
@@ -237,17 +237,11 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                       className="text-xs text-gray-400 hover:text-gray-600 transition-colors mb-3 inline-flex items-center gap-1"
                     >
                       <i className={`bi ${expandedDetails.has(currentCard) ? "bi-chevron-up" : "bi-chevron-down"} text-[10px]`} />
-                      {expandedDetails.has(currentCard) ? t("claims.hideReasoning") : t("claims.showReasoning")}
+                      {expandedDetails.has(currentCard) ? t("claims.hideDetails") : t("claims.showDetails")}
                     </button>
 
                     {expandedDetails.has(currentCard) && (
                       <div className="text-left max-w-md mx-auto mb-3 space-y-2 animate-fade-in">
-                        {claim.reasoning && (
-                          <div>
-                            <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">{t("common.reasoning")}</p>
-                            <p className="text-xs text-gray-500 leading-relaxed">{claim.reasoning}</p>
-                          </div>
-                        )}
                         {claim.falsifiability_condition && (
                           <div>
                             <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">{t("common.falsifiability")}</p>
