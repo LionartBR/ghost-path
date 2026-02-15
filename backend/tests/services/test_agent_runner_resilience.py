@@ -203,7 +203,7 @@ async def test_anthropic_api_error_yields_error_event(
         async def stream_message(self, **kwargs):
             self.calls.append(kwargs)
             raise AnthropicAPIError(
-                "Rate limit exceeded", "rate_limit",
+                "Bad request", "client_error",  # non-retryable
                 context=ErrorContext(session_id=str(seed_session.id)),
             )
             yield  # pragma: no cover

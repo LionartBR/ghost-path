@@ -278,11 +278,23 @@ async def save_state(
     session: SessionLike, messages: list,
     forge_state: ForgeState, db,
 ) -> None:
-    """Save message history + ForgeState snapshot. Never crashes."""
+    """Save message history + ForgeState snapshot. Raises on DB failure."""
+    session.message_history = messages
+    session.forge_state_snapshot = forge_state_to_snapshot(forge_state)
+    await db.commit()
+
+
+async def save_state_best_effort(
+    session: SessionLike, messages: list,
+    forge_state: ForgeState, db,
+) -> None:
+    """Save state without raising — for error-path cleanup.
+
+    ADR: error handlers must not mask the original error with a DB failure.
+    Best-effort save reduces data-loss window on API errors / max iterations.
+    """
     import logging
     try:
-        session.message_history = messages
-        session.forge_state_snapshot = forge_state_to_snapshot(forge_state)
-        await db.commit()
+        await save_state(session, messages, forge_state, db)
     except Exception as e:
-        logging.getLogger(__name__).error("Failed to save state: %s", e)
+        logging.getLogger(__name__).error("Best-effort save failed: %s", e)

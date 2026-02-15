@@ -3,12 +3,16 @@
 Invariants:
     - Max 50 iterations, tool errors never crash loop, pause tools halt loop
     - web_search results intercepted for ForgeState gate enforcement
+    - State saved on ALL exit paths (normal, pause, error, max iterations)
+    - Stream retried up to MAX_STREAM_RETRIES on transient failures (no content yielded)
+    - Periodic saves every PERIODIC_SAVE_INTERVAL tool calls (reduces data-loss window)
 
 Design Decisions:
     - Anthropic streaming API for real-time text/tool delivery (ADR: Day 4 polish)
     - get_final_message() for post-processing (avoids manual block reconstruction)
     - Language enforcement after stream (trade-off: user may briefly see wrong text)
     - Pure helpers extracted to agent_runner_helpers.py (ADR: ExMA ~7 methods / class)
+    - save_state raises, save_state_best_effort catches (ADR: error paths must not mask)
 """
 
 import asyncio
@@ -29,7 +33,7 @@ from app.services.agent_runner_helpers import (
     process_stream_event, web_search_detail_from_research,
     with_system_cache, with_tools_cache, with_message_cache,
     check_language, account_tokens, format_directives,
-    build_messages, save_state,
+    build_messages, save_state, save_state_best_effort,
 )
 from app.services.tools_registry import get_phase_tools
 from app.services.system_prompt import build_system_prompt
@@ -48,6 +52,9 @@ class AgentRunner:
     MAX_ITERATIONS = 50
     MAX_LANGUAGE_RETRIES = 2
     MAX_DOC_RETRIES = 2
+    MAX_STREAM_RETRIES = 2
+    PERIODIC_SAVE_INTERVAL = 3
+    RETRYABLE_STREAM_CODES = frozenset({"rate_limit", "connection_error", "timeout"})
 
     def __init__(
         self, db, anthropic_client: ResilientAnthropicClient,
@@ -80,6 +87,9 @@ class AgentRunner:
         except Exception as e:
             logger.error("Unexpected error in agent runner: %s", e,
                 extra={"session_id": str(session.id)}, exc_info=True)
+            await save_state_best_effort(
+                session, messages, forge_state, self.db,
+            )
             yield unexpected_error_event()
             yield done_event(error=True)
 
@@ -89,6 +99,7 @@ class AgentRunner:
         """Main iteration loop — yields SSE events."""
         lang_retries = 0
         doc_retries = 0
+        self._tools_since_save = 0
         for _ in range(self.MAX_ITERATIONS):
             if forge_state.cancelled:
                 yield {"type": "agent_text", "data": "Session cancelled."}
@@ -107,6 +118,9 @@ class AgentRunner:
             ):
                 yield sse
             if self._last_response is None:
+                await save_state_best_effort(
+                    session, messages, forge_state, self.db,
+                )
                 return
             response = self._last_response
             account_tokens(session, response)
@@ -142,13 +156,16 @@ class AgentRunner:
                 yield sse
                 if sse.get("type") == "done":
                     return
+        await save_state_best_effort(
+            session, messages, forge_state, self.db,
+        )
         yield AgentLoopExceededError(self.MAX_ITERATIONS, ctx).to_sse_event()
         yield done_event(error=True)
 
     async def _process_tools(
         self, dispatch, session, forge_state, response, messages, nudge,
     ):
-        """Execute tools, inject directives, handle pause."""
+        """Execute tools, inject directives, handle pause + periodic save."""
         tool_msgs, pause, events = await self._execute_tool_blocks(
             dispatch, session, response.content, nudge,
         )
@@ -158,43 +175,78 @@ class AgentRunner:
         if directives:
             tool_msgs.append({"type": "text", "text": format_directives(directives)})
         messages.append({"role": "user", "content": tool_msgs})
+        tool_count = sum(
+            1 for b in response.content
+            if getattr(b, "type", None) == "tool_use"
+        )
+        self._tools_since_save += tool_count
         if pause:
             await save_state(session, messages, forge_state, self.db)
+            self._tools_since_save = 0
             yield done_event(error=False, awaiting_input=True)
+        elif self._tools_since_save >= self.PERIODIC_SAVE_INTERVAL:
+            await save_state_best_effort(
+                session, messages, forge_state, self.db,
+            )
+            self._tools_since_save = 0
 
     async def _stream_api_call(self, system, messages, forge_state, ctx):
-        """Yields SSE text events, sets self._last_response."""
-        try:
-            text_lstrip = True
-            async with self.client.stream_message(
-                model=self.model, max_tokens=16384,
-                system=with_system_cache(system),
-                tools=with_tools_cache(
-                    get_phase_tools(forge_state.current_phase),
-                ),
-                messages=with_message_cache(messages),
-                context=ctx,
-            ) as stream:
-                async for event in stream:
-                    if forge_state.cancelled:
-                        break
-                    sse, text_lstrip = process_stream_event(
-                        event, text_lstrip,
-                    )
-                    if sse:
-                        yield sse
+        """Yields SSE text events, sets self._last_response.
 
-                if forge_state.cancelled:
-                    yield {"type": "agent_text", "data": "Session cancelled."}
-                    yield done_event(error=False)
+        Retries up to MAX_STREAM_RETRIES on transient failures
+        if no content has been yielded yet (safe to replay).
+        """
+        for attempt in range(self.MAX_STREAM_RETRIES + 1):
+            yielded_content = False
+            try:
+                text_lstrip = True
+                async with self.client.stream_message(
+                    model=self.model, max_tokens=16384,
+                    system=with_system_cache(system),
+                    tools=with_tools_cache(
+                        get_phase_tools(forge_state.current_phase),
+                    ),
+                    messages=with_message_cache(messages),
+                    context=ctx,
+                ) as stream:
+                    async for event in stream:
+                        if forge_state.cancelled:
+                            break
+                        sse, text_lstrip = process_stream_event(
+                            event, text_lstrip,
+                        )
+                        if sse:
+                            yielded_content = True
+                            yield sse
+
+                    if forge_state.cancelled:
+                        yield {"type": "agent_text", "data": "Session cancelled."}
+                        yield done_event(error=False)
+                        return
+
+                    self._last_response = await stream.get_final_message()
                     return
 
-                self._last_response = await stream.get_final_message()
-
-        except TrizError as e:
-            logger.error("Anthropic API error: %s", e.message)
-            yield e.to_sse_event()
-            yield done_event(error=True)
+            except TrizError as e:
+                api_type = getattr(e, "api_error_type", e.code)
+                can_retry = (
+                    attempt < self.MAX_STREAM_RETRIES
+                    and api_type in self.RETRYABLE_STREAM_CODES
+                    and not yielded_content
+                )
+                if can_retry:
+                    delay = (2 ** attempt) * 1.0
+                    logger.warning(
+                        "Stream retry %d/%d after %s (%.1fs)",
+                        attempt + 1, self.MAX_STREAM_RETRIES,
+                        e.code, delay,
+                    )
+                    await asyncio.sleep(delay)
+                    continue
+                logger.error("Anthropic API error: %s", e.message)
+                yield e.to_sse_event()
+                yield done_event(error=True)
+                return
 
     async def _execute_tool_blocks(
         self, dispatch: ToolDispatch, session: SessionLike,
