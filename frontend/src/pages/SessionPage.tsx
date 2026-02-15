@@ -126,7 +126,7 @@ export function SessionPage() {
               <ExploreReview data={stream.exploreReview} onSubmit={handleSubmit} />
             )}
 
-            {/* Phase 3: Claims Review (fallback — normally auto-submitted) */}
+            {/* Phase 3: Claims Review */}
             {stream.claimsReview && stream.awaitingInput && !stream.verdictsReview && (
               <ClaimReview claims={stream.claimsReview} onSubmit={handleSubmit} />
             )}
