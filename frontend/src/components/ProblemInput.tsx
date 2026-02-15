@@ -16,6 +16,13 @@ export function ProblemInput({ onSubmit, loading, exampleProblem }: Props) {
     if (problem.trim().length >= 10) onSubmit(problem.trim());
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey && !loading && problem.trim().length >= 10) {
+      e.preventDefault();
+      onSubmit(problem.trim());
+    }
+  };
+
   const charCount = problem.length;
   const isTooShort = charCount > 0 && charCount < 10;
 
@@ -32,6 +39,7 @@ export function ProblemInput({ onSubmit, loading, exampleProblem }: Props) {
           id="problem"
           value={problem}
           onChange={(e) => setProblem(e.target.value)}
+          onKeyDown={handleKeyDown}
           className="w-full p-4 bg-gray-50/30 border border-gray-200 text-gray-900 rounded-xl
                      text-sm resize-none focus:ring-2 focus:ring-blue-400/50
                      focus:border-blue-300 placeholder-gray-400 transition-all
