@@ -80,14 +80,14 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
             className={`py-2.5 px-4 rounded-md font-medium text-sm transition-colors ${
               data.max_rounds_reached
                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700 text-white"
+                : "bg-blue-600 hover:bg-blue-500 text-white"
             }`}
           >
             {t("build.continue")}
           </button>
           <button
             onClick={() => handleDecision("resolve")}
-            className="bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-4 rounded-md font-medium text-sm transition-colors"
+            className="bg-blue-600 hover:bg-blue-500 text-white py-2.5 px-4 rounded-md font-medium text-sm transition-colors"
           >
             {t("build.resolve")}
           </button>
@@ -124,7 +124,7 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
                   <button
                     onClick={() => handleDecision("deep_dive")}
                     disabled={data.max_rounds_reached || !selectedClaimId}
-                    className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-blue-500 hover:bg-blue-400 text-white py-2 px-4 rounded-md font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {t("build.deepDiveAction")}
                   </button>
@@ -132,7 +132,7 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
               </div>
               <button
                 onClick={() => handleDecision("add_insight")}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2.5 px-4 rounded-md font-medium text-sm transition-colors"
+                className="w-full bg-blue-500 hover:bg-blue-400 text-white py-2.5 px-4 rounded-md font-medium text-sm transition-colors"
               >
                 {t("build.addInsight")}
               </button>

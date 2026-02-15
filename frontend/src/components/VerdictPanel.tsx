@@ -25,19 +25,19 @@ interface VerdictPanelProps {
 
 const VERDICT_STYLES: Record<VerdictType, { active: string; inactive: string }> = {
   accept: {
-    active: "bg-emerald-600 text-white shadow-sm shadow-emerald-200",
+    active: "bg-emerald-600 text-white",
     inactive: "bg-white border border-gray-200 text-gray-600 hover:border-emerald-300 hover:text-emerald-600",
   },
   reject: {
-    active: "bg-red-500 text-white shadow-sm shadow-red-200",
+    active: "bg-red-500 text-white",
     inactive: "bg-white border border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-500",
   },
   qualify: {
-    active: "bg-amber-500 text-white shadow-sm shadow-amber-200",
+    active: "bg-amber-500 text-white",
     inactive: "bg-white border border-gray-200 text-gray-600 hover:border-amber-300 hover:text-amber-600",
   },
   merge: {
-    active: "bg-violet-500 text-white shadow-sm shadow-violet-200",
+    active: "bg-violet-500 text-white",
     inactive: "bg-white border border-gray-200 text-gray-600 hover:border-violet-300 hover:text-violet-600",
   },
 };
@@ -295,7 +295,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
       {/* Submit */}
       <button
         onClick={handleSubmit}
-        className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm py-3 px-6 rounded-lg shadow-md shadow-amber-200/50 hover:shadow-lg hover:shadow-amber-300/50 transition-all"
+        className="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold text-sm py-3 px-6 rounded-lg transition-all"
       >
         {t("verdicts.submit")}
       </button>

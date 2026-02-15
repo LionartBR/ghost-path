@@ -98,7 +98,7 @@ export default function UserInsightForm({ onSubmit, onCancel }: UserInsightFormP
       <div className="flex gap-3">
         <button
           onClick={handleSubmit}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm py-3 px-6 rounded-lg shadow-md shadow-blue-200/50 hover:shadow-lg hover:shadow-blue-300/50 transition-all"
+          className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm py-3 px-6 rounded-lg transition-all"
         >
           {t("insight.submit")}
         </button>

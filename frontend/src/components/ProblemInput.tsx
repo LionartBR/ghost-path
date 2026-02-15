@@ -72,9 +72,8 @@ export function ProblemInput({ onSubmit, loading, exampleProblem }: Props) {
         type="submit"
         disabled={loading || problem.trim().length < 10}
         className="w-full py-3.5 bg-blue-600 text-white font-semibold rounded-xl
-                   hover:bg-blue-700 active:bg-blue-800
-                   shadow-md shadow-blue-200/50 hover:shadow-lg hover:shadow-blue-300/50
-                   disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none
+                   hover:bg-blue-500 active:bg-blue-400
+                   disabled:bg-gray-100 disabled:text-gray-400
                    disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
       >
         {loading ? (

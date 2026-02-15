@@ -175,7 +175,7 @@ export default function ClaimVerdictReview({ claims, onSubmit }: ClaimVerdictRev
 
       <button
         onClick={handleSubmit}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm py-3 px-6 rounded-lg shadow-md shadow-blue-200/50 hover:shadow-lg hover:shadow-blue-300/50 transition-all"
+        className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm py-3 px-6 rounded-lg transition-all"
       >
         {t("verdicts.submit")}
       </button>

@@ -30,7 +30,7 @@ export default function KnowledgeDocument({
         <h2 className="text-lg font-semibold text-gray-900">{t("document.title")}</h2>
         <button
           onClick={handleDownload}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-md shadow-blue-200/50 hover:shadow-lg hover:shadow-blue-300/50 transition-all"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-all"
         >
           {t("document.download")}
         </button>

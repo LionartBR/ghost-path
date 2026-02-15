@@ -216,8 +216,8 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
                           className={`w-full px-4 py-2 rounded-md text-xs font-medium transition-all text-left ${
                             selected
                               ? optIdx === 0
-                                ? "bg-gray-400 text-white shadow-sm shadow-gray-200"
-                                : "bg-green-500 text-white shadow-sm shadow-green-200"
+                                ? "bg-gray-400 text-white"
+                                : "bg-green-500 text-white"
                               : "bg-white border border-gray-200 text-gray-600 hover:border-green-300 hover:text-green-600"
                           }`}
                         >
@@ -377,7 +377,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
       <button
         onClick={handleSubmit}
         disabled={!canSubmit}
-        className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg shadow-md shadow-green-200/50 hover:shadow-lg hover:shadow-green-300/50 transition-all inline-flex items-center justify-center gap-2"
+        className="w-full py-3 bg-green-600 hover:bg-green-500 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg transition-all inline-flex items-center justify-center gap-2"
       >
         {canSubmit
           ? t("explore.submitReview", { count: hasResonanceData ? resonatedCount : starredAnalogies.size })

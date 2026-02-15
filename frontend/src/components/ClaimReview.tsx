@@ -288,8 +288,8 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                               className={`w-full px-4 py-2 rounded-md text-xs font-medium transition-all text-left ${
                                 selected
                                   ? optIdx === 0
-                                    ? "bg-gray-400 text-white shadow-sm shadow-gray-200"
-                                    : "bg-green-500 text-white shadow-sm shadow-green-200"
+                                    ? "bg-gray-400 text-white"
+                                    : "bg-green-500 text-white"
                                   : optIdx === 0
                                     ? "bg-white border border-gray-300 text-gray-500 hover:border-gray-400"
                                     : "bg-white border border-gray-200 text-gray-600 hover:border-green-300 hover:text-green-600"
@@ -333,7 +333,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
         <button
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg shadow-md shadow-green-200/50 hover:shadow-lg hover:shadow-green-300/50 transition-all inline-flex items-center justify-center gap-2 animate-fade-in"
+          className="w-full py-3 bg-green-600 hover:bg-green-500 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg transition-all inline-flex items-center justify-center gap-2 animate-fade-in"
         >
           {t("claims.submit")}
         </button>
@@ -373,7 +373,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
 
       <button
         onClick={handleSubmit}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm py-3 px-6 rounded-lg shadow-md shadow-blue-200/50 hover:shadow-lg hover:shadow-blue-300/50 transition-all"
+        className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm py-3 px-6 rounded-lg transition-all"
       >
         {t("claims.submit")}
       </button>
