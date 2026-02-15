@@ -261,6 +261,13 @@ async def test_token_accounting_cumulative_across_iterations(
 
     await test_db.refresh(seed_session)
     assert seed_session.total_tokens_used == 150 + 275 + 100
+    assert seed_session.total_input_tokens == 100 + 200 + 80
+    assert seed_session.total_output_tokens == 50 + 75 + 20
+
+    # context_usage events include directional counters
+    last_ctx = ctx_events[-1]["data"]
+    assert last_ctx["input_tokens"] == 100 + 200 + 80
+    assert last_ctx["output_tokens"] == 50 + 75 + 20
 
 
 async def test_state_persisted_on_normal_completion(

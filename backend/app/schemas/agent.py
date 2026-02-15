@@ -18,7 +18,8 @@ class ContextUsage(BaseModel):
     tokens_limit: int
     tokens_remaining: int
     usage_percentage: float
-    estimated_rounds_left: int
+    input_tokens: int
+    output_tokens: int
 
 
 class ToolCallEvent(BaseModel):

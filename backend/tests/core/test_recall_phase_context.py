@@ -22,6 +22,8 @@ from app.services.handle_cross_cutting import CrossCuttingHandlers
 
 class FakeSession:
     total_tokens_used = 0
+    total_input_tokens = 0
+    total_output_tokens = 0
 
 
 @pytest.fixture

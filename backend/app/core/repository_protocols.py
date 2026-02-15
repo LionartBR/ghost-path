@@ -27,6 +27,8 @@ class SessionLike(Protocol):
     id: UUID
     problem: str
     total_tokens_used: int
+    total_input_tokens: int
+    total_output_tokens: int
     message_history: list
     forge_state_snapshot: dict | None
 

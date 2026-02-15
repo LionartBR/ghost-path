@@ -21,8 +21,15 @@ export const ContextMeter: React.FC<ContextMeterProps> = ({ usage }) => {
   }
 
   return (
-    <span className="text-xs text-gray-400 font-mono tabular-nums">
-      {formatNumber(usage.tokens_used)} tokens
+    <span className="text-xs text-gray-400 font-mono tabular-nums inline-flex items-center gap-2">
+      <span title="Input tokens (sent to model)">
+        <span className="text-blue-400">↑</span> {formatNumber(usage.input_tokens)}
+      </span>
+      <span title="Output tokens (received from model)">
+        <span className="text-emerald-400">↓</span> {formatNumber(usage.output_tokens)}
+      </span>
+      <span className="text-gray-300">|</span>
+      <span title="Total tokens used">{formatNumber(usage.tokens_used)}</span>
     </span>
   );
 };

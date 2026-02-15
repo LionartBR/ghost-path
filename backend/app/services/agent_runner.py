@@ -234,10 +234,12 @@ class AgentRunner:
         return tool_results, should_pause, sse_events
 
     def _account_tokens(self, session, response):
-        """Add token usage from response to session."""
-        session.total_tokens_used += (
-            response.usage.input_tokens + response.usage.output_tokens
-        )
+        """Add token usage from response to session (total + directional)."""
+        inp = response.usage.input_tokens
+        out = response.usage.output_tokens
+        session.total_tokens_used += inp + out
+        session.total_input_tokens += inp
+        session.total_output_tokens += out
 
     async def _save_state(self, session, messages, forge_state):
         """Save message history + ForgeState snapshot. Never crashes."""

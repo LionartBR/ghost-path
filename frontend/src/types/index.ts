@@ -197,6 +197,8 @@ export interface ContextUsage {
   tokens_limit: number;
   tokens_remaining: number;
   usage_percentage: number;
+  input_tokens: number;
+  output_tokens: number;
 }
 
 // --- Session Completion ---
