@@ -19,6 +19,7 @@ import { useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { Claim, ClaimFeedback, UserInput } from "../types";
 import ClaimCard from "./ClaimCard";
+import ClaimMarkdown from "./ClaimMarkdown";
 
 interface ClaimReviewProps {
   claims: Claim[];
@@ -260,9 +261,9 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                       {currentCard + 1} / {totalClaims}
                     </p>
                     <div className="text-left max-w-md mx-auto mb-2">
-                      <p className="text-gray-700 text-sm leading-relaxed">
+                      <ClaimMarkdown className="text-gray-700 text-sm leading-relaxed">
                         {claim.reasoning || claim.claim_text}
-                      </p>
+                      </ClaimMarkdown>
                     </div>
 
                     {/* Collapsible details */}
@@ -279,7 +280,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                         {claim.falsifiability_condition && (
                           <div>
                             <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">{t("common.falsifiability")}</p>
-                            <p className="text-xs text-gray-500 leading-relaxed">{claim.falsifiability_condition}</p>
+                            <ClaimMarkdown>{claim.falsifiability_condition}</ClaimMarkdown>
                           </div>
                         )}
                         {claim.evidence && claim.evidence.length > 0 && (

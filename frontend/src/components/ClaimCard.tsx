@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Claim } from "../types";
+import ClaimMarkdown from "./ClaimMarkdown";
 
 interface ClaimCardProps {
   claim: Claim;
@@ -98,9 +99,9 @@ export default function ClaimCard({ claim, index, compact = false }: ClaimCardPr
         </div>
 
         {/* Claim text — always visible */}
-        <p className={`text-gray-900 font-medium leading-relaxed ${compact ? "text-sm" : "text-base"}`}>
+        <ClaimMarkdown className={`text-gray-900 font-medium leading-relaxed ${compact ? "text-sm" : "text-base"}`}>
           {claim.claim_text}
-        </p>
+        </ClaimMarkdown>
 
         {/* Scores — always visible */}
         {claim.scores && (
@@ -142,7 +143,7 @@ export default function ClaimCard({ claim, index, compact = false }: ClaimCardPr
             {claim.reasoning && (
               <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-100">
                 <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wide">{t("common.reasoning")}</p>
-                <p className="text-gray-600 text-sm leading-relaxed">{claim.reasoning}</p>
+                <ClaimMarkdown className="text-gray-600 text-sm leading-relaxed">{claim.reasoning}</ClaimMarkdown>
               </div>
             )}
 
@@ -150,7 +151,7 @@ export default function ClaimCard({ claim, index, compact = false }: ClaimCardPr
             {claim.falsifiability_condition && (
               <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-100">
                 <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wide">{t("common.falsifiability")}</p>
-                <p className="text-gray-600 text-sm leading-relaxed">{claim.falsifiability_condition}</p>
+                <ClaimMarkdown className="text-gray-600 text-sm leading-relaxed">{claim.falsifiability_condition}</ClaimMarkdown>
               </div>
             )}
 
@@ -192,7 +193,7 @@ export default function ClaimCard({ claim, index, compact = false }: ClaimCardPr
             {claim.score_reasoning && (
               <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-100">
                 <p className="text-xs text-gray-500 font-semibold mb-1 uppercase tracking-wide">{t("common.scoreReasoning")}</p>
-                <p className="text-gray-600 text-sm leading-relaxed">{claim.score_reasoning}</p>
+                <ClaimMarkdown className="text-gray-600 text-sm leading-relaxed">{claim.score_reasoning}</ClaimMarkdown>
               </div>
             )}
           </>

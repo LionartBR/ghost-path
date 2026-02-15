@@ -17,6 +17,7 @@ Design Decisions:
 import { useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { Claim, ClaimVerdict, UserInput, VerdictType } from "../types";
+import ClaimMarkdown from "./ClaimMarkdown";
 
 interface VerdictPanelProps {
   claims: Claim[];
@@ -213,7 +214,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
 
                 {/* Claim text — always visible, left-aligned */}
                 <div className="text-left max-w-md mx-auto mb-3">
-                  <p className="text-gray-700 text-sm leading-relaxed">{claim.claim_text}</p>
+                  <ClaimMarkdown className="text-sm text-gray-700 leading-relaxed">{claim.claim_text}</ClaimMarkdown>
                 </div>
 
                 {/* Toggle details */}
@@ -246,19 +247,19 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                     {claim.reasoning && (
                       <div>
                         <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">{t("common.reasoning")}</p>
-                        <p className="text-xs text-gray-500 leading-relaxed">{claim.reasoning}</p>
+                        <ClaimMarkdown>{claim.reasoning}</ClaimMarkdown>
                       </div>
                     )}
                     {claim.falsifiability_condition && (
                       <div>
                         <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">{t("common.falsifiability")}</p>
-                        <p className="text-xs text-gray-500 leading-relaxed">{claim.falsifiability_condition}</p>
+                        <ClaimMarkdown>{claim.falsifiability_condition}</ClaimMarkdown>
                       </div>
                     )}
                     {claim.score_reasoning && (
                       <div>
                         <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold">{t("common.scoreReasoning")}</p>
-                        <p className="text-xs text-gray-500 leading-relaxed">{claim.score_reasoning}</p>
+                        <ClaimMarkdown>{claim.score_reasoning}</ClaimMarkdown>
                       </div>
                     )}
                     {claim.evidence && claim.evidence.length > 0 && (
