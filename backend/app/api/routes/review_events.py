@@ -123,12 +123,33 @@ def _build_crystallize_event(state: ForgeState, session) -> dict | None:
         resolved = getattr(session, "resolved_at", None)
         if created and resolved:
             stats["duration_seconds"] = int((resolved - created).total_seconds())
+    problem = getattr(session, "problem", "") if session else ""
     return {
         "type": "knowledge_document",
         "data": {
             "markdown": state.knowledge_document_markdown,
             "stats": stats,
             "graph": _to_react_flow_graph(state),
-            "problem": getattr(session, "problem", "") if session else "",
+            "problem": problem,
+            "problem_summary": _extract_problem_summary(
+                state.knowledge_document_markdown, problem,
+            ),
         },
     }
+
+
+def _extract_problem_summary(markdown: str, fallback: str) -> str:
+    """Extract first ~200 chars from the Problem Context section of the document.
+
+    Falls back to the raw problem text if no section is found.
+    """
+    import re
+    match = re.search(
+        r"##\s*\d*\.?\s*Problem\s+Context\s*\n+(.*?)(?=\n##|\Z)",
+        markdown, re.DOTALL | re.IGNORECASE,
+    )
+    if not match:
+        return fallback[:200] if fallback else ""
+    text = match.group(1).strip()
+    text = re.sub(r"\s+", " ", text)  # collapse whitespace
+    return text[:200] if len(text) > 200 else text

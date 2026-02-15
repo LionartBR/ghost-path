@@ -25,7 +25,7 @@ export default function KnowledgeDocument({
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40">
+    <div className="w-full bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40">
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">{t("document.title")}</h2>
         <button
@@ -69,12 +69,12 @@ export default function KnowledgeDocument({
             ),
             li: ({ children }) => <li className="ml-4">{children}</li>,
             blockquote: ({ children }) => (
-              <blockquote className="border-l-4 border-blue-400 pl-4 italic text-gray-500 my-4">
+              <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-500 my-4">
                 {children}
               </blockquote>
             ),
             code: ({ children }) => (
-              <code className="bg-gray-100 text-blue-700 px-1.5 py-0.5 rounded text-sm font-mono">
+              <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono">
                 {children}
               </code>
             ),

@@ -68,6 +68,8 @@ def format_user_input(
     deep_dive_claim_id: str | None = None,
     user_insight: str | None = None,
     user_evidence_urls: list[str] | None = None,
+    selected_gaps: list[int] | None = None,
+    continue_direction: str | None = None,
 ) -> str:
     """Format user input into a message string for the agent.
 
@@ -108,6 +110,8 @@ def format_user_input(
                 locale_prefix, locale, decision,
                 deep_dive_claim_id, user_insight,
                 user_evidence_urls, forge_state,
+                selected_gaps=selected_gaps,
+                continue_direction=continue_direction,
             )
 
     fallback = _pt_br.UNKNOWN_INPUT if pt else "Unknown user input type."
@@ -340,12 +344,18 @@ def _format_build_decision(
     prefix: str, locale: Locale, decision: str | None,
     claim_id: str | None, insight: str | None,
     urls: list[str] | None, forge_state: ForgeState | None = None,
+    *, selected_gaps: list[int] | None = None,
+    continue_direction: str | None = None,
 ) -> str:
     """Format build_decision variant."""
     pt = locale == Locale.PT_BR
     match decision:
         case "continue":
-            return _build_continue(prefix, pt, forge_state, locale)
+            return _build_continue(
+                prefix, pt, forge_state, locale,
+                selected_gaps=selected_gaps,
+                continue_direction=continue_direction,
+            )
         case "deep_dive":
             return _build_deep_dive(prefix, pt, claim_id)
         case "resolve":
@@ -356,7 +366,10 @@ def _format_build_decision(
     return f"{prefix}\n\n{fallback}"
 
 
-def _build_continue(prefix, pt, forge_state, locale):
+def _build_continue(
+    prefix, pt, forge_state, locale,
+    *, selected_gaps=None, continue_direction=None,
+):
     body = _pt_br.BUILD_CONTINUE if pt else (
         "The user wants to continue with another round. "
         "Go back to Phase 3 (SYNTHESIZE). Remember: call "
@@ -364,7 +377,22 @@ def _build_continue(prefix, pt, forge_state, locale):
         "at least one previous claim (Rule #9)."
     )
     ctx = _digest.build_continue_context(forge_state, locale) if forge_state else ""
-    return f"{prefix}\n\n{ctx}{body}"
+    gap_section = ""
+    if selected_gaps and forge_state and forge_state.gaps:
+        gap_header = (
+            _pt_br.BUILD_GAPS_FOCUS if pt
+            else "The user selected these knowledge gaps to investigate:"
+        )
+        gap_items = [forge_state.gaps[i] for i in selected_gaps if i < len(forge_state.gaps)]
+        if gap_items:
+            gap_section = f"\n\n{gap_header}\n" + "\n".join(f"- {g}" for g in gap_items)
+    elif continue_direction:
+        dir_header = (
+            _pt_br.BUILD_DIRECTION_FOCUS if pt
+            else "The user wants the next round to focus on:"
+        )
+        gap_section = f"\n\n{dir_header}\n{continue_direction}"
+    return f"{prefix}\n\n{ctx}{body}{gap_section}"
 
 
 def _build_deep_dive(prefix, pt, claim_id):

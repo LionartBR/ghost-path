@@ -1,4 +1,4 @@
-/* SessionPage — TRIZ 6-phase session UI with knowledge graph sidebar. */
+/* SessionPage — TRIZ 6-phase session UI (single-column, graph rendered inline by BuildDecision). */
 
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -12,7 +12,6 @@ import { ExploreReview } from "../components/ExploreReview";
 import ClaimReview from "../components/ClaimReview";
 import VerdictPanel from "../components/VerdictPanel";
 import BuildDecision from "../components/BuildDecision";
-import KnowledgeGraph from "../components/KnowledgeGraph";
 import SessionCompletion from "../components/SessionCompletion";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import { TrizMascot } from "../components/TrizMascot";
@@ -35,10 +34,6 @@ export function SessionPage() {
   const handleSubmit = (input: UserInput) => {
     stream.sendInput(input);
   };
-
-  const showGraph =
-    stream.buildReview?.graph &&
-    stream.buildReview.graph.nodes.length > 0;
 
   const showNothing =
     !stream.decomposeReview &&
@@ -78,9 +73,7 @@ export function SessionPage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className={`grid gap-6 ${showGraph ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-1"}`}>
-          {/* Left: Review panels + Agent activity */}
-          <div className={`space-y-5 ${showGraph ? "lg:col-span-2" : ""}`}>
+        <div className="space-y-5">
             {/* Error */}
             {stream.error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
@@ -176,16 +169,6 @@ export function SessionPage() {
               isStreaming={stream.isStreaming}
               activityItems={stream.activityItems}
             />
-          </div>
-
-          {/* Right: Knowledge Graph sidebar */}
-          {showGraph && (
-            <div className="lg:col-span-1">
-              <div className="sticky top-20" style={{ height: "calc(100vh - 8rem)" }}>
-                <KnowledgeGraph data={stream.buildReview!.graph} />
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

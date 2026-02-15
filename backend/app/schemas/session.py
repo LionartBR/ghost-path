@@ -134,6 +134,8 @@ class UserInput(BaseModel):
     deep_dive_claim_id: str | None = None
     user_insight: str | None = Field(None, max_length=5000)
     user_evidence_urls: list[str] | None = None
+    selected_gaps: list[int] | None = None
+    continue_direction: str | None = Field(None, max_length=2000)
 
     @model_validator(mode="after")
     def validate_type_fields(self):

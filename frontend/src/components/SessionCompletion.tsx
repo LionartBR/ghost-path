@@ -9,6 +9,9 @@ Design Decisions:
     - StatCard is private (not exported) — only used here (ADR: no premature abstraction)
     - Duration formatting handles hours/minutes/unknown gracefully
     - Graph section only renders when nodes exist
+    - Hero shows agent-generated problem_summary (falls back to raw problem)
+    - Semantic stat colors: emerald=validated, rose=rejected, amber=qualified, etc.
+    - No max-w-4xl — component fills parent grid column like all other phases
 */
 
 import { useTranslation } from "react-i18next";
@@ -54,15 +57,16 @@ function StatCard({ value, label, color, delay }: StatCardProps) {
 
 export default function SessionCompletion({ data }: SessionCompletionProps) {
   const { t } = useTranslation();
-  const { stats, graph, problem, markdown } = data;
+  const { stats, graph, markdown } = data;
+  const heroText = data.problem_summary ?? data.problem;
   const hasGraph = graph.nodes.length > 0;
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 animate-fade-in">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 rounded-2xl p-8 text-white shadow-xl shadow-blue-200/50">
+      <div className="bg-gradient-to-br from-slate-800 via-blue-900 to-indigo-900 rounded-2xl p-8 text-white shadow-xl shadow-indigo-300/30">
         <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+          <div className="flex-shrink-0 w-12 h-12 bg-amber-400/20 ring-1 ring-amber-300/40 rounded-xl flex items-center justify-center">
             <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -71,8 +75,8 @@ export default function SessionCompletion({ data }: SessionCompletionProps) {
             <h1 className="text-2xl font-extrabold tracking-tight">
               {t("completion.hero.title")}
             </h1>
-            <p className="mt-2 text-blue-100 text-sm leading-relaxed line-clamp-3">
-              {problem}
+            <p className="mt-2 text-blue-200/80 text-sm leading-relaxed line-clamp-2">
+              {heroText}
             </p>
           </div>
         </div>
@@ -92,16 +96,19 @@ export default function SessionCompletion({ data }: SessionCompletionProps) {
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Gold accent divider */}
+      <div className="h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
+
+      {/* Stats Grid — semantic colors per stat type */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard value={stats.claims_validated} label={t("completion.stats.claimsValidated")} color="text-blue-600" delay={100} />
-        <StatCard value={stats.claims_rejected} label={t("completion.stats.claimsRejected")} color="text-blue-500" delay={150} />
-        <StatCard value={stats.claims_qualified} label={t("completion.stats.claimsQualified")} color="text-blue-500" delay={200} />
+        <StatCard value={stats.claims_validated} label={t("completion.stats.claimsValidated")} color="text-emerald-600" delay={100} />
+        <StatCard value={stats.claims_rejected} label={t("completion.stats.claimsRejected")} color="text-rose-500" delay={150} />
+        <StatCard value={stats.claims_qualified} label={t("completion.stats.claimsQualified")} color="text-amber-500" delay={200} />
         <StatCard value={stats.evidence_collected} label={t("completion.stats.evidenceCollected")} color="text-blue-600" delay={250} />
-        <StatCard value={stats.analogies_used} label={t("completion.stats.analogiesUsed")} color="text-blue-600" delay={300} />
-        <StatCard value={stats.contradictions_found} label={t("completion.stats.contradictions")} color="text-blue-600" delay={350} />
-        <StatCard value={stats.fundamentals_identified} label={t("completion.stats.fundamentals")} color="text-blue-600" delay={400} />
-        <StatCard value={stats.assumptions_examined} label={t("completion.stats.assumptions")} color="text-blue-600" delay={450} />
+        <StatCard value={stats.analogies_used} label={t("completion.stats.analogiesUsed")} color="text-violet-500" delay={300} />
+        <StatCard value={stats.contradictions_found} label={t("completion.stats.contradictions")} color="text-orange-500" delay={350} />
+        <StatCard value={stats.fundamentals_identified} label={t("completion.stats.fundamentals")} color="text-slate-600" delay={400} />
+        <StatCard value={stats.assumptions_examined} label={t("completion.stats.assumptions")} color="text-teal-500" delay={450} />
       </div>
 
       {/* Knowledge Graph */}
@@ -122,13 +129,8 @@ export default function SessionCompletion({ data }: SessionCompletionProps) {
         </div>
       )}
 
-      {/* Knowledge Document */}
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">
-          {t("completion.document.title")}
-        </h2>
-        <KnowledgeDocument markdown={markdown} />
-      </div>
+      {/* Knowledge Document — no wrapper title (component has its own header) */}
+      <KnowledgeDocument markdown={markdown} />
     </div>
   );
 }

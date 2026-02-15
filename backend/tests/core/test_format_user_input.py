@@ -301,3 +301,51 @@ def test_initial_stream_message_defaults_to_english():
     prefix = get_phase_prefix(Locale.EN, EN_PROBLEM)
     result = build_initial_stream_message(prefix, EN_PROBLEM)
     assert "The user has submitted" in result
+
+
+# --- Build decision: selected gaps + continue direction ----------------------
+
+
+def test_build_decision_continue_with_selected_gaps_includes_gap_text():
+    """Continue with selected gaps includes gap texts in formatted message."""
+    from app.core.forge_state import ForgeState
+    state = ForgeState()
+    state.gaps = ["Gap about X", "Gap about Y", "Gap about Z"]
+    prefix = get_phase_prefix(Locale.EN, EN_PROBLEM)
+    result = format_user_input(
+        "build_decision", prefix, locale=Locale.EN,
+        decision="continue", forge_state=state,
+        selected_gaps=[0, 2],
+    )
+    assert "knowledge gaps to investigate" in result
+    # Selected gaps section lists only chosen items
+    section = result.split("knowledge gaps to investigate:")[1]
+    assert "Gap about X" in section
+    assert "Gap about Z" in section
+    assert "Gap about Y" not in section
+
+
+def test_build_decision_continue_with_direction_includes_user_text():
+    """Continue with free-text direction includes it in formatted message."""
+    prefix = get_phase_prefix(Locale.EN, EN_PROBLEM)
+    result = format_user_input(
+        "build_decision", prefix, locale=Locale.EN,
+        decision="continue",
+        continue_direction="Explore quantum effects on the problem",
+    )
+    assert "Explore quantum effects" in result
+
+
+def test_build_decision_continue_with_gaps_pt_br_body():
+    """PT-BR continue with gaps uses translated body, not English."""
+    from app.core.forge_state import ForgeState
+    state = ForgeState()
+    state.gaps = ["Lacuna sobre X"]
+    prefix = get_phase_prefix(Locale.PT_BR, PT_PROBLEM)
+    result = format_user_input(
+        "build_decision", prefix, locale=Locale.PT_BR,
+        decision="continue", forge_state=state,
+        selected_gaps=[0],
+    )
+    assert "The user wants" not in result
+    assert "Lacuna sobre X" in result

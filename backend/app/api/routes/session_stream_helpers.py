@@ -148,6 +148,8 @@ def format_user_input(body: UserInput, state: ForgeState, problem: str) -> str:
         deep_dive_claim_id=body.deep_dive_claim_id,
         user_insight=body.user_insight,
         user_evidence_urls=body.user_evidence_urls,
+        selected_gaps=body.selected_gaps,
+        continue_direction=body.continue_direction,
     )
 
 

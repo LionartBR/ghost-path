@@ -240,6 +240,7 @@ export interface CompletionData {
   stats: SessionStats;
   graph: GraphData;
   problem: string;
+  problem_summary?: string;
 }
 
 // --- Web Search Results ---
@@ -301,4 +302,6 @@ export interface UserInput {
   deep_dive_claim_id?: string;
   user_insight?: string;
   user_evidence_urls?: string[];
+  selected_gaps?: number[];
+  continue_direction?: string;
 }

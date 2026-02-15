@@ -121,6 +121,9 @@ BUILD_INSIGHT = (
     'depois apresente a revisão de construção atualizada.'
 )
 
+BUILD_GAPS_FOCUS = "O usuário selecionou estas lacunas de conhecimento para investigar:"
+BUILD_DIRECTION_FOCUS = "O usuário quer que a próxima rodada foque em:"
+
 UNKNOWN_BUILD = "Decisão de construção desconhecida."
 UNKNOWN_INPUT = "Tipo de entrada desconhecido."
 
