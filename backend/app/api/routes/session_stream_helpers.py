@@ -138,6 +138,7 @@ def format_user_input(body: UserInput, state: ForgeState, problem: str) -> str:
         forge_state=state,
         assumption_responses=body.assumption_responses,
         added_assumptions=body.added_assumptions,
+        reframing_responses=body.reframing_responses,
         selected_reframings=body.selected_reframings,
         added_reframings=body.added_reframings,
         analogy_responses=body.analogy_responses,
@@ -343,7 +344,19 @@ async def apply_user_input(
 
 def _apply_decompose(body: UserInput, state: ForgeState) -> None:
     """Apply decompose review selections to ForgeState."""
-    if body.selected_reframings:
+    if body.reframing_responses:
+        for resp in body.reframing_responses:
+            idx = resp.reframing_index
+            if idx < len(state.reframings):
+                reframing = state.reframings[idx]
+                if resp.selected_option > 0:
+                    reframing["selected"] = True
+                    options = reframing.get("resonance_options", [])
+                    opt_idx = resp.selected_option
+                    if opt_idx < len(options):
+                        reframing["user_resonance"] = options[opt_idx]
+                    reframing["selected_resonance_option"] = opt_idx
+    elif body.selected_reframings:
         for idx in body.selected_reframings:
             if idx < len(state.reframings):
                 state.reframings[idx]["selected"] = True

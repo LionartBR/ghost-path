@@ -83,6 +83,15 @@ export interface Reframing {
   type: string;
   reasoning?: string;
   selected: boolean;
+  resonance_prompt?: string;
+  resonance_options?: string[];
+  user_resonance?: string | null;
+  selected_resonance_option?: number | null;
+}
+
+export interface ReframingResponse {
+  reframing_index: number;
+  selected_option: number;
 }
 
 export interface DecomposeReviewData {
@@ -260,7 +269,8 @@ export interface UserInput {
   // decompose_review
   assumption_responses?: AssumptionResponse[];
   added_assumptions?: string[];
-  selected_reframings?: number[];
+  reframing_responses?: ReframingResponse[];
+  selected_reframings?: number[];  // backward compat
   added_reframings?: string[];
   // explore_review
   analogy_responses?: AnalogyResponse[];

@@ -49,6 +49,12 @@ class AssumptionResponse(BaseModel):
     selected_option: int = Field(ge=0)
 
 
+class ReframingResponse(BaseModel):
+    """Per-reframing user resonance response during decompose_review."""
+    reframing_index: int = Field(ge=0)
+    selected_option: int = Field(ge=0)
+
+
 class AnalogyResponse(BaseModel):
     """Per-analogy user resonance response during explore_review."""
     analogy_index: int = Field(ge=0)
@@ -97,7 +103,8 @@ class UserInput(BaseModel):
     # type == "decompose_review"
     assumption_responses: list[AssumptionResponse] | None = None
     added_assumptions: list[str] | None = None
-    selected_reframings: list[int] | None = None
+    reframing_responses: list[ReframingResponse] | None = None
+    selected_reframings: list[int] | None = None  # backward compat
     added_reframings: list[str] | None = None
 
     # type == "explore_review"
@@ -122,13 +129,19 @@ class UserInput(BaseModel):
     @model_validator(mode="after")
     def validate_type_fields(self):
         if self.type == "decompose_review":
+            # ADR: reframing_responses (new) OR selected_reframings (backward compat)
+            has_resonance = (
+                self.reframing_responses
+                and any(r.selected_option > 0 for r in self.reframing_responses)
+            )
             has_selection = (
                 (self.selected_reframings and len(self.selected_reframings) > 0)
                 or (self.added_reframings and len(self.added_reframings) > 0)
             )
-            if not has_selection:
+            if not (has_resonance or has_selection):
                 raise ValueError(
-                    "decompose_review requires >= 1 selected or added reframing",
+                    "decompose_review requires >= 1 reframing with resonance "
+                    "(selected_option > 0) or >= 1 selected/added reframing",
                 )
 
         elif self.type == "explore_review":

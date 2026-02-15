@@ -132,7 +132,9 @@ Reframing changes perspective to reveal new solution paths. Types:
 - variable_change: optimize different metric (e.g., 'fastest route' → 'most predictable route')
 - domain_change: view through different lens (e.g., transportation as information problem)
 
-Each reframing should feel like looking at the same problem through a different lens, potentially revealing overlooked opportunities.""",
+Each reframing should feel like looking at the same problem through a different lens, potentially revealing overlooked opportunities.
+
+RESONANCE ASSESSMENT: You MUST generate a resonance_prompt (question probing how this reframing shifts the user's thinking) and resonance_options (3-4 graduated options). Option 0 MUST be a "doesn't shift my perspective" variant. Options 1+ represent increasing resonance. The user's selection tells Phase 2 HOW the reframing shifted their thinking, not just that it did.""",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -148,9 +150,20 @@ Each reframing should feel like looking at the same problem through a different 
                 "reasoning": {
                     "type": "string",
                     "description": "Why this reframing might reveal new solutions — what shift in perspective does it create?"
+                },
+                "resonance_prompt": {
+                    "type": "string",
+                    "description": "A question probing how this reframing shifts the user's perspective on their problem. Example: 'Does viewing transportation as an information coordination problem change how you think about your routing challenge?'"
+                },
+                "resonance_options": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "3-4 options from 'no perspective shift' to 'fundamentally changes how I see the problem'. Option 0 MUST be a 'doesn't shift my perspective' variant. Example: ['Doesn\\'t shift my perspective', 'Interesting but doesn\\'t change my approach', 'Opens a new angle I hadn\\'t considered', 'Completely changes how I see the problem']",
+                    "minItems": 3,
+                    "maxItems": 4
                 }
             },
-            "required": ["reframing_text", "reframing_type", "reasoning"]
+            "required": ["reframing_text", "reframing_type", "reasoning", "resonance_prompt", "resonance_options"]
         }
     }
 ]

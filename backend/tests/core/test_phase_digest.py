@@ -296,3 +296,72 @@ def test_phase3_pt_br():
     result = build_phase3_context(state, Locale.PT_BR)
     assert "Afirmações a validar:" in result
     assert "Condição de falsificabilidade" in result
+
+
+# ---------------------------------------------------------------------------
+# Phase 1 — Reframing Resonance (new path)
+# ---------------------------------------------------------------------------
+
+def test_phase1_reframing_responses_included_in_context():
+    """reframing_responses with selected_option > 0 injects resonance text."""
+    state = ForgeState()
+    state.reframings = [
+        {
+            "text": "View as information problem",
+            "type": "domain_change",
+            "resonance_options": [
+                "Doesn't shift my perspective",
+                "Interesting angle",
+                "Completely changes how I see it",
+            ],
+        },
+    ]
+    responses = [{"reframing_index": 0, "selected_option": 2}]
+    result = build_phase1_context(
+        state, Locale.EN, reframing_responses=responses,
+    )
+    assert "View as information problem" in result
+    assert "Completely changes" in result
+    assert "User resonance:" in result
+
+
+def test_phase1_reframing_option_0_excluded_from_context():
+    """reframing_responses with selected_option == 0 are skipped."""
+    state = ForgeState()
+    state.reframings = [
+        {
+            "text": "Zoom out to macro level",
+            "type": "scope_change",
+            "resonance_options": ["No shift", "Partial shift", "Major shift"],
+        },
+        {
+            "text": "Redefine who the stakeholder is",
+            "type": "entity_question",
+            "resonance_options": ["No shift", "Partial shift", "Major shift"],
+        },
+    ]
+    responses = [
+        {"reframing_index": 0, "selected_option": 0},  # skipped
+        {"reframing_index": 1, "selected_option": 1},  # included
+    ]
+    result = build_phase1_context(
+        state, Locale.EN, reframing_responses=responses,
+    )
+    assert "Zoom out" not in result
+    assert "Redefine who" in result
+    assert "Partial shift" in result
+
+
+def test_phase1_selected_reframings_fallback_when_no_responses():
+    """When reframing_responses is None, falls back to selected_reframings path."""
+    state = ForgeState()
+    state.reframings = [
+        {"text": "Reframing A", "selected": False},
+        {"text": "Reframing B", "selected": False},
+    ]
+    result = build_phase1_context(
+        state, Locale.EN, selected_reframings=[1],
+    )
+    assert "Reframing B" in result
+    assert "Reframing A" not in result
+    assert "User resonance:" not in result

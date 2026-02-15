@@ -28,6 +28,7 @@ def _labels(locale: Locale) -> dict[str, str]:
         "reviewed_decomposition": "The user reviewed the decomposition:",
         "assumption_responses": "Assumption responses:",
         "added_assumptions": "Added assumptions:",
+        "reframing_responses": "Reframing responses:",
         "selected_reframings": "Selected reframings: indices",
         "added_reframings": "Added reframings:",
         "reviewed_exploration": "The user reviewed the exploration:",
@@ -60,6 +61,7 @@ def format_user_input(
     forge_state: ForgeState | None = None,
     assumption_responses: list | None = None,
     added_assumptions: list[str] | None = None,
+    reframing_responses: list | None = None,
     selected_reframings: list[int] | None = None,
     added_reframings: list[str] | None = None,
     analogy_responses: list | None = None,
@@ -87,6 +89,7 @@ def format_user_input(
                 assumption_responses,
                 added_assumptions, selected_reframings,
                 added_reframings, locale,
+                reframing_responses=reframing_responses,
             )
         case "explore_review":
             return _format_explore_review(
@@ -121,6 +124,7 @@ def format_user_input(
 def _format_decompose_review(
     prefix, pt, lbl, forge_state,
     assumption_responses, added, selected, added_ref, locale,
+    *, reframing_responses=None,
 ):
     """Format decompose_review input."""
     parts = [prefix, f"\n{lbl['reviewed_decomposition']}"]
@@ -137,13 +141,25 @@ def _format_decompose_review(
                 parts.append(f"  [{idx}] '{text}' → User: '{opt_text}'")
     if added:
         parts.append(f"{lbl['added_assumptions']} {added}")
-    if selected:
+    if reframing_responses and forge_state:
+        parts.append(lbl['reframing_responses'])
+        for resp in reframing_responses:
+            idx = _attr_or_key(resp, "reframing_index", 0)
+            opt_idx = _attr_or_key(resp, "selected_option", 0)
+            if idx < len(forge_state.reframings):
+                r = forge_state.reframings[idx]
+                text = r.get("text", "")
+                options = r.get("resonance_options", [])
+                opt_text = options[opt_idx] if opt_idx < len(options) else f"option {opt_idx}"
+                parts.append(f"  [{idx}] '{text}' → User: '{opt_text}'")
+    elif selected:
         parts.append(f"{lbl['selected_reframings']} {selected}")
     if added_ref:
         parts.append(f"{lbl['added_reframings']} {added_ref}")
     if forge_state:
         ctx = _build_phase1_context(
             forge_state, locale, selected, assumption_responses,
+            reframing_responses=reframing_responses,
         )
         if ctx:
             parts.append(ctx)

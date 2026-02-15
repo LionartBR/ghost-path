@@ -92,11 +92,18 @@ class DecomposeHandlers:
         reframing_type = input_data.get("reframing_type", "scope_change")
         reasoning = input_data.get("reasoning", "")
 
+        resonance_prompt = input_data.get("resonance_prompt", "")
+        resonance_options = input_data.get("resonance_options", [])
+
         self.state.reframings.append({
             "text": reframing_text,
             "type": reframing_type,
             "reasoning": reasoning,
             "selected": False,  # awaiting user review
+            "resonance_prompt": resonance_prompt,
+            "resonance_options": resonance_options,
+            "user_resonance": None,
+            "selected_resonance_option": None,
         })
 
         # Persist to DB

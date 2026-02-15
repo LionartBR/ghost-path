@@ -18,6 +18,7 @@ LABELS_PT_BR: dict[str, str] = {
     "reviewed_decomposition": "O usuário revisou a decomposição:",
     "assumption_responses": "Respostas aos pressupostos:",
     "added_assumptions": "Pressupostos adicionados:",
+    "reframing_responses": "Respostas às reformulações:",
     "selected_reframings": "Reformulações selecionadas: índices",
     "added_reframings": "Reformulações adicionadas:",
     "reviewed_exploration": "O usuário revisou a exploração:",

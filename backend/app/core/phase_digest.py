@@ -35,12 +35,17 @@ def build_phase1_context(
     locale: Locale,
     selected_reframings: list[int] | None = None,
     assumption_responses: list | None = None,
+    *,
+    reframing_responses: list | None = None,
 ) -> str:
     """Compact Phase 1 summary for Phase 2 context injection.
 
     Pure function -- no IO. Uses selection indices (not state flags) because
     this runs BEFORE _apply_user_input sets selected/confirmed flags.
     Limits output to ~150 tokens to prevent context explosion.
+
+    ADR: reframing_responses (new) preferred over selected_reframings (legacy).
+    When present, includes user's resonance articulation for richer Phase 2 context.
     """
     pt = locale == Locale.PT_BR
     parts: list[str] = []
@@ -50,7 +55,31 @@ def build_phase1_context(
         items = ", ".join(state.fundamentals[:5])
         parts.append(f"{label} {items}")
 
-    if selected_reframings and state.reframings:
+    # Reframing responses with resonance text (new path)
+    if reframing_responses and state.reframings:
+        label = (
+            "Respostas às reformulações:" if pt
+            else "Reframing responses:"
+        )
+        parts.append(label)
+        for resp in reframing_responses:
+            idx = _resp_attr(resp, "reframing_index", 0)
+            opt_idx = _resp_attr(resp, "selected_option", 0)
+            if opt_idx == 0:
+                continue  # no perspective shift — skip
+            if 0 <= idx < len(state.reframings):
+                r = state.reframings[idx]
+                text = r.get("text", "")[:120]
+                options = r.get("resonance_options", [])
+                opt_text = (
+                    options[opt_idx] if opt_idx < len(options)
+                    else f"option {opt_idx}"
+                )
+                parts.append(f"  - {text}")
+                parts.append(f"    User resonance: '{opt_text}'")
+
+    # Selected reframings by index — backward compat
+    elif selected_reframings and state.reframings:
         label = "Reformulações selecionadas:" if pt else "Selected reframings:"
         parts.append(label)
         for idx in selected_reframings:
@@ -63,8 +92,8 @@ def build_phase1_context(
         label = "Respostas aos pressupostos:" if pt else "Assumption responses:"
         parts.append(label)
         for resp in assumption_responses[:5]:
-            idx = resp.assumption_index if hasattr(resp, "assumption_index") else resp.get("assumption_index", 0)
-            opt_idx = resp.selected_option if hasattr(resp, "selected_option") else resp.get("selected_option", 0)
+            idx = _resp_attr(resp, "assumption_index", 0)
+            opt_idx = _resp_attr(resp, "selected_option", 0)
             if 0 <= idx < len(state.assumptions):
                 a = state.assumptions[idx]
                 text = a.get("text", "")
