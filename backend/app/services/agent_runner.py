@@ -68,7 +68,7 @@ class AgentRunner:
         forge_state: ForgeState,
     ):
         """Async generator yielding SSE events."""
-        system = build_system_prompt(forge_state.locale)
+        system = build_system_prompt(forge_state.locale, forge_state.current_phase)
         messages = build_messages(session, user_message)
         ctx = ErrorContext(session_id=str(session.id))
         dispatch = ToolDispatch(
