@@ -12,6 +12,7 @@ Design Decisions:
 import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
 import type { NodeProps } from "@xyflow/react";
+import { useTranslation } from "react-i18next";
 
 interface ClaimNodeData {
   nodeType: string;
@@ -88,7 +89,14 @@ const CONFIDENCE_BADGE: Record<string, string> = {
   grounded: "bg-blue-100 text-blue-700",
 };
 
+const CONFIDENCE_KEY: Record<string, string> = {
+  speculative: "claims.confidence.speculative",
+  emerging: "claims.confidence.emerging",
+  grounded: "claims.confidence.grounded",
+};
+
 function ClaimNodeInner({ data }: NodeProps) {
+  const { t } = useTranslation();
   const d = data as unknown as ClaimNodeData;
   const config = STATUS_CONFIG[d.nodeType] ?? DEFAULT_CONFIG;
 
@@ -112,14 +120,14 @@ function ClaimNodeInner({ data }: NodeProps) {
           <span
             className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${CONFIDENCE_BADGE[d.confidence] ?? "bg-gray-100 text-gray-500"}`}
           >
-            {d.confidence}
+            {t(CONFIDENCE_KEY[d.confidence] || d.confidence)}
           </span>
         )}
       </div>
 
       {/* Body */}
       <div className="px-3 pb-1.5">
-        <p className={`text-xs leading-relaxed line-clamp-2 ${config.textClass}`}>
+        <p className={`text-xs leading-relaxed line-clamp-2 ${config.textClass}`} title={d.claim_text}>
           {d.claim_text}
         </p>
       </div>

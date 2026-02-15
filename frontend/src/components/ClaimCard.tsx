@@ -178,7 +178,7 @@ export default function ClaimCard({ claim, index, compact = false }: ClaimCardPr
                         <p className="text-gray-500 text-xs mt-1">{ev.summary}</p>
                         {ev.type && (
                           <span className="inline-block mt-1.5 px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded border border-gray-200">
-                            {ev.type}
+                            {t(`evidence.type.${ev.type}`, { defaultValue: ev.type })}
                           </span>
                         )}
                       </div>

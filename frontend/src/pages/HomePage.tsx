@@ -36,12 +36,13 @@ export function HomePage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [exampleIndex, setExampleIndex] = useState(0);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [sessionsError, setSessionsError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     listSessions()
       .then((data) => { if (!cancelled) setSessions(data.sessions); })
-      .catch((err) => console.error("Failed to load sessions:", err));
+      .catch(() => { if (!cancelled) setSessionsError(true); });
     return () => { cancelled = true; };
   }, []);
 
@@ -129,6 +130,13 @@ export function HomePage() {
             </div>
           )}
         </div>
+
+        {/* Sessions error */}
+        {sessionsError && (
+          <div className="mt-8 w-full bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+            <p className="text-red-600 text-sm">{t("errors.loadingSessions")}</p>
+          </div>
+        )}
 
         {/* Recent sessions */}
         {sessions.length > 0 && (
