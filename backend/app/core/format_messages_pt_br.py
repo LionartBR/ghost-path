@@ -42,7 +42,7 @@ LABELS_PT_BR: dict[str, str] = {
 
 # --- Phase digest headers (used by core/phase_digest.py) ----------------------
 
-DIGEST_PHASE1_HEADER = "Achados da Fase 1 (use para derivar domínios de analogia):"
+DIGEST_PHASE1_HEADER = "Fundamentos identificados (combine com reformulações acima para fontes de analogia):"
 DIGEST_PHASE2_HEADER = "Achados da Fase 2 (use para derivar direções de síntese):"
 DIGEST_PHASE3_HEADER = "Afirmações a validar:"
 DIGEST_PHASE4_HEADER = "Validação concluída:"
@@ -94,14 +94,16 @@ VERDICTS_ALL_REJECTED = (
     "para uma nova rodada dialética. Chame get_negative_knowledge "
     "primeiro (Regra #10), revise o que falhou e por quê, depois referencie "
     "pelo menos uma afirmação anterior (Regra #9). Gere até 3 novas "
-    "afirmações com uma abordagem fundamentalmente diferente."
+    "afirmações com uma abordagem fundamentalmente diferente. "
+    "Recupere pesquisas anteriores antes de re-pesquisar os mesmos tópicos."
 )
 
 BUILD_CONTINUE = (
     "O usuário quer continuar com outra rodada. "
     "Volte para a Fase 3 (SYNTHESIZE). Lembre-se: chame "
     "get_negative_knowledge primeiro (Regra #10) e referencie "
-    "pelo menos uma afirmação anterior (Regra #9)."
+    "pelo menos uma afirmação anterior (Regra #9). "
+    "Recupere pesquisas anteriores antes de re-pesquisar os mesmos tópicos."
 )
 
 BUILD_DEEP_DIVE = (
@@ -112,9 +114,10 @@ BUILD_DEEP_DIVE = (
 
 BUILD_RESOLVE = (
     "O usuário está satisfeito com o grafo de conhecimento. "
-    "Prossiga para a Fase 6 (CRYSTALLIZE). Gere o Documento "
-    "de Conhecimento final com todas as 10 seções usando "
-    "generate_knowledge_document."
+    "Prossiga para a Fase 6 (CRYSTALLIZE). Recupere todas as "
+    "pesquisas e contextos de fases anteriores, depois gere o "
+    "Documento de Conhecimento final com todas as 10 seções "
+    "usando generate_knowledge_document."
 )
 
 BUILD_INSIGHT = (

@@ -42,12 +42,7 @@ def _resp_attr(obj: object, name: str, default: Any = None) -> Any:
 # section of the same message (format_messages._format_decompose_review)
 # ---------------------------------------------------------------------------
 
-def build_phase1_context(
-    state: ForgeState, locale: Locale,
-    selected_reframings: list[int] | None = None,
-    assumption_responses: list | None = None,
-    *, reframing_responses: list | None = None,
-) -> str:
+def build_phase1_context(state: ForgeState, locale: Locale) -> str:
     """Compact Phase 1 summary for Phase 2 context injection.
 
     Only includes fundamentals — reframings and assumptions are already
@@ -59,7 +54,7 @@ def build_phase1_context(
     label = "Fundamentos:" if pt else "Fundamentals:"
     header = (
         _pt_br.DIGEST_PHASE1_HEADER if pt else
-        "Phase 1 findings (use these to derive cross-domain analogy sources):"
+        "Fundamentals identified (combine with reframings above for analogy sources):"
     )
     return f"\n{header}\n{label} {', '.join(state.fundamentals[:5])}\n"
 

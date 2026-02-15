@@ -175,10 +175,7 @@ def _format_decompose_review(
     if domains:
         parts.append(f"{lbl['suggested_domains']} {domains}")
     if forge_state:
-        ctx = _digest.build_phase1_context(
-            forge_state, locale, selected, assumption_responses,
-            reframing_responses=reframing_responses,
-        )
+        ctx = _digest.build_phase1_context(forge_state, locale)
         if ctx:
             parts.append(ctx)
     instr = _pt_br.DECOMPOSE_INSTRUCTION if pt else (
@@ -318,7 +315,8 @@ def _format_verdicts(
             "for a new dialectical round. Call get_negative_knowledge "
             "first (Rule #10), review what failed and why, then reference "
             "at least one previous claim (Rule #9). Generate up to 3 new "
-            "claims taking a fundamentally different approach."
+            "claims taking a fundamentally different approach. "
+            "Recall prior research before re-searching the same topics."
         )
     else:
         instr = _pt_br.VERDICTS_INSTRUCTION if pt else (
@@ -389,7 +387,8 @@ def _build_continue(
         "The user wants to continue with another round. "
         "Go back to Phase 3 (SYNTHESIZE). Remember: call "
         "get_negative_knowledge first (Rule #10), and reference "
-        "at least one previous claim (Rule #9)."
+        "at least one previous claim (Rule #9). "
+        "Recall prior research before re-searching the same topics."
     )
     ctx = _digest.build_continue_context(forge_state, locale) if forge_state else ""
     gap_section = ""
@@ -422,9 +421,9 @@ def _build_deep_dive(prefix, pt, claim_id):
 def _build_resolve(prefix, pt, forge_state, locale):
     body = _pt_br.BUILD_RESOLVE if pt else (
         "The user is satisfied with the knowledge graph. "
-        "Proceed to Phase 6 (CRYSTALLIZE). Generate the final "
-        "Knowledge Document with all 10 sections using "
-        "generate_knowledge_document."
+        "Proceed to Phase 6 (CRYSTALLIZE). Recall all prior research "
+        "and phase context, then generate the final Knowledge Document "
+        "with all 10 sections using generate_knowledge_document."
     )
     ctx = _digest.build_crystallize_context(forge_state, locale) if forge_state else ""
     return f"{prefix}\n\n{ctx}{body}"

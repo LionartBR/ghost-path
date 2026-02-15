@@ -147,8 +147,18 @@ WORKING_DOCUMENT_CRYSTALLIZE = (
     + _WORKING_DOC_TONE
 )
 
-# Backward compat — full version for _assemble_full (phase=None)
-WORKING_DOCUMENT = WORKING_DOCUMENT_CRYSTALLIZE
+# Backward compat — full mapping for _assemble_full (phase=None)
+WORKING_DOCUMENT = (
+    _WORKING_DOC_HEADER
+    + "\n\nPhase-to-section mapping:"
+    + '\n- DECOMPOSE: write "problem_context"'
+    + '\n- EXPLORE: write "cross_domain_patterns", start "technical_details"'
+    + '\n- SYNTHESIZE: write "core_insight", "reasoning_chain", "evidence_base"'
+    + '\n- VALIDATE: update "evidence_base", write "boundaries"'
+    + '\n- BUILD: update "technical_details", update "boundaries"'
+    + '\n- CRYSTALLIZE: write "implementation_guide", "next_frontiers", polish all'
+    + _WORKING_DOC_TONE
+)
 
 # ---------------------------------------------------------------------------
 # Enforcement rules — split per phase (assembler wraps in <enforcement_rules>)

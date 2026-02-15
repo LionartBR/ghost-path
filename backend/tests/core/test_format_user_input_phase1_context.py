@@ -35,7 +35,7 @@ def test_decompose_review_injects_fundamentals_from_forge_state():
     )
     assert "latency bottleneck" in result
     assert "data consistency" in result
-    assert "Phase 1 findings" in result
+    assert "Fundamentals identified" in result
 
 
 def test_decompose_review_injects_selected_reframings_by_index():

@@ -28,10 +28,10 @@ from app.core.phase_digest import (
 def test_phase1_includes_fundamentals():
     state = ForgeState()
     state.fundamentals = ["latency bottleneck", "data consistency"]
-    result = build_phase1_context(state, Locale.EN, selected_reframings=[0])
+    result = build_phase1_context(state, Locale.EN)
     assert "latency bottleneck" in result
     assert "data consistency" in result
-    assert "Phase 1 findings" in result
+    assert "Fundamentals identified" in result
 
 
 def test_phase1_limits_fundamentals_to_5():
@@ -56,7 +56,7 @@ def test_phase1_no_longer_includes_reframings():
         {"text": "Reframing A", "selected": False},
         {"text": "Reframing B", "selected": False},
     ]
-    result = build_phase1_context(state, Locale.EN, selected_reframings=[0])
+    result = build_phase1_context(state, Locale.EN)
     assert "Reframing A" not in result
     assert "element_1" in result
 
@@ -68,8 +68,7 @@ def test_phase1_no_longer_includes_assumptions():
     state.assumptions = [
         {"text": "Users are rational", "options": ["Agree", "Challenge"]},
     ]
-    responses = [{"assumption_index": 0, "selected_option": 1}]
-    result = build_phase1_context(state, Locale.EN, assumption_responses=responses)
+    result = build_phase1_context(state, Locale.EN)
     assert "Users are rational" not in result
     assert "element_1" in result
 
@@ -322,10 +321,7 @@ def test_phase1_reframing_responses_no_longer_in_digest():
             ],
         },
     ]
-    responses = [{"reframing_index": 0, "selected_option": 2}]
-    result = build_phase1_context(
-        state, Locale.EN, reframing_responses=responses,
-    )
+    result = build_phase1_context(state, Locale.EN)
     assert "core_element" in result
     assert "View as information problem" not in result
     assert "User resonance:" not in result
@@ -339,9 +335,7 @@ def test_phase1_selected_reframings_no_longer_in_digest():
         {"text": "Reframing A", "selected": False},
         {"text": "Reframing B", "selected": False},
     ]
-    result = build_phase1_context(
-        state, Locale.EN, selected_reframings=[1],
-    )
+    result = build_phase1_context(state, Locale.EN)
     assert "core_element" in result
     assert "Reframing B" not in result
 
