@@ -419,14 +419,16 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                       <p className="text-xs text-gray-400 font-medium mb-2">
                         {currentReframingCard + 1} / {totalReframings}
                       </p>
-                      <p className="text-gray-700 text-sm leading-relaxed mb-2">
-                        {reframing.text}
-                      </p>
-                      {reframing.reasoning && (
-                        <p className="text-xs text-gray-400 italic mb-3">
-                          {reframing.reasoning}
+                      <div className="text-left max-w-md mx-auto mb-2">
+                        <p className="text-gray-700 text-sm leading-relaxed">
+                          {reframing.text}
                         </p>
-                      )}
+                        {reframing.reasoning && (
+                          <p className="text-xs text-gray-400 italic mt-2">
+                            {reframing.reasoning}
+                          </p>
+                        )}
+                      </div>
 
                       {/* Resonance prompt */}
                       {reframing.resonance_prompt && (
