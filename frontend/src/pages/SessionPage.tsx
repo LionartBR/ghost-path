@@ -10,7 +10,7 @@ import { ContextMeter } from "../components/ContextMeter";
 import { DecomposeReview } from "../components/DecomposeReview";
 import { ExploreReview } from "../components/ExploreReview";
 import ClaimReview from "../components/ClaimReview";
-import ClaimVerdictReview from "../components/ClaimVerdictReview";
+import VerdictPanel from "../components/VerdictPanel";
 import BuildDecision from "../components/BuildDecision";
 import KnowledgeGraph from "../components/KnowledgeGraph";
 import SessionCompletion from "../components/SessionCompletion";
@@ -133,7 +133,7 @@ export function SessionPage() {
 
             {/* Phase 4: Unified Claim + Verdict Review */}
             {stream.verdictsReview && stream.awaitingInput && (
-              <ClaimVerdictReview claims={stream.verdictsReview} onSubmit={handleSubmit} />
+              <VerdictPanel claims={stream.verdictsReview} onSubmit={handleSubmit} />
             )}
 
             {/* Phase 5: Build Decision */}
