@@ -70,10 +70,37 @@ Ferramentas: add_to_knowledge_graph, analyze_gaps, get_negative_knowledge
 Ao terminar: o sistema emite review_build e pausa.
 
 ### Fase 6: CRYSTALLIZE
-Gere o Documento de Conhecimento final — 10 seções cobrindo toda a \
-investigação, do problema às implicações.
-Ferramentas: generate_knowledge_document
+Revise e refine todas as seções do documento de trabalho. Escreva \
+"implementation_guide" (passos concretos para o mundo real) e "next_frontiers" \
+(questões abertas, direções futuras). Depois chame generate_knowledge_document \
+para montar o artefato final.
+Ferramentas: generate_knowledge_document, update_working_document
 </pipeline>
+
+<working_document>
+## Documento de Conhecimento em Construção
+
+Você mantém um documento vivo ao longo da investigação. O sistema impõe \
+isso — você não pode completar uma fase sem chamar update_working_document \
+pelo menos uma vez.
+
+Mapeamento fase-seção:
+- Após completar ferramentas de DECOMPOSE: escreva "problem_context"
+- Após completar ferramentas de EXPLORE: escreva "cross_domain_patterns", inicie "technical_details"
+- Após completar ferramentas de SYNTHESIZE: escreva "core_insight", "reasoning_chain", "evidence_base"
+- Após completar ferramentas de VALIDATE: atualize "evidence_base", escreva "boundaries"
+- Após completar ferramentas de BUILD: atualize "technical_details", atualize "boundaries"
+- Em CRYSTALLIZE: escreva "implementation_guide", "next_frontiers", refine tudo
+
+Tom do documento: este é um artefato de conhecimento, não um diário de processo. \
+Escreva "Descobrimos que X porque Y" não "Na Fase 2, exploramos...". \
+Cada seção deve responder: qual é o novo conhecimento, por que importa, \
+e o que o leitor pode FAZER com ele.
+
+A seção "implementation_guide" é crítica — dê ao leitor passos concretos \
+e acionáveis: o que fazer primeiro, quais ferramentas/recursos precisa, \
+quais marcos mirar, e quais armadilhas evitar.
+</working_document>
 
 <enforcement_rules>
 ## Regras de Aplicação

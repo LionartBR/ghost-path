@@ -144,10 +144,36 @@ Tools: add_to_knowledge_graph, analyze_gaps, get_negative_knowledge
 When done: the system emits review_build and pauses.
 
 ### Phase 6: CRYSTALLIZE
-Generate the final Knowledge Document — 10 sections covering the entire \
-investigation from problem to implications.
-Tools: generate_knowledge_document
+Review and polish all working document sections. Write "implementation_guide" \
+(concrete real-world steps) and "next_frontiers" (open questions, future \
+directions). Then call generate_knowledge_document to assemble the final artifact.
+Tools: generate_knowledge_document, update_working_document
 </pipeline>
+
+<working_document>
+## Working Knowledge Document
+
+You maintain a living document throughout the investigation. The system \
+enforces this — you cannot complete a phase without calling \
+update_working_document at least once.
+
+Phase-to-section mapping:
+- After completing DECOMPOSE tools: write "problem_context"
+- After completing EXPLORE tools: write "cross_domain_patterns", start "technical_details"
+- After completing SYNTHESIZE tools: write "core_insight", "reasoning_chain", "evidence_base"
+- After completing VALIDATE tools: update "evidence_base", write "boundaries"
+- After completing BUILD tools: update "technical_details", update "boundaries"
+- In CRYSTALLIZE: write "implementation_guide", "next_frontiers", polish all
+
+Document tone: this is a knowledge artifact, not a process journal. \
+Write "We discovered that X because Y" not "In Phase 2, we explored...". \
+Every section should answer: what is the new knowledge, why does it matter, \
+and what can the reader DO with it.
+
+The "implementation_guide" section is critical — give the reader concrete, \
+actionable steps: what to do first, what tools/resources they need, what \
+milestones to aim for, and what pitfalls to avoid.
+</working_document>
 
 <enforcement_rules>
 ## Enforcement Rules

@@ -1,12 +1,14 @@
-"""Cross-Cutting Handlers — tools available across all phases (3 methods).
+"""Cross-Cutting Handlers — tools available across all phases (4 methods).
 
 Invariants:
     - get_session_status is always available, never gated
     - submit_user_insight creates a user_contributed claim node in the graph
+    - update_working_document sets document_updated_this_phase gate flag
 
 Design Decisions:
     - These tools don't belong to any specific phase — they're utility tools
     - submit_user_insight is called by the agent when processing build_decision.add_insight
+    - update_working_document enforced by agent_runner document gate
 """
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -143,6 +145,33 @@ class CrossCuttingHandlers:
             "insight_text": insight_text,
             "evidence_count": len(evidence_urls),
             "total_graph_nodes": len(self.state.knowledge_graph_nodes),
+        }
+
+    _VALID_SECTIONS = frozenset({
+        "core_insight", "problem_context", "reasoning_chain",
+        "evidence_base", "technical_details", "cross_domain_patterns",
+        "boundaries", "implementation_guide", "next_frontiers",
+    })
+
+    async def update_working_document(
+        self, session: SessionLike, input_data: dict,
+    ) -> dict:
+        """Write or replace a section of the working Knowledge Document."""
+        section = input_data.get("section", "")
+        content = input_data.get("content", "")
+        if section not in self._VALID_SECTIONS:
+            return {
+                "status": "error",
+                "error_code": "INVALID_SECTION",
+                "message": f"Unknown section: '{section}'",
+            }
+        self.state.working_document[section] = content
+        self.state.document_updated_this_phase = True
+        return {
+            "status": "ok",
+            "section": section,
+            "sections_written": len(self.state.working_document),
+            "sections_total": 9,
         }
 
     def _validate_phase_request(self, phase_str: str) -> tuple[Phase | None, dict | None]:

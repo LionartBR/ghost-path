@@ -149,7 +149,8 @@ RESUME_BUILD = (
 )
 
 RESUME_CRYSTALLIZE = (
-    "Continue a Fase 6 (CRYSTALLIZE). Gere o Documento "
-    "de Conhecimento final com todas as 10 seções usando "
+    "Continue a Fase 6 (CRYSTALLIZE). Revise as seções do documento "
+    "de trabalho que você construiu. Escreva implementation_guide e "
+    "next_frontiers. Refine todas as seções, depois chame "
     "generate_knowledge_document."
 )

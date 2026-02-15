@@ -5,7 +5,8 @@ Tests cover:
     - recall_phase_context excluded from DECOMPOSE (nothing to recall)
     - recall_phase_context included in EXPLORE and later phases
     - research excluded from CRYSTALLIZE (write-only phase)
-    - ALL_TOOLS backward compat has 22 entries (21 custom + 1 research)
+    - update_working_document available in all phases
+    - ALL_TOOLS backward compat has 23 entries (22 custom + 1 research)
 
 Design Decisions:
     - Tool counts validated per phase as integration-level contract
@@ -22,9 +23,9 @@ def _tool_names(phase: Phase) -> set[str]:
 
 
 def test_decompose_has_correct_tools():
-    """4 decompose + 2 cross-cutting (no recall) + research = 7."""
+    """4 decompose + 3 cross-cutting (no recall) + research = 8."""
     tools = get_phase_tools(Phase.DECOMPOSE)
-    assert len(tools) == 7
+    assert len(tools) == 8
     names = _tool_names(Phase.DECOMPOSE)
     assert "decompose_to_fundamentals" in names
     assert "map_state_of_art" in names
@@ -32,42 +33,42 @@ def test_decompose_has_correct_tools():
 
 
 def test_explore_has_correct_tools():
-    """4 explore + 3 cross-cutting (incl recall) + research = 8."""
+    """4 explore + 4 cross-cutting (incl recall) + research = 9."""
     tools = get_phase_tools(Phase.EXPLORE)
-    assert len(tools) == 8
+    assert len(tools) == 9
     names = _tool_names(Phase.EXPLORE)
     assert "build_morphological_box" in names
     assert "recall_phase_context" in names
 
 
 def test_synthesize_has_correct_tools():
-    """3 synthesize + 3 cross-cutting (incl recall) + research = 7."""
+    """3 synthesize + 4 cross-cutting (incl recall) + research = 8."""
     tools = get_phase_tools(Phase.SYNTHESIZE)
-    assert len(tools) == 7
+    assert len(tools) == 8
     names = _tool_names(Phase.SYNTHESIZE)
     assert "state_thesis" in names
     assert "recall_phase_context" in names
 
 
 def test_validate_has_correct_tools():
-    """3 validate + 3 cross-cutting + research = 7."""
+    """3 validate + 4 cross-cutting + research = 8."""
     tools = get_phase_tools(Phase.VALIDATE)
-    assert len(tools) == 7
+    assert len(tools) == 8
 
 
 def test_build_has_correct_tools():
-    """3 build + 3 cross-cutting + research = 7."""
+    """3 build + 4 cross-cutting + research = 8."""
     tools = get_phase_tools(Phase.BUILD)
-    assert len(tools) == 7
+    assert len(tools) == 8
     names = _tool_names(Phase.BUILD)
     assert "add_to_knowledge_graph" in names
     assert "recall_phase_context" in names
 
 
 def test_crystallize_has_correct_tools():
-    """1 crystallize + 3 cross-cutting (incl recall) - research = 4."""
+    """1 crystallize + 4 cross-cutting (incl recall) - research = 5."""
     tools = get_phase_tools(Phase.CRYSTALLIZE)
-    assert len(tools) == 4
+    assert len(tools) == 5
     names = _tool_names(Phase.CRYSTALLIZE)
     assert "generate_knowledge_document" in names
     assert "recall_phase_context" in names
@@ -92,10 +93,20 @@ def test_research_excluded_from_crystallize():
 
 
 def test_all_tools_backward_compat():
-    """ALL_TOOLS still has 22 entries (21 custom + 1 research)."""
-    assert len(ALL_TOOLS) == 22
+    """ALL_TOOLS still has 23 entries (22 custom + 1 research)."""
+    assert len(ALL_TOOLS) == 23
     names = {t.get("name", "") for t in ALL_TOOLS}
     assert "recall_phase_context" in names
     assert "research" in names
     assert "decompose_to_fundamentals" in names
     assert "generate_knowledge_document" in names
+    assert "update_working_document" in names
+
+
+def test_update_working_document_available_in_all_phases():
+    """update_working_document is a cross-cutting tool available everywhere."""
+    for phase in Phase:
+        names = _tool_names(phase)
+        assert "update_working_document" in names, (
+            f"update_working_document missing from {phase.value}"
+        )

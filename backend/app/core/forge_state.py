@@ -152,12 +152,19 @@ class ForgeState:
     # === Phase 6: Crystallize ===
     knowledge_document_markdown: str | None = None
 
+    # === Working document (incremental — built across phases, never reset) ===
+    working_document: dict[str, str] = field(default_factory=dict)
+
+    # === Document gate (reset per phase — ensures agent captures context) ===
+    document_updated_this_phase: bool = False
+
     # --- Mutation methods --------------------------------------------------------
 
     def transition_to(self, phase: Phase) -> None:
-        """Move to a new phase. Resets web_search tracking."""
+        """Move to a new phase. Resets web_search tracking and document gate."""
         self.current_phase = phase
         self.web_searches_this_phase = []
+        self.document_updated_this_phase = False
 
     def add_research_directive(
         self, directive_type: str, query: str, domain: str,

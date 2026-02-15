@@ -79,10 +79,11 @@ def _build_handler_registry(
         "get_negative_knowledge": build.get_negative_knowledge,
         # Phase 6: CRYSTALLIZE (1 tool)
         "generate_knowledge_document": crystallize.generate_knowledge_document,
-        # Cross-cutting (3 tools)
+        # Cross-cutting (4 tools)
         "get_session_status": cross_cutting.get_session_status,
         "submit_user_insight": cross_cutting.submit_user_insight,
         "recall_phase_context": cross_cutting.recall_phase_context,
+        "update_working_document": cross_cutting.update_working_document,
     }
 
 

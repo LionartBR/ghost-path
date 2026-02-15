@@ -106,4 +106,44 @@ This makes the investigation collaborative.""",
             "required": ["phase", "artifact"],
         },
     },
+    {
+        "name": "update_working_document",
+        "description": (
+            "Write or update a section of the working Knowledge Document.\n\n"
+            "Call this during each phase to capture discoveries while context "
+            "is fresh. The system enforces this — you cannot complete a phase "
+            "without updating at least one document section.\n\n"
+            "Phase-to-section mapping:\n"
+            '- DECOMPOSE: "problem_context" (problem landscape, reframings, gaps)\n'
+            '- EXPLORE: "cross_domain_patterns" (analogies), "technical_details" (morphological params)\n'
+            '- SYNTHESIZE: "core_insight" (the discovery), "reasoning_chain", "evidence_base"\n'
+            '- VALIDATE: "evidence_base" (update with validation), "boundaries" (limitations)\n'
+            '- BUILD: "technical_details" (update from graph), "boundaries" (negative knowledge)\n'
+            '- CRYSTALLIZE: "implementation_guide", "next_frontiers", polish all\n\n'
+            "Calling with an existing section key replaces it entirely. "
+            "Write the complete updated version each time.\n"
+            'Write as a knowledge artifact — "X works because Y" not '
+            '"In Phase 2, we explored...".'
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "section": {
+                    "type": "string",
+                    "enum": [
+                        "core_insight", "problem_context", "reasoning_chain",
+                        "evidence_base", "technical_details",
+                        "cross_domain_patterns", "boundaries",
+                        "implementation_guide", "next_frontiers",
+                    ],
+                    "description": "Which document section to write/update",
+                },
+                "content": {
+                    "type": "string",
+                    "description": "Full markdown content for this section",
+                },
+            },
+            "required": ["section", "content"],
+        },
+    },
 ]

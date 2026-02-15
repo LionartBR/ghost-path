@@ -28,6 +28,7 @@ _SIMPLE_FIELDS: dict[str, object] = {
     "previous_claims_referenced": False, "deep_dive_active": False,
     "awaiting_user_input": False, "research_directives": [],
     "research_archive": [], "research_tokens_used": 0,
+    "working_document": {}, "document_updated_this_phase": False,
 }
 _NULLABLE_FIELDS: tuple[str, ...] = (
     "morphological_box", "deep_dive_target_claim_id",
@@ -69,6 +70,9 @@ def _serialize_phase_data(state: ForgeState) -> dict:
         "previous_claims_referenced": state.previous_claims_referenced,
         # Phase 6
         "knowledge_document_markdown": state.knowledge_document_markdown,
+        # Working document (incremental — built across phases)
+        "working_document": state.working_document,
+        "document_updated_this_phase": state.document_updated_this_phase,
     }
 
 

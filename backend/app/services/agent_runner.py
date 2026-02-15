@@ -17,6 +17,7 @@ import logging
 
 from app.core.context_compaction import optimize_context
 from app.core.domain_types import SessionId
+from app.core.enforce_document import check_document_gate
 from app.services.tool_dispatch import ToolDispatch, PAUSE_TOOLS
 from app.core.forge_state import ForgeState
 from app.core.repository_protocols import SessionLike
@@ -46,6 +47,7 @@ class AgentRunner:
 
     MAX_ITERATIONS = 50
     MAX_LANGUAGE_RETRIES = 2
+    MAX_DOC_RETRIES = 2
 
     def __init__(
         self, db, anthropic_client: ResilientAnthropicClient,
@@ -86,6 +88,7 @@ class AgentRunner:
     ):
         """Main iteration loop — yields SSE events."""
         lang_retries = 0
+        doc_retries = 0
         for _ in range(self.MAX_ITERATIONS):
             if forge_state.cancelled:
                 yield {"type": "agent_text", "data": "Session cancelled."}
@@ -121,6 +124,14 @@ class AgentRunner:
                 messages.append({"role": "user", "content": nudge})
                 continue
             if not has_tool_use(response):
+                doc_nudge = check_document_gate(forge_state)
+                if doc_nudge and doc_retries < self.MAX_DOC_RETRIES:
+                    doc_retries += 1
+                    messages.append({"role": "assistant", "content": serialized})
+                    messages.append({"role": "user", "content": [
+                        {"type": "text", "text": doc_nudge},
+                    ]})
+                    continue
                 await save_state(session, messages, forge_state, self.db)
                 yield done_event(error=False)
                 return

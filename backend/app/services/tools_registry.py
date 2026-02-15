@@ -75,7 +75,7 @@ ALL_TOOLS: list[dict] = [
     *TOOLS_VALIDATE,         # 3 tools
     *TOOLS_BUILD,            # 3 tools
     *TOOLS_CRYSTALLIZE,      # 1 tool
-    *TOOLS_CROSS_CUTTING,    # 3 tools (incl recall_phase_context)
+    *TOOLS_CROSS_CUTTING,    # 4 tools (incl recall_phase_context + update_working_document)
     RESEARCH_TOOL,           # 1 research delegation tool
 ]
-# Total: 21 custom + 1 research = 22
+# Total: 22 custom + 1 research = 23

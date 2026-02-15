@@ -117,3 +117,22 @@ def test_other_locales_still_use_english_base():
     for locale in [Locale.ES, Locale.FR, Locale.DE, Locale.ZH]:
         prompt = build_system_prompt(locale)
         assert "Knowledge Creation Engine" in prompt
+
+
+# --- Working document section tests -----------------------------------------
+
+
+def test_system_prompt_contains_working_document_section():
+    """English prompt includes the <working_document> guidance."""
+    prompt = build_system_prompt(Locale.EN)
+    assert "<working_document>" in prompt
+    assert "update_working_document" in prompt
+    assert "implementation_guide" in prompt
+
+
+def test_system_prompt_pt_br_contains_working_document_section():
+    """Portuguese prompt includes the translated working document guidance."""
+    prompt = build_system_prompt(Locale.PT_BR)
+    assert "<working_document>" in prompt
+    assert "update_working_document" in prompt
+    assert "implementation_guide" in prompt

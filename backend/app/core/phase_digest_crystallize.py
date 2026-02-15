@@ -41,6 +41,7 @@ def build_crystallize_context(
     parts.append(_cryst_gaps(state, pt))
     s10 = "Rodadas" if pt else "Rounds"
     parts.append(f"\n[S10] {s10}: {state.current_round + 1}")
+    parts.append(_cryst_working_document(state, pt))
     return "\n".join(p for p in parts if p) + "\n\n"
 
 
@@ -146,4 +147,16 @@ def _cryst_gaps(state: ForgeState, pt: bool) -> str:
     lines = [f"\n[S8-9] {s89}:"]
     for gap in state.gaps:
         lines.append(f"  - {gap[:120]}")
+    return "\n".join(lines)
+
+
+def _cryst_working_document(state: ForgeState, pt: bool) -> str:
+    """Existing working document sections for refinement."""
+    if not state.working_document:
+        return ""
+    header = "Seções do documento de trabalho" if pt else "Working document sections"
+    lines = [f"\n== {header} =="]
+    for key, content in state.working_document.items():
+        preview = content[:300].replace("\n", " ")
+        lines.append(f"\n[{key}]: {preview}...")
     return "\n".join(lines)

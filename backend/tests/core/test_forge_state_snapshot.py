@@ -296,3 +296,37 @@ def test_from_snapshot_defaults_research_archive():
     restored = forge_state_from_snapshot(snapshot)
     assert restored.research_archive == []
     assert restored.research_tokens_used == 0
+
+
+# -- working_document --------------------------------------------------------
+
+def test_roundtrip_working_document():
+    """Working document sections survive roundtrip."""
+    state = ForgeState()
+    state.working_document = {
+        "core_insight": "The main discovery...",
+        "problem_context": "Why this matters...",
+    }
+    snapshot = forge_state_to_snapshot(state)
+    restored = forge_state_from_snapshot(snapshot)
+    assert restored.working_document == {
+        "core_insight": "The main discovery...",
+        "problem_context": "Why this matters...",
+    }
+
+
+def test_roundtrip_document_updated_flag():
+    """document_updated_this_phase survives roundtrip."""
+    state = ForgeState()
+    state.document_updated_this_phase = True
+    snapshot = forge_state_to_snapshot(state)
+    restored = forge_state_from_snapshot(snapshot)
+    assert restored.document_updated_this_phase is True
+
+
+def test_empty_snapshot_restores_empty_working_document():
+    """Old snapshots without working_document default to empty dict."""
+    snapshot = {"current_phase": "decompose", "current_round": 0}
+    restored = forge_state_from_snapshot(snapshot)
+    assert restored.working_document == {}
+    assert restored.document_updated_this_phase is False

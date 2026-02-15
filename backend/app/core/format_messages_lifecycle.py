@@ -74,8 +74,9 @@ def build_resume_message(
         ),
         Phase.CRYSTALLIZE: (
             _pt_br.RESUME_CRYSTALLIZE if pt else
-            "Continue Phase 6 (CRYSTALLIZE). Generate the final "
-            "Knowledge Document with all 10 sections using "
+            "Continue Phase 6 (CRYSTALLIZE). Review the working document "
+            "sections you've built. Write implementation_guide and "
+            "next_frontiers. Polish all sections, then call "
             "generate_knowledge_document."
         ),
     }

@@ -52,6 +52,7 @@ async def test_language_retry_on_text_only_wrong_locale(
     """PT_BR session gets English text-only → retry with corrective message."""
     state = ForgeState()
     state.locale = Locale.PT_BR
+    state.document_updated_this_phase = True  # bypass document gate
     # >50 chars of English to trigger check_response_language
     english_text = (
         "This is a comprehensive analysis of the problem that "
@@ -80,6 +81,7 @@ async def test_language_nudge_on_tool_interleaved_wrong_locale(
     """PT_BR + English text with tools → nudge injected alongside tool_results."""
     state = ForgeState()
     state.locale = Locale.PT_BR
+    state.document_updated_this_phase = True  # bypass document gate
     english_text = (
         "Let me decompose this problem into its fundamental components "
         "to understand the underlying structure of the challenge."

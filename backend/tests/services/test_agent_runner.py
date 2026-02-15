@@ -48,6 +48,7 @@ async def test_text_response_yields_agent_text_and_done(
 ):
     """Text-only end_turn → agent_text + context_usage + done(error=False)."""
     state = ForgeState()
+    state.document_updated_this_phase = True  # bypass document gate
     client = MockAnthropicClient([text_response("Analysis complete.")])
     runner = AgentRunner(test_db, client)
 
@@ -72,6 +73,7 @@ async def test_tool_call_executes_and_loops(
 ):
     """Tool use → dispatch.execute → loop continues → end_turn."""
     state = ForgeState()
+    state.document_updated_this_phase = True  # bypass document gate
     client = MockAnthropicClient([
         tool_response("decompose_to_fundamentals", {"problem": "test"}),
         text_response("Done decomposing."),
@@ -110,6 +112,7 @@ async def test_tool_error_yields_tool_error_and_continues(
         "message": "Missing fundamentals",
     }
     state = ForgeState()
+    state.document_updated_this_phase = True  # bypass document gate
     client = MockAnthropicClient([
         tool_response("extract_assumptions", {}),
         text_response("I see the error, let me fix it."),
@@ -259,6 +262,7 @@ async def test_token_accounting_cumulative_across_iterations(
 ):
     """Tokens accumulated across multiple API calls."""
     state = ForgeState()
+    state.document_updated_this_phase = True  # bypass document gate
     client = MockAnthropicClient([
         tool_response("tool_a", {}, tokens=(100, 50)),  # 150
         tool_response("tool_b", {}, tokens=(200, 75)),  # 275
@@ -296,6 +300,7 @@ async def test_token_accounting_includes_cache_tokens(
     in input_tokens. All three buckets must be summed for accurate billing.
     """
     state = ForgeState()
+    state.document_updated_this_phase = True  # bypass document gate
     client = MockAnthropicClient([
         # 1st call: 50 input + 5000 cache_creation = 5050 input total, 30 out
         tool_response("tool_a", {}, tokens=(50, 30), cache=(5000, 0)),
@@ -331,6 +336,7 @@ async def test_state_persisted_on_normal_completion(
     assistant response (line 186-188). History contains user messages only.
     """
     state = ForgeState()
+    state.document_updated_this_phase = True  # bypass document gate
     client = MockAnthropicClient([text_response("Hello.")])
     runner = AgentRunner(test_db, client)
 
@@ -474,3 +480,56 @@ async def test_research_detail_event_has_correct_structure(
     assert detail_events[0]["data"]["query"] == "quantum computing 2026"
     assert len(detail_events[0]["data"]["results"]) == 3
     assert detail_events[0]["data"]["results"][0]["url"] == "https://example.com/0"
+
+
+# ==============================================================================
+# Document Gate
+# ==============================================================================
+
+
+async def test_document_gate_nudges_agent_when_not_updated(
+    test_db, seed_session, mock_dispatch,
+):
+    """Agent tries to finish without calling update_working_document → nudged."""
+    state = ForgeState()
+    state.document_updated_this_phase = False  # gate not cleared
+    # 1st response: text only (triggers gate) → nudge
+    # 2nd response: text only (triggers gate again) → nudge
+    # 3rd response: text only (max retries exceeded) → proceeds to done
+    client = MockAnthropicClient([
+        text_response("Analysis complete."),
+        text_response("Still working."),
+        text_response("Done now."),
+    ])
+    runner = AgentRunner(test_db, client)
+
+    events = await _collect(runner, seed_session, "Go", state)
+
+    # 3 API calls: original + 2 retries
+    assert len(client.calls) == 3
+
+    # Final done — no error (gate exceeded but graceful)
+    done = _events_of_type(events, "done")
+    assert len(done) == 1
+    assert done[0]["data"]["error"] is False
+
+
+async def test_document_gate_passes_after_update(
+    test_db, seed_session, mock_dispatch,
+):
+    """Agent calls update_working_document → gate passes → finishes normally."""
+    state = ForgeState()
+    state.document_updated_this_phase = True  # gate already cleared
+    client = MockAnthropicClient([
+        text_response("Analysis complete."),
+    ])
+    runner = AgentRunner(test_db, client)
+
+    events = await _collect(runner, seed_session, "Go", state)
+
+    # Only 1 API call — no retry needed
+    assert len(client.calls) == 1
+
+    done = _events_of_type(events, "done")
+    assert len(done) == 1
+    assert done[0]["data"]["error"] is False

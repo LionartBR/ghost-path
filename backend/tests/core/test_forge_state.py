@@ -440,3 +440,31 @@ def test_research_archive_persists_across_phase_transition():
 def test_initial_research_tokens_used_zero():
     state = ForgeState()
     assert state.research_tokens_used == 0
+
+
+# --- Working document (incremental Knowledge Document) ----------------------
+
+def test_initial_working_document_empty():
+    state = ForgeState()
+    assert state.working_document == {}
+
+
+def test_initial_document_updated_this_phase_false():
+    state = ForgeState()
+    assert state.document_updated_this_phase is False
+
+
+def test_working_document_not_reset_on_new_round():
+    """working_document persists across rounds like knowledge_graph_nodes."""
+    state = ForgeState()
+    state.working_document = {"core_insight": "Discovery content"}
+    state.reset_for_new_round()
+    assert state.working_document == {"core_insight": "Discovery content"}
+
+
+def test_document_updated_resets_on_transition():
+    """document_updated_this_phase resets when transitioning phases."""
+    state = ForgeState()
+    state.document_updated_this_phase = True
+    state.transition_to(Phase.EXPLORE)
+    assert state.document_updated_this_phase is False
