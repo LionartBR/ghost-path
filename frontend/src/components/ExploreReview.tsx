@@ -181,12 +181,12 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
                   {currentCard + 1} / {totalAnalogies}
                 </p>
 
-                <h4 className="font-semibold text-gray-900 text-sm mb-1">{analogy.domain}</h4>
-                {analogy.target_application && (
-                  <p className="text-xs text-gray-400 mb-3">{analogy.target_application}</p>
-                )}
+                <h4 className="font-semibold text-gray-900 text-sm mb-3">{analogy.domain}</h4>
 
                 <div className="text-left max-w-md mx-auto mb-3">
+                  {analogy.target_application && (
+                    <p className="text-xs text-gray-400 mb-2">{analogy.target_application}</p>
+                  )}
                   <p className="text-gray-600 text-sm leading-relaxed">
                     {analogy.description}
                   </p>
