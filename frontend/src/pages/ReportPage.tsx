@@ -51,9 +51,9 @@ export function ReportPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white border border-blue-200/80 rounded-xl shadow-md shadow-gray-200/40 p-6 max-w-md">
+        <div className="bg-white border border-red-200/80 rounded-xl shadow-md shadow-gray-200/40 p-6 max-w-md">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">{t("common.error")}</h2>
-          <p className="text-blue-600 text-sm mb-4">{error}</p>
+          <p className="text-red-600 text-sm mb-4">{error}</p>
           <button
             onClick={() => void navigate("/")}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors"

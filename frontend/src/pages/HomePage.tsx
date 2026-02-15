@@ -124,8 +124,8 @@ export function HomePage() {
             exampleProblem={exampleProblem}
           />
           {error && (
-            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3">
-              <p className="text-blue-600 text-sm">{error}</p>
+            <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-3">
+              <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
         </div>

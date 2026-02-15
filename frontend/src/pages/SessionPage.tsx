@@ -83,7 +83,7 @@ export function SessionPage() {
           <div className={`space-y-5 ${showGraph ? "lg:col-span-2" : ""}`}>
             {/* Error */}
             {stream.error && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
                 {stream.error}
               </div>
             )}
@@ -94,7 +94,7 @@ export function SessionPage() {
                 {stream.toolErrors.map((te, i) => (
                   <div
                     key={i}
-                    className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded px-3 py-2"
+                    className="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2"
                   >
                     <span className="font-mono font-bold">[{te.error_code}]</span>{" "}
                     <span className="font-mono">{te.tool}</span>: {te.message}
