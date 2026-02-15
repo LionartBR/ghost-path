@@ -399,3 +399,44 @@ def test_reset_for_new_round_preserves_user_suggested_domains():
     state.user_suggested_domains = ["biology"]
     state.reset_for_new_round()
     assert state.user_suggested_domains == ["biology"]
+
+
+# --- Research archive (cumulative — Haiku delegation) -------------------------
+
+def test_initial_research_archive_empty():
+    state = ForgeState()
+    assert state.research_archive == []
+
+
+def test_research_archive_accumulates():
+    state = ForgeState()
+    state.research_archive.append({
+        "query": "TRIZ methods", "purpose": "state_of_art",
+        "summary": "Found methods", "sources": [],
+    })
+    state.research_archive.append({
+        "query": "biology analogies", "purpose": "cross_domain",
+        "summary": "Found analogies", "sources": [{"url": "https://example.com"}],
+    })
+    assert len(state.research_archive) == 2
+
+
+def test_research_archive_persists_across_round_reset():
+    """research_archive is cumulative — survives round reset."""
+    state = ForgeState()
+    state.research_archive.append({"query": "test", "summary": "result"})
+    state.reset_for_new_round()
+    assert len(state.research_archive) == 1
+
+
+def test_research_archive_persists_across_phase_transition():
+    """research_archive is cumulative — survives phase transition."""
+    state = ForgeState()
+    state.research_archive.append({"query": "test", "summary": "result"})
+    state.transition_to(Phase.EXPLORE)
+    assert len(state.research_archive) == 1
+
+
+def test_initial_research_tokens_used_zero():
+    state = ForgeState()
+    assert state.research_tokens_used == 0

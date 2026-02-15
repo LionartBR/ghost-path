@@ -25,7 +25,7 @@ from app.core.errors import TrizError, AgentLoopExceededError, ErrorContext
 from app.services.agent_runner_helpers import (
     done_event, tool_result_event, unexpected_error_event,
     get_context_usage, has_tool_use, serialize_content,
-    process_stream_event, record_web_searches,
+    process_stream_event, web_search_detail_from_research,
     with_system_cache, with_tools_cache, with_message_cache,
     check_language, account_tokens, format_directives,
     build_messages, save_state,
@@ -62,7 +62,9 @@ class AgentRunner:
         system = build_system_prompt(forge_state.locale)
         messages = build_messages(session, user_message)
         ctx = ErrorContext(session_id=str(session.id))
-        dispatch = ToolDispatch(self.db, forge_state, SessionId(session.id))
+        dispatch = ToolDispatch(
+            self.db, forge_state, SessionId(session.id), self.client,
+        )
 
         try:
             async for event in self._iteration_loop(
@@ -106,8 +108,6 @@ class AgentRunner:
             response = self._last_response
             account_tokens(session, response)
             yield {"type": "context_usage", "data": get_context_usage(session)}
-            for sse in record_web_searches(response.content, dispatch):
-                yield sse
             serialized = serialize_content(response)
             if response.stop_reason == "pause_turn":
                 messages.append({"role": "assistant", "content": serialized})
@@ -201,6 +201,10 @@ class AgentRunner:
                 dispatch, session, block.name, block.input,
             )
             sse_events.append(tool_result_event(block.name, result))
+            if block.name == "research":
+                detail = web_search_detail_from_research(block.input, result)
+                if detail:
+                    sse_events.append(detail)
             if block.name in PAUSE_TOOLS and result.get("paused"):
                 should_pause = True
             tool_results.append({

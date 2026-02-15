@@ -22,11 +22,12 @@ from app.services.define_validate_tools import TOOLS_VALIDATE
 from app.services.define_build_tools import TOOLS_BUILD
 from app.services.define_crystallize_tools import TOOLS_CRYSTALLIZE
 from app.services.define_cross_cutting_tools import TOOLS_CROSS_CUTTING
+from app.services.define_research_tools import RESEARCH_TOOL
 
 
 # ADR: web_search is an Anthropic built-in tool (server-side, not custom).
-# Uses a different schema format (type instead of name+input_schema).
-# Pricing: $10/1000 searches, billed to the same ANTHROPIC_API_KEY.
+# Kept as constant for backward compat — Haiku's ResearchAgent uses it internally.
+# Opus now uses the `research` custom tool instead (ADR: token optimization).
 WEB_SEARCH_TOOL: dict[str, Any] = {
     "type": "web_search_20250305",
     "name": "web_search",
@@ -51,13 +52,18 @@ _PHASE_TOOLS = {
 
 
 def get_phase_tools(phase: Phase) -> list[dict]:
-    """Return tools for the given phase + cross-cutting + web_search."""
+    """Return tools for the given phase + cross-cutting + research.
+
+    ADR: Opus gets `research` (custom tool → Haiku delegation) instead of
+    `web_search` (built-in). Haiku handles raw page_content internally,
+    Opus only sees structured summaries (~98% token savings).
+    """
     tools = list(_PHASE_TOOLS[phase])
     tools.extend(_CROSS_CUTTING_BASE)
     if phase != Phase.DECOMPOSE:
         tools.extend(_RECALL_TOOL)
     if phase != Phase.CRYSTALLIZE:
-        tools.append(WEB_SEARCH_TOOL)
+        tools.append(RESEARCH_TOOL)
     return tools
 
 
@@ -70,6 +76,6 @@ ALL_TOOLS: list[dict] = [
     *TOOLS_BUILD,            # 3 tools
     *TOOLS_CRYSTALLIZE,      # 1 tool
     *TOOLS_CROSS_CUTTING,    # 3 tools (incl recall_phase_context)
-    WEB_SEARCH_TOOL,         # 1 built-in
+    RESEARCH_TOOL,           # 1 research delegation tool
 ]
-# Total: 21 custom + 1 built-in = 22
+# Total: 21 custom + 1 research = 22

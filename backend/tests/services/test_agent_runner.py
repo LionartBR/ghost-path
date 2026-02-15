@@ -21,7 +21,6 @@ from tests.services.mock_anthropic import (
     text_response,
     tool_response,
     mixed_response,
-    web_search_response,
 )
 
 
@@ -188,53 +187,66 @@ async def test_pause_tool_saves_state_and_awaits_input(
 
 
 # ==============================================================================
-# web_search & pause_turn
+# Research tool (Haiku delegation)
 # ==============================================================================
 
 
-async def test_web_search_recorded_in_forge_state(
+async def test_research_tool_emits_web_search_detail(
     test_db, seed_session, mock_dispatch,
 ):
-    """web_search interception records in ForgeState + yields tool_result SSE."""
+    """research tool → tool_result + web_search_detail SSE events."""
+    mock_dispatch["results"]["research"] = {
+        "status": "ok",
+        "summary": "TRIZ has evolved with AI methods.",
+        "sources": [
+            {"id": 1, "url": "https://example.com/triz", "title": "TRIZ 2025",
+             "finding": "New AI methods", "date": "2025"},
+        ],
+        "result_count": 1,
+        "empty": False,
+    }
     state = ForgeState()
     client = MockAnthropicClient([
-        web_search_response("quantum computing 2026", n_results=3),
+        tool_response("research", {"query": "TRIZ methods", "purpose": "state_of_art"}),
         text_response("Research complete."),
     ])
     runner = AgentRunner(test_db, client)
 
     events = await _collect(runner, seed_session, "Research", state)
 
-    # ForgeState updated
-    assert len(state.web_searches_this_phase) == 1
-    assert state.web_searches_this_phase[0]["query"] == "quantum computing 2026"
+    # tool_result SSE emitted
+    tool_results = _events_of_type(events, "tool_result")
+    assert len(tool_results) == 1
 
-    # SSE event for web search result (web_search_detail with rich data)
+    # web_search_detail SSE emitted (frontend compatibility)
     detail = _events_of_type(events, "web_search_detail")
     assert len(detail) == 1
-    assert detail[0]["data"]["query"] == "quantum computing 2026"
-    assert len(detail[0]["data"]["results"]) == 3
+    assert detail[0]["data"]["query"] == "TRIZ methods"
+    assert len(detail[0]["data"]["results"]) == 1
 
 
-async def test_pause_turn_serializes_and_continues_loop(
+async def test_research_tool_no_detail_when_empty(
     test_db, seed_session, mock_dispatch,
 ):
-    """stop_reason=pause_turn → serialize → continue loop → end_turn."""
+    """research tool with empty results → no web_search_detail SSE."""
+    mock_dispatch["results"]["research"] = {
+        "status": "ok",
+        "summary": "No results found.",
+        "sources": [],
+        "result_count": 0,
+        "empty": True,
+    }
     state = ForgeState()
     client = MockAnthropicClient([
-        web_search_response("test query", n_results=2),
-        text_response("Search done."),
+        tool_response("research", {"query": "nonexistent topic", "purpose": "novelty_check"}),
+        text_response("Nothing found."),
     ])
     runner = AgentRunner(test_db, client)
 
-    events = await _collect(runner, seed_session, "Search", state)
+    events = await _collect(runner, seed_session, "Research", state)
 
-    # 2 API calls (pause_turn + end_turn)
-    assert len(client.calls) == 2
-
-    # Final done
-    done = _events_of_type(events, "done")
-    assert done[0]["data"]["error"] is False
+    detail = _events_of_type(events, "web_search_detail")
+    assert len(detail) == 0
 
 
 # ==============================================================================
@@ -433,13 +445,24 @@ async def test_format_directives_skip_domain(
     assert "SKIP 'cooking'" in text
 
 
-async def test_web_search_detail_event_emitted(
+async def test_research_detail_event_has_correct_structure(
     test_db, seed_session, mock_dispatch,
 ):
-    """web_search response emits web_search_detail SSE with results."""
+    """web_search_detail from research has query + results array."""
+    mock_dispatch["results"]["research"] = {
+        "status": "ok",
+        "summary": "Found results",
+        "sources": [
+            {"id": 1, "url": "https://example.com/0", "title": "Result 0", "finding": "A"},
+            {"id": 2, "url": "https://example.com/1", "title": "Result 1", "finding": "B"},
+            {"id": 3, "url": "https://example.com/2", "title": "Result 2", "finding": "C"},
+        ],
+        "result_count": 3,
+        "empty": False,
+    }
     state = ForgeState()
     client = MockAnthropicClient([
-        web_search_response("quantum computing 2026", n_results=3),
+        tool_response("research", {"query": "quantum computing 2026", "purpose": "state_of_art"}),
         text_response("Research complete."),
     ])
     runner = AgentRunner(test_db, client)

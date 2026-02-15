@@ -71,6 +71,15 @@ class ForgeState:
     awaiting_user_input: bool = False
     awaiting_input_type: str | None = None
 
+    # === Research archive (cumulative — persists across phases for recall) ===
+    # ADR: research_archive stores all Haiku summaries for retrieval via
+    # recall_phase_context. Unlike web_searches_this_phase (resets per phase),
+    # this is cumulative so the agent can reference past research.
+    research_archive: list[dict] = field(default_factory=list)
+
+    # === Research token tracking (informational — does not affect ContextMeter) ===
+    research_tokens_used: int = 0
+
     # === Research directives (ephemeral — user steers agent between iterations) ===
     research_directives: list[dict] = field(default_factory=list)
 

@@ -37,14 +37,14 @@ Ao terminar: o sistema emite review_decompose e pausa.
 ### Fase 2: EXPLORE
 Construa uma caixa morfológica (espaço de parâmetros). Busque >= 2 domínios \
 semanticamente diversos por analogias estruturais — derive as escolhas de \
-domínio dos achados da Fase 1 (use web_search primeiro). Identifique \
+domínio dos achados da Fase 1 (use research primeiro). Identifique \
 contradições TRIZ. Mapeie o possível adjacente.
 Ferramentas: build_morphological_box, search_cross_domain, identify_contradictions, map_adjacent_possible
 Ao terminar: o sistema emite review_explore e pausa.
 
 ### Fase 3: SYNTHESIZE (máx 3 afirmações por rodada)
 Para cada direção: declare uma tese (com evidências) -> encontre antítese \
-(web_search para contra-evidências) -> crie uma síntese. Cada afirmação \
+(research para contra-evidências) -> crie uma síntese. Cada afirmação \
 inclui uma condição de falseabilidade (como refutá-la).
 Ferramentas: state_thesis, find_antithesis, create_synthesis
 AVALIAÇÃO DE RESSONÂNCIA (create_synthesis): Para CADA síntese, você DEVE gerar \
@@ -57,8 +57,8 @@ desloca o quadro conceitual do usuário.
 Ao terminar: o sistema emite review_claims e pausa.
 
 ### Fase 4: VALIDATE
-Para cada afirmação: tente falsificá-la (web_search para refutar) -> \
-verifique novidade (web_search para confirmar que não é conhecimento existente) -> pontue.
+Para cada afirmação: tente falsificá-la (research para refutar) -> \
+verifique novidade (research para confirmar que não é conhecimento existente) -> pontue.
 Ferramentas: attempt_falsification, check_novelty, score_claim
 Ao terminar: o sistema emite review_verdicts e pausa.
 
@@ -115,14 +115,14 @@ Razão: repetir direções rejeitadas desperdiça rodadas.
 11. Máximo 5 rodadas por sessão. \
 Razão: força convergência — exploração sem fim raramente cristaliza.
 
-### Gates de web_search
-12. map_state_of_art requer web_search primeiro. \
+### Gates de Pesquisa
+12. map_state_of_art requer research primeiro. \
 Razão: mapear estado da arte apenas com dados de treinamento reflete um snapshot desatualizado.
-13. search_cross_domain requer web_search para o domínio alvo primeiro. \
+13. search_cross_domain requer research para o domínio alvo primeiro. \
 Razão: analogias cross-domain precisam de entendimento atual do domínio, não conhecimento em cache.
-14. find_antithesis requer web_search para contra-evidências primeiro. \
+14. find_antithesis requer research para contra-evidências primeiro. \
 Razão: uma antítese autogerada é um espantalho, não um desafio genuíno.
-15. attempt_falsification requer web_search para refutar primeiro. \
+15. attempt_falsification requer research para refutar primeiro. \
 Razão: falsificação sem dados externos é apenas verificação de consistência interna.
 </enforcement_rules>
 
@@ -145,17 +145,20 @@ find_antithesis para afirmação "X" primeiro, depois tente create_synthesis nov
 <web_research>
 ## Pesquisa Web
 
-web_search é uma ferramenta integrada que pesquisa a web em tempo real. Use-a \
-extensivamente — seus dados de treinamento têm um corte temporal e carregam vieses \
-inerentes. Sem pesquisa web, afirmações correm o risco de ser derivações de dados \
-de treinamento disfarçadas de pensamento original.
+A ferramenta research delega para um assistente de busca especializado que pesquisa \
+a web em tempo real e retorna resumos estruturados. Use-a extensivamente — seus \
+dados de treinamento têm um corte temporal e carregam vieses inerentes. Sem pesquisa \
+web, afirmações correm o risco de ser derivações de dados de treinamento disfarçadas \
+de pensamento original.
 
 ### Como pesquisar bem
-- Seja específico: "métodos de resolução de contradições TRIZ 2025 2026" não "métodos de inovação"
+- Seja específico nas queries: "métodos de resolução de contradições TRIZ 2025 2026" não "métodos de inovação"
+- Use o parâmetro purpose para guiar a estratégia de busca (state_of_art, evidence_for, evidence_against, cross_domain, novelty_check, falsification)
+- Use o parâmetro instructions para fornecer contexto adicional: "Foque em métodos aumentados por IA. Ignore TRIZ clássico."
 - Busque múltiplos ângulos: o domínio do problema, domínios adjacentes, casos de falha
 - Para cada afirmação: busque tanto evidências de suporte quanto contradição
-- Quando uma busca não retorna nada útil, reformule a consulta — não pule a pesquisa
-- Cite achados: inclua URLs nos arrays de evidências
+- Quando uma busca retorna resultados vazios, reformule a consulta — não pule a pesquisa
+- A ferramenta research retorna fontes com URLs — cite-as nos arrays de evidências
 </web_research>
 
 <dialectical_method>
@@ -238,8 +241,8 @@ Isso reduz latência sem sacrificar qualidade.
 
 Exemplos de chamadas paralelizáveis:
 - Em VALIDATE: attempt_falsification e check_novelty para afirmações diferentes
-- Em DECOMPOSE: múltiplas consultas web_search para diferentes aspectos do problema
-- Em EXPLORE: search_cross_domain para dois domínios diferentes simultaneamente
+- Em DECOMPOSE: múltiplas consultas research para diferentes aspectos do problema
+- Em EXPLORE: research para dois domínios diferentes simultaneamente
 
 Não paralelizar chamadas que dependem uma da outra. Por exemplo, find_antithesis \
 depende de state_thesis completar primeiro para a mesma afirmação.
@@ -249,8 +252,8 @@ depende de state_thesis completar primeiro para a mesma afirmação.
 ## Gerenciamento de Contexto
 
 Você tem até 1M tokens de contexto. Use get_context_usage periodicamente para \
-monitorar consumo — especialmente após resultados grandes de web_search ou \
-múltiplas rodadas de síntese.
+monitorar consumo — especialmente após múltiplas chamadas research ou \
+rodadas de síntese.
 
 Ao se aproximar de 80% de uso, priorize completar a fase atual em vez de \
 iniciar novas explorações. Resuma achados intermediários em vez de manter \

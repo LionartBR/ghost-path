@@ -273,3 +273,26 @@ def test_from_snapshot_ignores_removed_user_added_fields():
     }
     state = forge_state_from_snapshot(old_snapshot)
     assert state.user_suggested_domains == []
+
+
+# -- research_archive --------------------------------------------------------
+
+def test_roundtrip_includes_research_archive():
+    state = ForgeState()
+    state.research_archive = [
+        {"query": "TRIZ", "purpose": "state_of_art", "summary": "Found", "sources": []},
+    ]
+    state.research_tokens_used = 150
+    snapshot = forge_state_to_snapshot(state)
+    restored = forge_state_from_snapshot(snapshot)
+    assert len(restored.research_archive) == 1
+    assert restored.research_archive[0]["query"] == "TRIZ"
+    assert restored.research_tokens_used == 150
+
+
+def test_from_snapshot_defaults_research_archive():
+    """Old snapshots without research_archive default to empty list."""
+    snapshot = {"current_phase": "decompose", "current_round": 0}
+    restored = forge_state_from_snapshot(snapshot)
+    assert restored.research_archive == []
+    assert restored.research_tokens_used == 0

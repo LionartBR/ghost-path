@@ -33,6 +33,12 @@ _ARTIFACT_MAP = {
     ("build", "graph_edges"): lambda s: s.knowledge_graph_edges,
     ("build", "negative_knowledge"): lambda s: s.negative_knowledge,
     ("build", "gaps"): lambda s: s.gaps,
+    # web_searches: research archive accessible from any phase
+    ("decompose", "web_searches"): lambda s: s.research_archive,
+    ("explore", "web_searches"): lambda s: s.research_archive,
+    ("synthesize", "web_searches"): lambda s: s.research_archive,
+    ("validate", "web_searches"): lambda s: s.research_archive,
+    ("build", "web_searches"): lambda s: s.research_archive,
 }
 
 

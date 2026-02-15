@@ -30,8 +30,15 @@ from app.services.handle_validate import ValidateHandlers
 from app.services.handle_build import BuildHandlers
 from app.services.handle_crystallize import CrystallizeHandlers
 from app.services.handle_cross_cutting import CrossCuttingHandlers
+from app.services.research_agent import ResearchAgent
 
 logger = logging.getLogger(__name__)
+
+MAX_RESEARCH_PER_PHASE = 10
+
+
+def _empty_research(reason: str) -> dict:
+    return {"summary": reason, "sources": [], "result_count": 0, "empty": True}
 
 # Tools that pause the agent loop (agent yields 'done', waits for user input)
 PAUSE_TOOLS = frozenset({"generate_knowledge_document"})
@@ -85,10 +92,14 @@ class ToolDispatch:
     def __init__(
         self, db: AsyncSession, state: ForgeState,
         session_id: SessionId | None = None,
+        anthropic_client=None,
     ):
         self._session_id = session_id
         self._db = db
         self._state = state
+        self._research_agent = (
+            ResearchAgent(anthropic_client) if anthropic_client else None
+        )
         # Instantiate all phase handlers
         decompose = DecomposeHandlers(db, state)
         explore = ExploreHandlers(db, state)
@@ -101,6 +112,8 @@ class ToolDispatch:
         self._handlers = _build_handler_registry(
             decompose, explore, synthesize, validate, build, crystallize, cross_cutting,
         )
+        # Research tool handled separately (needs async agent call)
+        self._handlers["research"] = self._handle_research
 
     def record_web_search(self, query: str, result_summary: str) -> None:
         """Intercept web_search calls for enforcement tracking.
@@ -109,6 +122,48 @@ class ToolDispatch:
         (server_tool_use / web_search_tool_result blocks).
         """
         self._state.record_web_search(query, result_summary)
+
+    async def _handle_research(
+        self, session: SessionLike, input_data: dict,
+    ) -> dict:
+        """Delegate web search to Haiku, record in ForgeState for enforcement."""
+        if not self._research_agent:
+            return {"status": "ok", **_empty_research("Research agent not configured.")}
+
+        # Enforce per-phase limit
+        if len(self._state.web_searches_this_phase) >= MAX_RESEARCH_PER_PHASE:
+            return {
+                "status": "ok",
+                "summary": "Research limit reached for this phase (max 10).",
+                "sources": [], "result_count": 0, "empty": True,
+            }
+
+        query = input_data.get("query", "")
+        purpose = input_data.get("purpose", "state_of_art")
+        instructions = input_data.get("instructions")
+        max_results = input_data.get("max_results", 3)
+
+        result = await self._research_agent.execute(
+            query, purpose, instructions, max_results,
+        )
+
+        # Record in web_searches_this_phase for enforcement gates
+        # (same field → enforce_phases.py checks pass without changes)
+        summary = result.get("summary", "")
+        self._state.record_web_search(query, summary)
+
+        # Track Haiku tokens (informational — does not affect ContextMeter)
+        haiku_tokens = result.pop("haiku_tokens", 0)
+        self._state.research_tokens_used += haiku_tokens
+
+        # Archive for recall_phase_context
+        self._state.research_archive.append({
+            "query": query, "purpose": purpose,
+            "phase": self._state.current_phase.value,
+            **result,
+        })
+
+        return {"status": "ok", **result}
 
     async def execute(
         self, tool_name: str, session: SessionLike, input_data: dict,

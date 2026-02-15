@@ -27,6 +27,7 @@ _SIMPLE_FIELDS: dict[str, object] = {
     "gaps": [], "negative_knowledge_consulted": False,
     "previous_claims_referenced": False, "deep_dive_active": False,
     "awaiting_user_input": False, "research_directives": [],
+    "research_archive": [], "research_tokens_used": 0,
 }
 _NULLABLE_FIELDS: tuple[str, ...] = (
     "morphological_box", "deep_dive_target_claim_id",
@@ -92,6 +93,9 @@ def forge_state_to_snapshot(state: ForgeState) -> dict:
         "awaiting_input_type": state.awaiting_input_type,
         # Research directives (ephemeral, but persisted for crash recovery)
         "research_directives": state.research_directives,
+        # Research archive (cumulative — Haiku summaries for recall_phase_context)
+        "research_archive": state.research_archive,
+        "research_tokens_used": state.research_tokens_used,
     }
 
 

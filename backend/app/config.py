@@ -46,6 +46,12 @@ class Settings(BaseSettings):
     agent_max_iterations: int = 50
     agent_model: str = "claude-opus-4-6"
 
+    # Research agent (Haiku delegation for web search)
+    # ADR: Haiku processes raw web_search page_content (~200K chars) and returns
+    # a ~500-token summary. Opus never sees raw page content → ~98% token savings.
+    research_model: str = "claude-haiku-4-5-20251001"
+    research_max_tokens: int = 2000
+
     # Context window — 1M beta (requires Anthropic tier 4)
     # ADR: opt-in via env var. Without tier 4, falls back to 200K automatically.
     anthropic_context_1m: bool = True

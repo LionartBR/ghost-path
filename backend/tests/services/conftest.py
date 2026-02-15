@@ -100,7 +100,7 @@ def mock_dispatch(monkeypatch):
     results = {}
 
     class _FakeDispatch:
-        def __init__(self, db, state, session_id=None):
+        def __init__(self, db, state, session_id=None, anthropic_client=None):
             self._state = state
 
         async def execute(self, tool_name, session, input_data):

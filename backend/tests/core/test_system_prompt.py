@@ -103,7 +103,7 @@ def test_pt_br_prompt_keeps_tool_names_in_english():
     # Tool names are API identifiers — must stay in English
     assert "decompose_to_fundamentals" in prompt
     assert "find_antithesis" in prompt
-    assert "web_search" in prompt
+    assert "research" in prompt
     assert "generate_knowledge_document" in prompt
 
 

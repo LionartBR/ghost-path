@@ -74,11 +74,11 @@ This makes the investigation collaborative.""",
             "Only call for phases already completed — calling for "
             "current or future phases returns an error.\n\n"
             "Valid phase-artifact combinations:\n"
-            "- decompose: fundamentals, assumptions, reframings\n"
-            "- explore: morphological_box, analogies, contradictions, adjacent_possible\n"
-            "- synthesize: claims\n"
-            "- validate: claims\n"
-            "- build: graph_nodes, graph_edges, negative_knowledge, gaps"
+            "- decompose: fundamentals, assumptions, reframings, web_searches\n"
+            "- explore: morphological_box, analogies, contradictions, adjacent_possible, web_searches\n"
+            "- synthesize: claims, web_searches\n"
+            "- validate: claims, web_searches\n"
+            "- build: graph_nodes, graph_edges, negative_knowledge, gaps, web_searches"
         ),
         "input_schema": {
             "type": "object",
@@ -98,7 +98,7 @@ This makes the investigation collaborative.""",
                         "morphological_box", "analogies",
                         "contradictions", "adjacent_possible",
                         "claims", "graph_nodes", "graph_edges",
-                        "negative_knowledge", "gaps",
+                        "negative_knowledge", "gaps", "web_searches",
                     ],
                     "description": "The specific artifact to retrieve",
                 },
