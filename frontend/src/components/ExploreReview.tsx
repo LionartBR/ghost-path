@@ -112,23 +112,23 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
   const animationClass =
     slideDirection === "right" ? "animate-slide-in-right" : "animate-slide-in-left";
 
-  const distanceBadgeColor = (d?: string) => {
-    switch (d) {
-      case "far": return "bg-purple-50 text-purple-700 border-purple-200";
-      case "medium": return "bg-blue-50 text-blue-700 border-blue-200";
-      case "near": return "bg-gray-50 text-gray-600 border-gray-200";
-      default: return "bg-gray-50 text-gray-500 border-gray-200";
-    }
-  };
-
   return (
     <div className="space-y-4">
 
       {/* ── Analogies ── */}
-      <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5">
-        <h3 className="flex items-center gap-2.5 text-sm font-semibold text-blue-600 uppercase tracking-wide mb-4">
+      <div className={`bg-white border border-gray-200/80 border-l-4 rounded-xl shadow-sm p-5 transition-all ${
+        resonatedCount > 0 ? "border-l-green-500" : "border-l-gray-300"
+      }`}>
+        <h3 className={`flex items-center gap-2.5 text-sm font-semibold uppercase tracking-wide mb-4 ${
+          resonatedCount > 0 ? "text-green-600" : "text-gray-400"
+        }`}>
           <i className="bi bi-globe2 text-base" />
           {t("explore.analogies")}
+          {resonatedCount > 0 && (
+            <span className="ml-auto text-xs text-green-500 font-normal flex items-center gap-1">
+              <i className="bi bi-check-circle-fill text-[11px]" />
+            </span>
+          )}
         </h3>
 
         {hasResonanceData && totalAnalogies > 0 && analogy ? (
@@ -140,11 +140,11 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
                 const responded = analogyResponses.has(i);
                 const resonated = (analogyResponses.get(i) ?? 0) > 0;
                 const dotColor = resonated
-                  ? "bg-blue-500"
+                  ? "bg-green-500"
                   : responded
                     ? "bg-gray-400"
                     : "bg-gray-300";
-                const ring = i === currentCard ? "ring-2 ring-blue-400 ring-offset-1" : "";
+                const ring = i === currentCard ? "ring-2 ring-green-400 ring-offset-1" : "";
                 return (
                   <button
                     key={i}
@@ -165,7 +165,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
                 className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
                   isFirstCard
                     ? "text-gray-300 cursor-not-allowed"
-                    : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                    : "text-gray-500 hover:bg-green-50 hover:text-green-600"
                 }`}
                 aria-label="Previous analogy"
               >
@@ -181,26 +181,24 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
                   {currentCard + 1} / {totalAnalogies}
                 </p>
 
-                {/* Domain + distance badge */}
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <h4 className="font-semibold text-gray-900 text-sm">{analogy.domain}</h4>
-                  {analogy.semantic_distance && (
-                    <span className={`text-xs px-2 py-0.5 rounded border inline-flex items-center gap-1 ${distanceBadgeColor(analogy.semantic_distance)}`}>
-                      <i className="bi bi-rulers text-[10px]" />
-                      {analogy.semantic_distance}
-                    </span>
-                  )}
-                </div>
+                <h4 className="font-semibold text-gray-900 text-sm mb-1">{analogy.domain}</h4>
+                {analogy.target_application && (
+                  <p className="text-xs text-gray-400 mb-3">{analogy.target_application}</p>
+                )}
 
-                <p className="text-gray-600 text-sm leading-relaxed mb-3">
-                  {analogy.description}
-                </p>
+                <div className="text-left max-w-md mx-auto mb-3">
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {analogy.description}
+                  </p>
+                </div>
 
                 {/* Resonance prompt */}
                 {analogy.resonance_prompt && (
-                  <p className="text-gray-500 text-sm italic mb-4">
-                    {analogy.resonance_prompt}
-                  </p>
+                  <div className="text-left max-w-md mx-auto mb-4">
+                    <p className="text-gray-500 text-sm italic">
+                      {analogy.resonance_prompt}
+                    </p>
+                  </div>
                 )}
 
                 {/* Resonance option buttons */}
@@ -216,8 +214,8 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
                             selected
                               ? optIdx === 0
                                 ? "bg-gray-400 text-white shadow-sm shadow-gray-200"
-                                : "bg-blue-500 text-white shadow-sm shadow-blue-200"
-                              : "bg-white border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600"
+                                : "bg-green-500 text-white shadow-sm shadow-green-200"
+                              : "bg-white border border-gray-200 text-gray-600 hover:border-green-300 hover:text-green-600"
                           }`}
                         >
                           {option}
@@ -235,7 +233,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
                 className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
                   isLastCard
                     ? "text-gray-300 cursor-not-allowed"
-                    : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                    : "text-gray-500 hover:bg-green-50 hover:text-green-600"
                 }`}
                 aria-label="Next analogy"
               >
@@ -251,7 +249,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
                 key={i}
                 className={`p-4 rounded-lg border transition-all ${
                   starredAnalogies.has(i)
-                    ? "bg-blue-50 border-blue-300"
+                    ? "bg-green-50 border-green-300"
                     : "bg-gray-50 border-gray-200 hover:border-gray-300"
                 }`}
               >
@@ -261,7 +259,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
                     onClick={() => toggleStar(i)}
                     className={`text-sm font-medium px-2 py-0.5 rounded transition-colors inline-flex items-center gap-1 ${
                       starredAnalogies.has(i)
-                        ? "text-blue-600 bg-blue-100"
+                        ? "text-green-600 bg-green-100"
                         : "text-gray-400 hover:text-gray-600"
                     }`}
                   >
@@ -270,12 +268,6 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
                   </button>
                 </div>
                 <p className="text-gray-600 text-sm mb-2">{a.description}</p>
-                {a.semantic_distance && (
-                  <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-flex items-center gap-1">
-                    <i className="bi bi-rulers text-[10px]" />
-                    {a.semantic_distance}
-                  </span>
-                )}
               </div>
             ))}
           </div>
@@ -286,7 +278,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
           value={newDomain}
           onChange={(e) => setNewDomain(e.target.value)}
           placeholder={t("explore.suggestDomain")}
-          className="mt-3 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+          className="mt-3 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
         />
       </div>
 
@@ -382,7 +374,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
       <button
         onClick={handleSubmit}
         disabled={!canSubmit}
-        className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg shadow-md shadow-blue-200/50 hover:shadow-lg hover:shadow-blue-300/50 transition-all inline-flex items-center justify-center gap-2"
+        className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg shadow-md shadow-green-200/50 hover:shadow-lg hover:shadow-green-300/50 transition-all inline-flex items-center justify-center gap-2"
       >
         {canSubmit
           ? t("explore.submitReview", { count: hasResonanceData ? resonatedCount : starredAnalogies.size })
