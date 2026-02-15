@@ -36,8 +36,8 @@
   "decompose.reframings": "再定義",
   "decompose.confirm": "確認",
   "decompose.reject": "却下",
-  "decompose.addAssumption": "新しい前提を追加...",
-  "decompose.addReframing": "新しい再定義を追加...",
+  "decompose.suggestDomain": "探索するドメインを提案",
+  "decompose.suggestDomainPlaceholder": "探索するドメインを提案してください...",
   "decompose.edit": "編集",
   "decompose.submitReview": "レビューを送信",
 
@@ -64,7 +64,6 @@
   "claims.title": "知識主張のレビュー",
   "claims.description": "各主張は弁証法的合成によって鍛造されました。共鳴するか評価してください — 新しい方向を開くか、問題の見方を変えますか？",
   "claims.evidenceValid": "証拠は有効で主張を裏付けている",
-  "claims.addClaim": "独自の主張を追加...",
   "claims.showDetails": "詳細を表示",
   "claims.hideDetails": "詳細を非表示",
   "claims.edit": "編集",
@@ -144,6 +143,7 @@
   "score.falsifiability": "反証可能性",
   "score.significance": "重要性",
 
+  "common.addYourArgument": "あなたの意見を追加...",
   "common.show": "表示",
   "common.hide": "非表示",
   "common.reasoning": "推論",

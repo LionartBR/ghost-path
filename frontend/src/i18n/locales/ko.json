@@ -36,8 +36,8 @@
   "decompose.reframings": "재구성",
   "decompose.confirm": "확인",
   "decompose.reject": "거부",
-  "decompose.addAssumption": "새 가정 추가...",
-  "decompose.addReframing": "새 재구성 추가...",
+  "decompose.suggestDomain": "탐색할 도메인 제안",
+  "decompose.suggestDomainPlaceholder": "탐색할 도메인을 제안하세요...",
   "decompose.edit": "편집",
   "decompose.submitReview": "검토 제출",
 
@@ -64,7 +64,6 @@
   "claims.title": "지식 주장 검토",
   "claims.description": "각 주장은 변증법적 합성을 통해 단조되었습니다. 공명하는지 평가하세요 — 새로운 방향을 열거나 문제를 보는 방식을 바꾸나요?",
   "claims.evidenceValid": "증거가 유효하고 주장을 뒷받침함",
-  "claims.addClaim": "자신의 주장 추가...",
   "claims.showDetails": "세부 정보 표시",
   "claims.hideDetails": "세부 정보 숨기기",
   "claims.edit": "편집",
@@ -144,6 +143,7 @@
   "score.falsifiability": "반증가능성",
   "score.significance": "중요성",
 
+  "common.addYourArgument": "의견을 추가하세요...",
   "common.show": "표시",
   "common.hide": "숨기기",
   "common.reasoning": "추론",

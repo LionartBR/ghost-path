@@ -385,3 +385,17 @@ def test_research_directives_default_on_old_snapshot():
     snapshot = {"current_phase": "decompose", "current_round": 0}
     restored = forge_state_from_snapshot(snapshot)
     assert restored.research_directives == []
+
+
+# --- User-suggested domains --------------------------------------------------
+
+def test_user_suggested_domains_starts_empty():
+    state = ForgeState()
+    assert state.user_suggested_domains == []
+
+
+def test_reset_for_new_round_preserves_user_suggested_domains():
+    state = ForgeState()
+    state.user_suggested_domains = ["biology"]
+    state.reset_for_new_round()
+    assert state.user_suggested_domains == ["biology"]

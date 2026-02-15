@@ -146,28 +146,16 @@ def test_claims_review_resonance_includes_phase_instruction():
     assert "Phase 4" in msg or "VALIDATE" in msg
 
 
-# --- claims_review with added_claims -----------------------------------------
+# --- claims_review with custom_argument --------------------------------------
 
-def test_claims_review_added_claims_included():
+def test_claims_review_custom_argument_included():
     state = _make_state_with_claims()
     msg = format_user_input(
         "claims_review", _prefix(), locale=Locale.EN, forge_state=state,
-        claim_responses=[{"claim_index": 0, "selected_option": 1}],
-        added_claims=["My custom claim about AI safety"],
+        claim_responses=[{"claim_index": 0, "selected_option": 1, "custom_argument": "Opens direction Y"}],
     )
-    assert "My custom claim about AI safety" in msg
-    assert "User-contributed claims:" in msg
-
-
-def test_claims_review_added_claims_strips_whitespace():
-    state = _make_state_with_claims()
-    msg = format_user_input(
-        "claims_review", _prefix(), locale=Locale.EN, forge_state=state,
-        added_claims=["  valid claim  ", "  ", ""],
-    )
-    assert "valid claim" in msg
-    # empty/whitespace-only claims should NOT appear
-    assert msg.count("- ") == 1
+    assert "Opens direction Y" in msg
+    assert "argument" in msg.lower()
 
 
 # --- claims_review with legacy feedback (backward compat) --------------------
@@ -207,15 +195,15 @@ def test_claims_review_no_resonance_pt_br():
     assert "Sem ressonância (usuário rejeitou)" in msg
 
 
-def test_claims_review_added_claims_pt_br():
+def test_claims_review_custom_argument_pt_br():
     state = _make_state_with_claims()
     msg = format_user_input(
         "claims_review", _prefix(Locale.PT_BR),
         locale=Locale.PT_BR, forge_state=state,
-        added_claims=["Minha afirmação sobre IA"],
+        claim_responses=[{"claim_index": 0, "selected_option": 1, "custom_argument": "Abre direção Y"}],
     )
-    assert "Afirmações contribuídas pelo usuário:" in msg
-    assert "Minha afirmação sobre IA" in msg
+    assert "Abre direção Y" in msg
+    assert "argumento" in msg.lower()
 
 
 # --- verdicts: all-rejected bypass ------------------------------------------

@@ -36,8 +36,8 @@
   "decompose.reframings": "Переформулировки",
   "decompose.confirm": "Подтвердить",
   "decompose.reject": "Отклонить",
-  "decompose.addAssumption": "Добавить новое предположение...",
-  "decompose.addReframing": "Добавить новую переформулировку...",
+  "decompose.suggestDomain": "Предложить домены для исследования",
+  "decompose.suggestDomainPlaceholder": "Предложить домен для исследования...",
   "decompose.edit": "изменить",
   "decompose.submitReview": "Отправить отзыв",
 
@@ -64,7 +64,6 @@
   "claims.title": "Обзор утверждений знания",
   "claims.description": "Каждое утверждение было выковано диалектическим синтезом. Оцените, резонирует ли оно — открывает ли новые направления или меняет ваш взгляд на проблему?",
   "claims.evidenceValid": "Доказательства достоверны и подтверждают утверждение",
-  "claims.addClaim": "Добавить своё утверждение...",
   "claims.showDetails": "Показать детали",
   "claims.hideDetails": "Скрыть детали",
   "claims.edit": "редактировать",
@@ -144,6 +143,7 @@
   "score.falsifiability": "Фальсифицируемость",
   "score.significance": "Значимость",
 
+  "common.addYourArgument": "Добавить свой аргумент...",
   "common.show": "Показать",
   "common.hide": "Скрыть",
   "common.reasoning": "Рассуждение",

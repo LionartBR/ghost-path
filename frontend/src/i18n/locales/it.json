@@ -36,8 +36,8 @@
   "decompose.reframings": "Riformulazioni",
   "decompose.confirm": "Conferma",
   "decompose.reject": "Rifiuta",
-  "decompose.addAssumption": "Aggiungi nuova assunzione...",
-  "decompose.addReframing": "Aggiungi nuova riformulazione...",
+  "decompose.suggestDomain": "Suggerisci domini per l'esplorazione",
+  "decompose.suggestDomainPlaceholder": "Suggerisci un dominio per l'esplorazione...",
   "decompose.edit": "modifica",
   "decompose.submitReview": "Invia Revisione",
 
@@ -64,7 +64,6 @@
   "claims.title": "Esaminare le Affermazioni di Conoscenza",
   "claims.description": "Ogni affermazione è stata forgiata dalla sintesi dialettica. Valuta se risuona — apre nuove direzioni o cambia come vedi il problema?",
   "claims.evidenceValid": "L'evidenza è valida e supporta l'affermazione",
-  "claims.addClaim": "Aggiungi la tua affermazione...",
   "claims.showDetails": "Mostra Dettagli",
   "claims.hideDetails": "Nascondi Dettagli",
   "claims.edit": "modifica",
@@ -144,6 +143,7 @@
   "score.falsifiability": "Falsificabilità",
   "score.significance": "Significatività",
 
+  "common.addYourArgument": "Aggiungi il tuo argomento...",
   "common.show": "Mostra",
   "common.hide": "Nascondi",
   "common.reasoning": "Ragionamento",

@@ -36,8 +36,8 @@
   "decompose.reframings": "Recadrages",
   "decompose.confirm": "Confirmer",
   "decompose.reject": "Rejeter",
-  "decompose.addAssumption": "Ajouter une nouvelle hypothèse...",
-  "decompose.addReframing": "Ajouter un nouveau recadrage...",
+  "decompose.suggestDomain": "Suggérer des domaines d'exploration",
+  "decompose.suggestDomainPlaceholder": "Suggérer un domaine d'exploration...",
   "decompose.edit": "modifier",
   "decompose.submitReview": "Soumettre la revue",
 
@@ -64,7 +64,6 @@
   "claims.title": "Examiner les Affirmations de Connaissance",
   "claims.description": "Chaque affirmation a été forgée par synthèse dialectique. Évaluez si elle résonne — ouvre-t-elle de nouvelles directions ou change-t-elle votre perception du problème ?",
   "claims.evidenceValid": "L'évidence est valide et soutient l'affirmation",
-  "claims.addClaim": "Ajouter votre propre affirmation...",
   "claims.showDetails": "Afficher les Détails",
   "claims.hideDetails": "Masquer les Détails",
   "claims.edit": "modifier",
@@ -144,6 +143,7 @@
   "score.falsifiability": "Falsifiabilité",
   "score.significance": "Importance",
 
+  "common.addYourArgument": "Ajouter votre argument...",
   "common.show": "Afficher",
   "common.hide": "Masquer",
   "common.reasoning": "Raisonnement",

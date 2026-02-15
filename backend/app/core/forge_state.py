@@ -37,8 +37,7 @@ class ForgeState:
     state_of_art_researched: bool = False
     assumptions: list[dict] = field(default_factory=list)
     reframings: list[dict] = field(default_factory=list)
-    user_added_assumptions: list[str] = field(default_factory=list)
-    user_added_reframings: list[str] = field(default_factory=list)
+    user_suggested_domains: list[str] = field(default_factory=list)
 
     # === Phase 2: Explore ===
     morphological_box: dict | None = None
@@ -51,7 +50,6 @@ class ForgeState:
     current_round_claims: list[dict] = field(default_factory=list)  # max 3
     theses_stated: int = 0
     antitheses_searched: set[int] = field(default_factory=set)
-    user_added_claims: list[str] = field(default_factory=list)
 
     # === Phase 4: Validate ===
     falsification_attempted: set[int] = field(default_factory=set)
@@ -185,4 +183,3 @@ class ForgeState:
         self.negative_knowledge_consulted = False
         self.previous_claims_referenced = False
         self.web_searches_this_phase = []
-        self.user_added_claims = []

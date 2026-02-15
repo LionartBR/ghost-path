@@ -134,16 +134,13 @@ def format_user_input(body: UserInput, state: ForgeState, problem: str) -> str:
         locale=state.locale,
         forge_state=state,
         assumption_responses=body.assumption_responses,
-        added_assumptions=body.added_assumptions,
         reframing_responses=body.reframing_responses,
         selected_reframings=body.selected_reframings,
-        added_reframings=body.added_reframings,
         analogy_responses=body.analogy_responses,
         starred_analogies=body.starred_analogies,
         suggested_domains=body.suggested_domains,
         added_contradictions=body.added_contradictions,
         claim_responses=body.claim_responses,
-        added_claims=body.added_claims,
         claim_feedback=body.claim_feedback,
         verdicts=body.verdicts,
         decision=body.decision,
@@ -196,13 +193,18 @@ async def apply_user_input(
 
 
 def _apply_decompose(body: UserInput, state: ForgeState) -> None:
-    """Apply decompose review selections to ForgeState."""
+    """Apply decompose review — resonance + custom arguments."""
     if body.reframing_responses:
         for r_resp in body.reframing_responses:
             idx = r_resp.reframing_index
             if idx < len(state.reframings):
                 reframing = state.reframings[idx]
-                if r_resp.selected_option > 0:
+                if r_resp.custom_argument:
+                    reframing["selected"] = True
+                    reframing["user_resonance"] = r_resp.custom_argument.strip()
+                    reframing["selected_resonance_option"] = r_resp.selected_option
+                    reframing["custom_argument"] = r_resp.custom_argument.strip()
+                elif r_resp.selected_option > 0:
                     reframing["selected"] = True
                     options = reframing.get("resonance_options", [])
                     opt_idx = r_resp.selected_option
@@ -213,15 +215,15 @@ def _apply_decompose(body: UserInput, state: ForgeState) -> None:
         for idx in body.selected_reframings:
             if idx < len(state.reframings):
                 state.reframings[idx]["selected"] = True
-    if body.added_reframings:
-        state.user_added_reframings.extend(body.added_reframings)
-    if body.added_assumptions:
-        state.user_added_assumptions.extend(body.added_assumptions)
     if body.assumption_responses:
         for as_resp in body.assumption_responses:
             idx = as_resp.assumption_index
             if idx < len(state.assumptions):
                 state.assumptions[idx]["selected_option"] = as_resp.selected_option
+                if as_resp.custom_argument:
+                    state.assumptions[idx]["custom_argument"] = as_resp.custom_argument.strip()
+    if body.suggested_domains:
+        state.user_suggested_domains = [d.strip() for d in body.suggested_domains if d.strip()]
 
 
 def _apply_explore(body: UserInput, state: ForgeState) -> None:
@@ -231,7 +233,12 @@ def _apply_explore(body: UserInput, state: ForgeState) -> None:
             idx = a_resp.analogy_index
             if idx < len(state.cross_domain_analogies):
                 analogy = state.cross_domain_analogies[idx]
-                if a_resp.selected_option > 0:
+                if a_resp.custom_argument:
+                    analogy["starred"] = True
+                    analogy["user_resonance"] = a_resp.custom_argument.strip()
+                    analogy["selected_resonance_option"] = a_resp.selected_option
+                    analogy["custom_argument"] = a_resp.custom_argument.strip()
+                elif a_resp.selected_option > 0:
                     analogy["starred"] = True
                     options = analogy.get("resonance_options", [])
                     opt_idx = a_resp.selected_option
@@ -245,14 +252,14 @@ def _apply_explore(body: UserInput, state: ForgeState) -> None:
 
 
 def _apply_claims(body: UserInput, state: ForgeState) -> None:
-    """Apply claims review — resonance responses and user-contributed claims."""
+    """Apply claims review — resonance responses with optional custom arguments."""
     if body.claim_responses:
         for c_resp in body.claim_responses:
             idx = c_resp.claim_index
             if idx < len(state.current_round_claims):
                 state.current_round_claims[idx]["user_resonance"] = c_resp.selected_option
-    if body.added_claims:
-        state.user_added_claims = [c.strip() for c in body.added_claims if c.strip()]
+                if c_resp.custom_argument:
+                    state.current_round_claims[idx]["custom_argument"] = c_resp.custom_argument.strip()
 
 
 def _apply_verdict_transition(body: UserInput, state: ForgeState) -> None:

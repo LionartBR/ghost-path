@@ -20,10 +20,9 @@ from app.core import phase_digest as _digest
 _LABELS_EN: dict[str, str] = {
     "reviewed_decomposition": "The user reviewed the decomposition:",
     "assumption_responses": "Assumption responses:",
-    "added_assumptions": "Added assumptions:",
+    "custom_argument": "User's argument:",
     "reframing_responses": "Reframing responses:",
     "selected_reframings": "Selected reframings: indices",
-    "added_reframings": "Added reframings:",
     "reviewed_exploration": "The user reviewed the exploration:",
     "analogy_responses": "Analogy responses:",
     "starred_analogies": "Starred analogies: indices",
@@ -33,7 +32,7 @@ _LABELS_EN: dict[str, str] = {
     "claim_n": "Claim #{idx}:",
     "claim_resonance": "  Resonance: {text}",
     "claim_no_resonance": "  No resonance (user rejected)",
-    "added_claims": "User-contributed claims:",
+    "custom_argument_claim": "User's argument on claim:",
     "evidence_valid": "  Evidence valid:",
     "counter_example": "  Counter-example:",
     "missing_factor": "  Missing factor:",
@@ -56,16 +55,13 @@ def format_user_input(
     locale: Locale = Locale.EN,
     forge_state: ForgeState | None = None,
     assumption_responses: list | None = None,
-    added_assumptions: list[str] | None = None,
     reframing_responses: list | None = None,
     selected_reframings: list[int] | None = None,
-    added_reframings: list[str] | None = None,
     analogy_responses: list | None = None,
     starred_analogies: list[int] | None = None,
     suggested_domains: list[str] | None = None,
     added_contradictions: list[str] | None = None,
     claim_responses: list | None = None,
-    added_claims: list[str] | None = None,
     claim_feedback: list | None = None,
     verdicts: list | None = None,
     decision: str | None = None,
@@ -85,9 +81,9 @@ def format_user_input(
             return _format_decompose_review(
                 locale_prefix, pt, lbl, forge_state,
                 assumption_responses,
-                added_assumptions, selected_reframings,
-                added_reframings, locale,
+                selected_reframings, locale,
                 reframing_responses=reframing_responses,
+                suggested_domains=suggested_domains,
             )
         case "explore_review":
             return _format_explore_review(
@@ -101,7 +97,6 @@ def format_user_input(
                 locale_prefix, pt, lbl, forge_state,
                 claim_feedback, locale,
                 claim_responses=claim_responses,
-                added_claims=added_claims,
             )
         case "verdicts":
             return _format_verdicts(
@@ -123,8 +118,8 @@ def format_user_input(
 
 def _format_decompose_review(
     prefix, pt, lbl, forge_state,
-    assumption_responses, added, selected, added_ref, locale,
-    *, reframing_responses=None,
+    assumption_responses, selected, locale,
+    *, reframing_responses=None, suggested_domains=None,
 ):
     """Format decompose_review input."""
     parts = [prefix, f"\n{lbl['reviewed_decomposition']}"]
@@ -133,29 +128,37 @@ def _format_decompose_review(
         for resp in assumption_responses:
             idx = _attr_or_key(resp, "assumption_index", 0)
             opt_idx = _attr_or_key(resp, "selected_option", 0)
+            custom = _attr_or_key(resp, "custom_argument", None)
             if idx < len(forge_state.assumptions):
                 a = forge_state.assumptions[idx]
                 text = a.get("text", "")
-                options = a.get("options", [])
-                opt_text = options[opt_idx] if opt_idx < len(options) else f"option {opt_idx}"
-                parts.append(f"  [{idx}] '{text}' → User: '{opt_text}'")
-    if added:
-        parts.append(f"{lbl['added_assumptions']} {added}")
+                if custom:
+                    parts.append(f"  [{idx}] '{text}' → {lbl['custom_argument']} '{custom}'")
+                else:
+                    options = a.get("options", [])
+                    opt_text = options[opt_idx] if opt_idx < len(options) else f"option {opt_idx}"
+                    parts.append(f"  [{idx}] '{text}' → User: '{opt_text}'")
     if reframing_responses and forge_state:
         parts.append(lbl['reframing_responses'])
         for resp in reframing_responses:
             idx = _attr_or_key(resp, "reframing_index", 0)
             opt_idx = _attr_or_key(resp, "selected_option", 0)
+            custom = _attr_or_key(resp, "custom_argument", None)
             if idx < len(forge_state.reframings):
                 r = forge_state.reframings[idx]
                 text = r.get("text", "")
-                options = r.get("resonance_options", [])
-                opt_text = options[opt_idx] if opt_idx < len(options) else f"option {opt_idx}"
-                parts.append(f"  [{idx}] '{text}' → User: '{opt_text}'")
+                if custom:
+                    parts.append(f"  [{idx}] '{text}' → {lbl['custom_argument']} '{custom}'")
+                else:
+                    options = r.get("resonance_options", [])
+                    opt_text = options[opt_idx] if opt_idx < len(options) else f"option {opt_idx}"
+                    parts.append(f"  [{idx}] '{text}' → User: '{opt_text}'")
     elif selected:
         parts.append(f"{lbl['selected_reframings']} {selected}")
-    if added_ref:
-        parts.append(f"{lbl['added_reframings']} {added_ref}")
+    # Suggested domains for Phase 2
+    domains = suggested_domains or (forge_state.user_suggested_domains if forge_state else [])
+    if domains:
+        parts.append(f"{lbl['suggested_domains']} {domains}")
     if forge_state:
         ctx = _digest.build_phase1_context(
             forge_state, locale, selected, assumption_responses,
@@ -205,7 +208,7 @@ def _format_explore_review(
 
 def _format_claims_review(
     prefix, pt, lbl, forge_state, feedback, locale,
-    *, claim_responses=None, added_claims=None,
+    *, claim_responses=None,
 ):
     """Format claims_review input — resonance (new) or feedback (legacy)."""
     parts = [prefix, f"\n{lbl['reviewed_claims']}"]
@@ -218,12 +221,6 @@ def _format_claims_review(
     elif feedback:
         for fb in feedback:
             _append_claim_feedback(parts, fb, lbl)
-    if added_claims:
-        cleaned = [c.strip() for c in added_claims if c.strip()]
-        if cleaned:
-            parts.append(lbl["added_claims"])
-            for c in cleaned:
-                parts.append(f"  - {c}")
     instr = _pt_br.CLAIMS_INSTRUCTION if pt else (
         "Proceed to Phase 4 (VALIDATE). For each claim, attempt "
         "falsification (use web_search to disprove), check novelty "
@@ -240,8 +237,12 @@ def _append_claim_responses(
     for resp in responses:
         idx = _attr_or_key(resp, "claim_index", 0)
         opt_idx = _attr_or_key(resp, "selected_option", 0)
+        custom = _attr_or_key(resp, "custom_argument", None)
         parts.append(lbl["claim_n"].format(idx=idx))
-        if opt_idx == 0:
+        if custom:
+            ca_label = lbl.get("custom_argument_claim", lbl.get("custom_argument", "User's argument:"))
+            parts.append(f"  {ca_label} '{custom}'")
+        elif opt_idx == 0:
             parts.append(lbl["claim_no_resonance"])
         elif idx < len(forge_state.current_round_claims):
             claim = forge_state.current_round_claims[idx]

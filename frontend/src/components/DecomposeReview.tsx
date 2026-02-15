@@ -1,10 +1,11 @@
 /* DecomposeReview — Phase 1 review UI with 2 section containers (Assumptions + Reframings).
 
 Invariants:
-    - All assumptions start pending (user must select a dynamic option)
-    - At least 1 reframing must resonate (option > 0) or be selected before submit
+    - All assumptions start pending (user must select a dynamic option or add argument)
+    - At least 1 reframing must resonate (option > 0), have custom argument, or be selected
     - Carousel allows free navigation (prev/next) through assumptions and reframings
     - Option selection auto-advances to next card after brief visual feedback
+    - "Add your argument" replaces "Add new item" — enriches existing cards, not new entities
 
 Design Decisions:
     - Fundamentals hidden from UI but still sent as context to the model (ADR: reduce visual noise)
@@ -16,6 +17,7 @@ Design Decisions:
     - Reframing resonance: same pattern as analogy resonance (Phase 2) — carousel with
       resonance_prompt + graduated options. Option 0 = "no shift" (gray). Option 1+ = resonance (green).
     - Fallback to checkbox list when no resonance data (backward compat with old sessions)
+    - Suggested domains section: user can suggest domains for Phase 2 exploration (moved from ExploreReview)
 */
 
 import React, { useState, useCallback, useRef } from "react";
@@ -49,23 +51,34 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
   const [reframingsCollapsed, setReframingsCollapsed] = useState(false);
   const [selectedReframings, setSelectedReframings] = useState<Set<number>>(new Set());
 
-  // -- Custom items (tag-input pattern) --
-  const [addedAssumptions, setAddedAssumptions] = useState<string[]>([]);
-  const [assumptionInput, setAssumptionInput] = useState("");
-  const [addedReframings, setAddedReframings] = useState<string[]>([]);
-  const [reframingInput, setReframingInput] = useState("");
+  // -- Custom argument state (per-card inline input) --
+  const [customArgTexts, setCustomArgTexts] = useState<Map<number, string>>(new Map());
+  const [customArgInput, setCustomArgInput] = useState<Map<number, string>>(new Map());
+  const [showCustomArgInput, setShowCustomArgInput] = useState<Map<number, boolean>>(new Map());
+  const [customRefTexts, setCustomRefTexts] = useState<Map<number, string>>(new Map());
+  const [customRefInput, setCustomRefInput] = useState<Map<number, string>>(new Map());
+  const [showCustomRefInput, setShowCustomRefInput] = useState<Map<number, boolean>>(new Map());
+
+  // -- Suggested domains (moved from ExploreReview — useful pre-Phase 2) --
+  const [suggestedDomains, setSuggestedDomains] = useState<string[]>([]);
+  const [domainInput, setDomainInput] = useState("");
+
+  // -- Helper to update Map state --
+  function updateMap<K, V>(setter: React.Dispatch<React.SetStateAction<Map<K, V>>>, key: K, value: NoInfer<V>) {
+    setter(prev => { const next = new Map(prev); next.set(key, value); return next; });
+  }
 
   // -- Assumptions derived --
   const totalAssumptions = data.assumptions.length;
-  const allAssumptionsReviewed = totalAssumptions > 0 && assumptionResponses.size >= totalAssumptions;
+  const allAssumptionsReviewed = totalAssumptions > 0 && (assumptionResponses.size + customArgTexts.size) >= totalAssumptions;
   const isLastCard = currentCard >= totalAssumptions - 1;
   const isFirstCard = currentCard <= 0;
 
   // -- Reframings derived --
   const totalReframings = data.reframings.length;
   const hasResonanceData = data.reframings.some(r => r.resonance_options && r.resonance_options.length > 0);
-  const allReframingsReviewed = totalReframings > 0 && reframingResponses.size >= totalReframings;
-  const hasResonanceSelection = Array.from(reframingResponses.values()).some(opt => opt > 0);
+  const allReframingsReviewed = totalReframings > 0 && (reframingResponses.size + customRefTexts.size) >= totalReframings;
+  const hasResonanceSelection = Array.from(reframingResponses.values()).some(opt => opt > 0) || customRefTexts.size > 0;
   const isLastReframingCard = currentReframingCard >= totalReframings - 1;
   const isFirstReframingCard = currentReframingCard <= 0;
 
@@ -87,6 +100,9 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
   const selectOption = useCallback((assumptionIndex: number, optionIndex: number) => {
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
 
+    // Clear any custom argument for this card if selecting a predefined option
+    setCustomArgTexts(prev => { const next = new Map(prev); next.delete(assumptionIndex); return next; });
+
     setAssumptionResponses((prev) => {
       const next = new Map(prev);
       if (next.get(assumptionIndex) === optionIndex) {
@@ -95,7 +111,8 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
         next.set(assumptionIndex, optionIndex);
       }
 
-      if (next.size >= totalAssumptions) {
+      const totalAnswered = next.size + customArgTexts.size;
+      if (totalAnswered >= totalAssumptions) {
         autoAdvanceTimer.current = setTimeout(() => {
           setAssumptionsDone(true);
           setAssumptionsCollapsed(true);
@@ -107,7 +124,25 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
       return next;
     });
     assumptionsCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [totalAssumptions, goNext]);
+  }, [totalAssumptions, goNext, customArgTexts.size]);
+
+  // -- Custom argument submission for assumptions --
+  const submitCustomArg = useCallback((cardIndex: number) => {
+    const text = (customArgInput.get(cardIndex) || "").trim();
+    if (!text) return;
+    updateMap(setCustomArgTexts, cardIndex, text);
+    // Set selected_option to options.length (beyond predefined)
+    const optCount = data.assumptions[cardIndex]?.options?.length ?? 2;
+    setAssumptionResponses(prev => { const next = new Map(prev); next.set(cardIndex, optCount); return next; });
+    updateMap(setShowCustomArgInput, cardIndex, false);
+    // Auto-advance
+    const totalAnswered = assumptionResponses.size + customArgTexts.size + 1;
+    if (totalAnswered >= totalAssumptions) {
+      setTimeout(() => { setAssumptionsDone(true); setAssumptionsCollapsed(true); }, 400);
+    } else if (cardIndex < totalAssumptions - 1) {
+      setTimeout(() => goNext(), 300);
+    }
+  }, [customArgInput, data.assumptions, assumptionResponses.size, customArgTexts.size, totalAssumptions, goNext]);
 
   // -- Reframings carousel navigation --
   const goToReframingCard = useCallback((index: number, direction: "left" | "right") => {
@@ -127,6 +162,9 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
   const selectReframingOption = useCallback((reframingIndex: number, optionIndex: number) => {
     if (reframingAutoAdvanceTimer.current) clearTimeout(reframingAutoAdvanceTimer.current);
 
+    // Clear custom argument if selecting a predefined option
+    setCustomRefTexts(prev => { const next = new Map(prev); next.delete(reframingIndex); return next; });
+
     setReframingResponses((prev) => {
       const next = new Map(prev);
       if (next.get(reframingIndex) === optionIndex) {
@@ -135,7 +173,8 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
         next.set(reframingIndex, optionIndex);
       }
 
-      if (next.size >= totalReframings) {
+      const totalAnswered = next.size + customRefTexts.size;
+      if (totalAnswered >= totalReframings) {
         reframingAutoAdvanceTimer.current = setTimeout(() => {
           setReframingsDone(true);
           setReframingsCollapsed(true);
@@ -147,7 +186,23 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
       return next;
     });
     reframingsCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [totalReframings, goNextReframing]);
+  }, [totalReframings, goNextReframing, customRefTexts.size]);
+
+  // -- Custom argument submission for reframings --
+  const submitCustomRef = useCallback((cardIndex: number) => {
+    const text = (customRefInput.get(cardIndex) || "").trim();
+    if (!text) return;
+    updateMap(setCustomRefTexts, cardIndex, text);
+    const optCount = data.reframings[cardIndex]?.resonance_options?.length ?? 2;
+    setReframingResponses(prev => { const next = new Map(prev); next.set(cardIndex, optCount); return next; });
+    updateMap(setShowCustomRefInput, cardIndex, false);
+    const totalAnswered = reframingResponses.size + customRefTexts.size + 1;
+    if (totalAnswered >= totalReframings) {
+      setTimeout(() => { setReframingsDone(true); setReframingsCollapsed(true); }, 400);
+    } else if (cardIndex < totalReframings - 1) {
+      setTimeout(() => goNextReframing(), 300);
+    }
+  }, [customRefInput, data.reframings, reframingResponses.size, customRefTexts.size, totalReframings, goNextReframing]);
 
   // -- Checkbox fallback toggle --
   const toggleReframing = (index: number) => {
@@ -159,24 +214,15 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
     reframingsCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // -- Tag-input handlers --
-  const registerAssumption = () => {
-    const text = assumptionInput.trim();
+  // -- Domain suggestion handlers --
+  const addDomain = () => {
+    const text = domainInput.trim();
     if (!text) return;
-    setAddedAssumptions((prev) => [...prev, text]);
-    setAssumptionInput("");
+    setSuggestedDomains(prev => [...prev, text]);
+    setDomainInput("");
   };
-  const removeAssumption = (index: number) => {
-    setAddedAssumptions((prev) => prev.filter((_, i) => i !== index));
-  };
-  const registerReframing = () => {
-    const text = reframingInput.trim();
-    if (!text) return;
-    setAddedReframings((prev) => [...prev, text]);
-    setReframingInput("");
-  };
-  const removeReframing = (index: number) => {
-    setAddedReframings((prev) => prev.filter((_, i) => i !== index));
+  const removeDomain = (index: number) => {
+    setSuggestedDomains(prev => prev.filter((_, i) => i !== index));
   };
 
   // -- Submit --
@@ -184,14 +230,27 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
     const input: UserInput = {
       type: "decompose_review",
       assumption_responses: Array.from(assumptionResponses.entries()).map(
-        ([idx, opt]) => ({ assumption_index: idx, selected_option: opt }),
+        ([idx, opt]) => {
+          const resp: { assumption_index: number; selected_option: number; custom_argument?: string } = {
+            assumption_index: idx, selected_option: opt,
+          };
+          const custom = customArgTexts.get(idx);
+          if (custom) resp.custom_argument = custom;
+          return resp;
+        },
       ),
-      added_assumptions: addedAssumptions.length > 0 ? addedAssumptions : undefined,
-      added_reframings: addedReframings.length > 0 ? addedReframings : undefined,
+      suggested_domains: suggestedDomains.length > 0 ? suggestedDomains : undefined,
     };
     if (hasResonanceData) {
       input.reframing_responses = Array.from(reframingResponses.entries()).map(
-        ([idx, opt]) => ({ reframing_index: idx, selected_option: opt }),
+        ([idx, opt]) => {
+          const resp: { reframing_index: number; selected_option: number; custom_argument?: string } = {
+            reframing_index: idx, selected_option: opt,
+          };
+          const custom = customRefTexts.get(idx);
+          if (custom) resp.custom_argument = custom;
+          return resp;
+        },
       );
     } else {
       input.selected_reframings = Array.from(selectedReframings);
@@ -202,8 +261,8 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
   // -- Can submit? --
   const canSubmit = hasResonanceData ? hasResonanceSelection : selectedReframings.size > 0;
 
-  const isReviewed = (index: number): boolean => assumptionResponses.has(index);
-  const isReframingReviewed = (index: number): boolean => reframingResponses.has(index);
+  const isReviewed = (index: number): boolean => assumptionResponses.has(index) || customArgTexts.has(index);
+  const isReframingReviewed = (index: number): boolean => reframingResponses.has(index) || customRefTexts.has(index);
 
   const assumption = data.assumptions[currentCard];
   const reframing = data.reframings[currentReframingCard];
@@ -295,7 +354,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                   {assumption.options && assumption.options.length > 0 ? (
                     <div className="flex flex-col gap-2">
                       {assumption.options.map((option, optIdx) => {
-                        const selected = assumptionResponses.get(currentCard) === optIdx;
+                        const selected = assumptionResponses.get(currentCard) === optIdx && !customArgTexts.has(currentCard);
                         return (
                           <button
                             key={optIdx}
@@ -310,6 +369,40 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                           </button>
                         );
                       })}
+
+                      {/* Custom argument display or input */}
+                      {customArgTexts.has(currentCard) ? (
+                        <button
+                          onClick={() => {
+                            setCustomArgTexts(prev => { const next = new Map(prev); next.delete(currentCard); return next; });
+                            updateMap(setShowCustomArgInput, currentCard, true);
+                            updateMap(setCustomArgInput, currentCard, customArgTexts.get(currentCard) || "");
+                          }}
+                          className="w-full px-4 py-2 rounded-md text-xs font-medium transition-all text-left bg-green-500 text-white"
+                        >
+                          {customArgTexts.get(currentCard)}
+                        </button>
+                      ) : showCustomArgInput.get(currentCard) ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            autoFocus
+                            type="text"
+                            value={customArgInput.get(currentCard) || ""}
+                            onChange={e => updateMap(setCustomArgInput, currentCard, e.target.value)}
+                            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); submitCustomArg(currentCard); } }}
+                            onBlur={() => submitCustomArg(currentCard)}
+                            placeholder={t("common.addYourArgument")}
+                            className="flex-1 px-3 py-1.5 text-xs border border-dashed border-gray-300 rounded-md bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:border-green-400"
+                          />
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => updateMap(setShowCustomArgInput, currentCard, true)}
+                          className="w-full px-4 py-2 rounded-md text-xs font-medium transition-all text-left text-gray-400 hover:text-green-600 border border-dashed border-gray-300 hover:border-green-300"
+                        >
+                          + {t("common.addYourArgument")}
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <div className="flex justify-center gap-3">
@@ -354,39 +447,6 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
               </div>
             </div>
           )}
-
-          {/* User-added assumptions — rendered as cards identical to model items */}
-          {addedAssumptions.map((text, i) => (
-            <div
-              key={`user-assumption-${i}`}
-              className="group relative mt-3 w-full max-w-lg mx-auto p-4 rounded-lg border border-gray-200 bg-white"
-            >
-              <p className="text-gray-700 text-sm leading-relaxed pr-6">{text}</p>
-              <button
-                onClick={() => removeAssumption(i)}
-                className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
-                aria-label="Remove"
-              >
-                <i className="bi bi-x-lg text-xs" />
-              </button>
-            </div>
-          ))}
-
-          {/* Add new assumption — dashed card with inline input */}
-          <div className="mt-3 w-full max-w-lg mx-auto p-4 rounded-lg border border-dashed border-gray-300">
-            <div className="flex items-center gap-2">
-              <i className="bi bi-plus-lg text-gray-400 text-sm" />
-              <input
-                type="text"
-                value={assumptionInput}
-                onChange={(e) => setAssumptionInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); registerAssumption(); } }}
-                onBlur={() => registerAssumption()}
-                placeholder={t("decompose.addAssumption")}
-                className="flex-1 bg-transparent text-gray-700 text-sm placeholder-gray-400 focus:outline-none"
-              />
-            </div>
-          </div>
         </div>
       )}
 
@@ -435,7 +495,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                       const reviewed = isReframingReviewed(i);
                       const responded = reframingResponses.get(i);
                       const dotColor = reviewed
-                        ? (responded !== undefined && responded > 0 ? "bg-green-500" : "bg-gray-400")
+                        ? (responded !== undefined && responded > 0 ? "bg-green-500" : customRefTexts.has(i) ? "bg-green-500" : "bg-gray-400")
                         : "bg-gray-300";
                       const ring = i === currentReframingCard ? "ring-2 ring-green-400 ring-offset-1" : "";
                       return (
@@ -495,7 +555,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                       {reframing.resonance_options && reframing.resonance_options.length > 0 && (
                         <div className="flex flex-col gap-2">
                           {reframing.resonance_options.map((option, optIdx) => {
-                            const selected = reframingResponses.get(currentReframingCard) === optIdx;
+                            const selected = reframingResponses.get(currentReframingCard) === optIdx && !customRefTexts.has(currentReframingCard);
                             return (
                               <button
                                 key={optIdx}
@@ -514,6 +574,40 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                               </button>
                             );
                           })}
+
+                          {/* Custom argument for reframing */}
+                          {customRefTexts.has(currentReframingCard) ? (
+                            <button
+                              onClick={() => {
+                                setCustomRefTexts(prev => { const next = new Map(prev); next.delete(currentReframingCard); return next; });
+                                updateMap(setShowCustomRefInput, currentReframingCard, true);
+                                updateMap(setCustomRefInput, currentReframingCard, customRefTexts.get(currentReframingCard) || "");
+                              }}
+                              className="w-full px-4 py-2 rounded-md text-xs font-medium transition-all text-left bg-green-500 text-white"
+                            >
+                              {customRefTexts.get(currentReframingCard)}
+                            </button>
+                          ) : showCustomRefInput.get(currentReframingCard) ? (
+                            <div className="flex items-center gap-2">
+                              <input
+                                autoFocus
+                                type="text"
+                                value={customRefInput.get(currentReframingCard) || ""}
+                                onChange={e => updateMap(setCustomRefInput, currentReframingCard, e.target.value)}
+                                onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); submitCustomRef(currentReframingCard); } }}
+                                onBlur={() => submitCustomRef(currentReframingCard)}
+                                placeholder={t("common.addYourArgument")}
+                                className="flex-1 px-3 py-1.5 text-xs border border-dashed border-gray-300 rounded-md bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:border-green-400"
+                              />
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => updateMap(setShowCustomRefInput, currentReframingCard, true)}
+                              className="w-full px-4 py-2 rounded-md text-xs font-medium transition-all text-left text-gray-400 hover:text-green-600 border border-dashed border-gray-300 hover:border-green-300"
+                            >
+                              + {t("common.addYourArgument")}
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -533,39 +627,6 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                   </div>
                 </div>
               )}
-
-              {/* User-added reframings — rendered as cards identical to model items */}
-              {addedReframings.map((text, i) => (
-                <div
-                  key={`user-reframing-${i}`}
-                  className="group relative mt-3 w-full max-w-lg mx-auto p-4 rounded-lg border border-gray-200 bg-white"
-                >
-                  <p className="text-gray-700 text-sm leading-relaxed pr-6">{text}</p>
-                  <button
-                    onClick={() => removeReframing(i)}
-                    className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
-                    aria-label="Remove"
-                  >
-                    <i className="bi bi-x-lg text-xs" />
-                  </button>
-                </div>
-              ))}
-
-              {/* Add new reframing — dashed card with inline input */}
-              <div className="mt-3 w-full max-w-lg mx-auto p-4 rounded-lg border border-dashed border-gray-300">
-                <div className="flex items-center gap-2">
-                  <i className="bi bi-plus-lg text-gray-400 text-sm" />
-                  <input
-                    type="text"
-                    value={reframingInput}
-                    onChange={(e) => setReframingInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); registerReframing(); } }}
-                    onBlur={() => registerReframing()}
-                    placeholder={t("decompose.addReframing")}
-                    className="flex-1 bg-transparent text-gray-700 text-sm placeholder-gray-400 focus:outline-none"
-                  />
-                </div>
-              </div>
             </div>
           ) : (
             /* Checkbox fallback — backward compat with old sessions */
@@ -609,40 +670,45 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                   </label>
                 ))}
               </div>
-              {/* User-added reframings — rendered as list items identical to model items */}
-              {addedReframings.map((text, i) => (
-                <div
-                  key={`user-reframing-${i}`}
-                  className="group relative flex items-start p-3 rounded-md border bg-green-50 border-green-200 mt-2"
-                >
-                  <div className="flex-1">
-                    <p className="text-gray-700 text-sm pr-6">{text}</p>
-                  </div>
-                  <button
-                    onClick={() => removeReframing(i)}
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
-                    aria-label="Remove"
-                  >
-                    <i className="bi bi-x-lg text-xs" />
-                  </button>
-                </div>
-              ))}
+            </div>
+          )}
 
-              {/* Add new reframing — dashed card matching list item shape */}
-              <div className="flex items-center gap-2 p-3 rounded-md border border-dashed border-gray-300 mt-2">
+          {/* -- Suggested domains for Phase 2 -- */}
+          <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5 animate-fade-in">
+            <h3 className="flex items-center gap-2.5 text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
+              <i className="bi bi-globe2 text-base" />
+              {t("decompose.suggestDomain")}
+            </h3>
+            {suggestedDomains.map((text, i) => (
+              <div
+                key={`domain-${i}`}
+                className="group relative mb-2 p-3 rounded-lg border bg-blue-50 border-blue-200"
+              >
+                <span className="text-gray-700 text-sm font-medium pr-6">{text}</span>
+                <button
+                  onClick={() => removeDomain(i)}
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
+                  aria-label="Remove"
+                >
+                  <i className="bi bi-x-lg text-xs" />
+                </button>
+              </div>
+            ))}
+            <div className="p-3 rounded-lg border border-dashed border-gray-300">
+              <div className="flex items-center gap-2">
                 <i className="bi bi-plus-lg text-gray-400 text-sm" />
                 <input
                   type="text"
-                  value={reframingInput}
-                  onChange={(e) => setReframingInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); registerReframing(); } }}
-                  onBlur={() => registerReframing()}
-                  placeholder={t("decompose.addReframing")}
+                  value={domainInput}
+                  onChange={e => setDomainInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addDomain(); } }}
+                  onBlur={() => addDomain()}
+                  placeholder={t("decompose.suggestDomainPlaceholder")}
                   className="flex-1 bg-transparent text-gray-700 text-sm placeholder-gray-400 focus:outline-none"
                 />
               </div>
             </div>
-          )}
+          </div>
         </>
       )}
 

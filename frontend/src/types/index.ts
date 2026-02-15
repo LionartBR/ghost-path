@@ -79,6 +79,7 @@ export interface Assumption {
 export interface AssumptionResponse {
   assumption_index: number;
   selected_option: number;
+  custom_argument?: string;
 }
 
 export interface Reframing {
@@ -95,6 +96,7 @@ export interface Reframing {
 export interface ReframingResponse {
   reframing_index: number;
   selected_option: number;
+  custom_argument?: string;
 }
 
 export interface DecomposeReviewData {
@@ -124,6 +126,7 @@ export interface Analogy {
 export interface AnalogyResponse {
   analogy_index: number;
   selected_option: number;
+  custom_argument?: string;
 }
 
 export interface Contradiction {
@@ -152,6 +155,7 @@ export interface ClaimFeedback {
 export interface ClaimResponse {
   claim_index: number;
   selected_option: number;
+  custom_argument?: string;
 }
 
 export interface ClaimVerdict {
@@ -280,10 +284,8 @@ export interface UserInput {
   type: UserInputType;
   // decompose_review
   assumption_responses?: AssumptionResponse[];
-  added_assumptions?: string[];
   reframing_responses?: ReframingResponse[];
   selected_reframings?: number[];  // backward compat
-  added_reframings?: string[];
   // explore_review
   analogy_responses?: AnalogyResponse[];
   starred_analogies?: number[];
@@ -291,7 +293,6 @@ export interface UserInput {
   added_contradictions?: string[];
   // claims_review
   claim_responses?: ClaimResponse[];
-  added_claims?: string[];
   claim_feedback?: ClaimFeedback[];  // backward compat
   // verdicts
   verdicts?: ClaimVerdict[];

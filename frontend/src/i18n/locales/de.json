@@ -36,8 +36,8 @@
   "decompose.reframings": "Neuformulierungen",
   "decompose.confirm": "Bestätigen",
   "decompose.reject": "Ablehnen",
-  "decompose.addAssumption": "Neue Annahme hinzufügen...",
-  "decompose.addReframing": "Neue Neuformulierung hinzufügen...",
+  "decompose.suggestDomain": "Domänen zur Erkundung vorschlagen",
+  "decompose.suggestDomainPlaceholder": "Eine Domäne zur Erkundung vorschlagen...",
   "decompose.edit": "bearbeiten",
   "decompose.submitReview": "Überprüfung absenden",
 
@@ -64,7 +64,6 @@
   "claims.title": "Wissensbehauptungen überprüfen",
   "claims.description": "Jede Behauptung wurde durch dialektische Synthese geschmiedet. Bewerten Sie, ob sie resoniert — eröffnet sie neue Richtungen oder verändert sie Ihre Sicht auf das Problem?",
   "claims.evidenceValid": "Die Evidenz ist gültig und stützt die Behauptung",
-  "claims.addClaim": "Eigene Behauptung hinzufügen...",
   "claims.showDetails": "Details anzeigen",
   "claims.hideDetails": "Details ausblenden",
   "claims.edit": "bearbeiten",
@@ -144,6 +143,7 @@
   "score.falsifiability": "Falsifizierbarkeit",
   "score.significance": "Bedeutung",
 
+  "common.addYourArgument": "Ihr Argument hinzufügen...",
   "common.show": "Anzeigen",
   "common.hide": "Verbergen",
   "common.reasoning": "Begründung",

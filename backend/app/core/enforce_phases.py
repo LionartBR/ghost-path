@@ -29,21 +29,21 @@ def check_decompose_complete(state: ForgeState) -> dict | None:
     if not state.state_of_art_researched:
         return _error("DECOMPOSE_INCOMPLETE", "State of art has not been researched.")
 
-    total_assumptions = len(state.assumptions) + len(state.user_added_assumptions)
+    total_assumptions = len(state.assumptions)
     if total_assumptions < 3:
         return _error(
             "DECOMPOSE_INCOMPLETE",
             f"Need >= 3 assumptions, have {total_assumptions}.",
         )
 
-    total_reframings = len(state.reframings) + len(state.user_added_reframings)
+    total_reframings = len(state.reframings)
     if total_reframings < 3:
         return _error(
             "DECOMPOSE_INCOMPLETE",
             f"Need >= 3 reframings, have {total_reframings}.",
         )
 
-    if not state.selected_reframings and not state.user_added_reframings:
+    if not state.selected_reframings:
         return _error(
             "DECOMPOSE_INCOMPLETE",
             "User must select >= 1 reframing or add their own.",

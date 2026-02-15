@@ -1,14 +1,16 @@
 /* ExploreReview — Phase 2 review UI with carousel for analogy resonance assessment.
 
 Invariants:
-    - At least 1 analogy must resonate (selected_option > 0) before submit
+    - At least 1 analogy must resonate (selected_option > 0) or have custom argument before submit
     - Carousel reuses DecomposeReview pattern: progress dots, prev/next, auto-advance
     - Morphological box and contradictions are collapsible (read-only context)
     - Backward compat: falls back to simple star toggle when no resonance data
+    - "Suggest domain" moved to DecomposeReview (pre-Phase 2, more useful there)
 
 Design Decisions:
     - Convention Option 0: agent always generates option 0 as "no structural connection"
     - selected_option > 0 means the analogy resonated (replaces binary star toggle)
+    - custom_argument enriches existing analogy card (not a new entity)
     - Resonance text injected into Phase 3 context for richer thesis generation
     - Carousel over grid: reduces cognitive load, matches DecomposeReview UX (ADR)
 */
@@ -26,8 +28,6 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
   const { t } = useTranslation();
   const [morphBoxOpen, setMorphBoxOpen] = useState(false);
   const [contradictionsOpen, setContradictionsOpen] = useState(false);
-  const [suggestedDomains, setSuggestedDomains] = useState<string[]>([]);
-  const [domainInput, setDomainInput] = useState("");
 
   // Resonance carousel state (mirrors DecomposeReview pattern)
   const [analogyResponses, setAnalogyResponses] = useState<Map<number, number>>(new Map());
@@ -38,6 +38,15 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
 
   // Backward compat: star toggle for analogies without resonance data
   const [starredAnalogies, setStarredAnalogies] = useState<Set<number>>(new Set());
+
+  // Custom argument state (per-analogy)
+  const [customArgTexts, setCustomArgTexts] = useState<Map<number, string>>(new Map());
+  const [customArgInput, setCustomArgInput] = useState<Map<number, string>>(new Map());
+  const [showCustomArgInput, setShowCustomArgInput] = useState<Map<number, boolean>>(new Map());
+
+  function updateMap<K, V>(setter: React.Dispatch<React.SetStateAction<Map<K, V>>>, key: K, value: NoInfer<V>) {
+    setter(prev => { const next = new Map(prev); next.set(key, value); return next; });
+  }
 
   const hasResonanceData = data.analogies.some(
     (a) => a.resonance_prompt && a.resonance_options && a.resonance_options.length >= 3,
@@ -64,6 +73,9 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
   const selectOption = useCallback((analogyIndex: number, optionIndex: number) => {
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
 
+    // Clear custom argument when selecting predefined option
+    setCustomArgTexts(prev => { const next = new Map(prev); next.delete(analogyIndex); return next; });
+
     setAnalogyResponses((prev) => {
       const next = new Map(prev);
       if (next.get(analogyIndex) === optionIndex) {
@@ -80,6 +92,19 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
     }
   }, [totalAnalogies, goNext]);
 
+  // Custom argument submission for analogies
+  const submitCustomArg = useCallback((cardIndex: number) => {
+    const text = (customArgInput.get(cardIndex) || "").trim();
+    if (!text) return;
+    updateMap(setCustomArgTexts, cardIndex, text);
+    const optCount = data.analogies[cardIndex]?.resonance_options?.length ?? 2;
+    setAnalogyResponses(prev => { const next = new Map(prev); next.set(cardIndex, optCount); return next; });
+    updateMap(setShowCustomArgInput, cardIndex, false);
+    if (cardIndex < totalAnalogies - 1) {
+      setTimeout(() => goNext(), 300);
+    }
+  }, [customArgInput, data.analogies, totalAnalogies, goNext]);
+
   const toggleStar = (index: number) => {
     setStarredAnalogies((prev) => {
       const next = new Set(prev);
@@ -89,35 +114,29 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
     analogiesCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // -- Domain suggestion handlers --
-  const addDomain = () => {
-    const text = domainInput.trim();
-    if (!text) return;
-    setSuggestedDomains((prev) => [...prev, text]);
-    setDomainInput("");
-  };
-  const removeDomain = (index: number) => {
-    setSuggestedDomains((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const resonatedCount = Array.from(analogyResponses.values()).filter((opt) => opt > 0).length;
-  const canSubmit = hasResonanceData ? resonatedCount > 0 : starredAnalogies.size > 0;
+  const canSubmit = hasResonanceData ? (resonatedCount > 0 || customArgTexts.size > 0) : starredAnalogies.size > 0;
 
   const handleSubmit = () => {
     if (hasResonanceData) {
       const input: UserInput = {
         type: "explore_review",
         analogy_responses: Array.from(analogyResponses.entries()).map(
-          ([idx, opt]) => ({ analogy_index: idx, selected_option: opt }),
+          ([idx, opt]) => {
+            const resp: { analogy_index: number; selected_option: number; custom_argument?: string } = {
+              analogy_index: idx, selected_option: opt,
+            };
+            const custom = customArgTexts.get(idx);
+            if (custom) resp.custom_argument = custom;
+            return resp;
+          },
         ),
-        suggested_domains: suggestedDomains.length > 0 ? suggestedDomains : undefined,
       };
       onSubmit(input);
     } else {
       const input: UserInput = {
         type: "explore_review",
         starred_analogies: Array.from(starredAnalogies),
-        suggested_domains: suggestedDomains.length > 0 ? suggestedDomains : undefined,
       };
       onSubmit(input);
     }
@@ -130,16 +149,16 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
   return (
     <div className="space-y-4">
 
-      {/* ── Analogies ── */}
+      {/* -- Analogies -- */}
       <div ref={analogiesCardRef} className={`scroll-mt-4 bg-white border border-gray-200/80 border-l-4 rounded-xl shadow-sm p-5 transition-all ${
-        resonatedCount > 0 ? "border-l-green-500" : "border-l-gray-300"
+        resonatedCount > 0 || customArgTexts.size > 0 ? "border-l-green-500" : "border-l-gray-300"
       }`}>
         <h3 className={`flex items-center gap-2.5 text-sm font-semibold uppercase tracking-wide mb-4 ${
-          resonatedCount > 0 ? "text-green-600" : "text-gray-400"
+          resonatedCount > 0 || customArgTexts.size > 0 ? "text-green-600" : "text-gray-400"
         }`}>
           <i className="bi bi-globe2 text-base" />
           {t("explore.analogies")}
-          {resonatedCount > 0 && (
+          {(resonatedCount > 0 || customArgTexts.size > 0) && (
             <span className="ml-auto text-xs text-green-500 font-normal flex items-center gap-1">
               <i className="bi bi-check-circle-fill text-[11px]" />
             </span>
@@ -147,14 +166,14 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
         </h3>
 
         {hasResonanceData && totalAnalogies > 0 && analogy ? (
-          /* ── Carousel mode (with resonance data) ── */
+          /* -- Carousel mode (with resonance data) -- */
           <div className="flex flex-col items-center">
             {/* Progress dots */}
             <div className="flex items-center gap-1.5 mb-4">
               {data.analogies.map((_, i) => {
                 const responded = analogyResponses.has(i);
                 const resonated = (analogyResponses.get(i) ?? 0) > 0;
-                const dotColor = resonated
+                const dotColor = resonated || customArgTexts.has(i)
                   ? "bg-green-500"
                   : responded
                     ? "bg-gray-400"
@@ -220,7 +239,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
                 {analogy.resonance_options && analogy.resonance_options.length > 0 && (
                   <div className="flex flex-col gap-2">
                     {analogy.resonance_options.map((option, optIdx) => {
-                      const selected = analogyResponses.get(currentCard) === optIdx;
+                      const selected = analogyResponses.get(currentCard) === optIdx && !customArgTexts.has(currentCard);
                       return (
                         <button
                           key={optIdx}
@@ -237,6 +256,40 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
                         </button>
                       );
                     })}
+
+                    {/* Custom argument for analogy */}
+                    {customArgTexts.has(currentCard) ? (
+                      <button
+                        onClick={() => {
+                          setCustomArgTexts(prev => { const next = new Map(prev); next.delete(currentCard); return next; });
+                          updateMap(setShowCustomArgInput, currentCard, true);
+                          updateMap(setCustomArgInput, currentCard, customArgTexts.get(currentCard) || "");
+                        }}
+                        className="w-full px-4 py-2 rounded-md text-xs font-medium transition-all text-left bg-green-500 text-white"
+                      >
+                        {customArgTexts.get(currentCard)}
+                      </button>
+                    ) : showCustomArgInput.get(currentCard) ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          autoFocus
+                          type="text"
+                          value={customArgInput.get(currentCard) || ""}
+                          onChange={e => updateMap(setCustomArgInput, currentCard, e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); submitCustomArg(currentCard); } }}
+                          onBlur={() => submitCustomArg(currentCard)}
+                          placeholder={t("common.addYourArgument")}
+                          className="flex-1 px-3 py-1.5 text-xs border border-dashed border-gray-300 rounded-md bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:border-green-400"
+                        />
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => updateMap(setShowCustomArgInput, currentCard, true)}
+                        className="w-full px-4 py-2 rounded-md text-xs font-medium transition-all text-left text-gray-400 hover:text-green-600 border border-dashed border-gray-300 hover:border-green-300"
+                      >
+                        + {t("common.addYourArgument")}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -257,7 +310,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
             </div>
           </div>
         ) : (
-          /* ── Grid mode (backward compat, no resonance data) ── */
+          /* -- Grid mode (backward compat, no resonance data) -- */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {data.analogies.map((a, i) => (
               <div
@@ -287,42 +340,9 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
             ))}
           </div>
         )}
-
-        {/* User-added domains — rendered as cards identical to analogy grid items */}
-        {suggestedDomains.map((text, i) => (
-          <div
-            key={`user-domain-${i}`}
-            className="group relative mt-3 p-4 rounded-lg border bg-gray-50 border-gray-200"
-          >
-            <h4 className="font-semibold text-gray-900 text-sm pr-6">{text}</h4>
-            <button
-              onClick={() => removeDomain(i)}
-              className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
-              aria-label="Remove"
-            >
-              <i className="bi bi-x-lg text-xs" />
-            </button>
-          </div>
-        ))}
-
-        {/* Add new domain — dashed card with inline input */}
-        <div className="mt-3 p-4 rounded-lg border border-dashed border-gray-300">
-          <div className="flex items-center gap-2">
-            <i className="bi bi-plus-lg text-gray-400 text-sm" />
-            <input
-              type="text"
-              value={domainInput}
-              onChange={(e) => setDomainInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addDomain(); } }}
-              onBlur={() => addDomain()}
-              placeholder={t("explore.suggestDomain")}
-              className="flex-1 bg-transparent text-gray-700 text-sm placeholder-gray-400 focus:outline-none"
-            />
-          </div>
-        </div>
       </div>
 
-      {/* ── Morphological Box ── */}
+      {/* -- Morphological Box -- */}
       {data.morphological_box && (
         <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5">
           <button
@@ -376,7 +396,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
         </div>
       )}
 
-      {/* ── Contradictions ── */}
+      {/* -- Contradictions -- */}
       <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5">
         <button
           onClick={() => setContradictionsOpen(!contradictionsOpen)}
@@ -410,14 +430,14 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
         )}
       </div>
 
-      {/* ── Submit ── */}
+      {/* -- Submit -- */}
       <button
         onClick={handleSubmit}
         disabled={!canSubmit}
         className="w-full py-3 bg-green-600 hover:bg-green-500 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg transition-all inline-flex items-center justify-center gap-2"
       >
         {canSubmit
-          ? t("explore.submitReview", { count: hasResonanceData ? resonatedCount : starredAnalogies.size })
+          ? t("explore.submitReview", { count: hasResonanceData ? resonatedCount + customArgTexts.size : starredAnalogies.size })
           : t("explore.submitReviewNone")}
       </button>
     </div>

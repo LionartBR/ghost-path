@@ -36,8 +36,8 @@
   "decompose.reframings": "Reframings",
   "decompose.confirm": "Confirm",
   "decompose.reject": "Reject",
-  "decompose.addAssumption": "Add new assumption...",
-  "decompose.addReframing": "Add new reframing...",
+  "decompose.suggestDomain": "Suggest domains for exploration",
+  "decompose.suggestDomainPlaceholder": "Suggest a domain for exploration...",
   "decompose.edit": "edit",
   "decompose.submitReview": "Submit Review",
 
@@ -64,7 +64,6 @@
   "claims.title": "Review Knowledge Claims",
   "claims.description": "Each claim was forged through dialectical synthesis. Assess whether it resonates — does it open new directions or shift how you see the problem?",
   "claims.evidenceValid": "Evidence is valid and supports the claim",
-  "claims.addClaim": "Add your own claim...",
   "claims.showDetails": "Show Details",
   "claims.hideDetails": "Hide Details",
   "claims.edit": "edit",
@@ -144,6 +143,7 @@
   "score.falsifiability": "Falsifiability",
   "score.significance": "Significance",
 
+  "common.addYourArgument": "Add your argument...",
   "common.show": "Show",
   "common.hide": "Hide",
   "common.reasoning": "Reasoning",

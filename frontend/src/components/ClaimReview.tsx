@@ -1,14 +1,16 @@
 /* ClaimReview — Phase 3 review UI with carousel + resonance assessment.
 
 Invariants:
-    - At least 1 claim must resonate (option > 0) or user adds a custom claim before submit
+    - At least 1 claim must resonate (option > 0) or have custom argument before submit
     - Carousel allows free navigation through claims
     - Option selection auto-advances to next card after brief visual feedback
     - Collapsible reasoning/falsifiability details per claim
+    - "Add your argument" replaces "Add your own claim" — enriches existing cards
 
 Design Decisions:
     - Mirrors DecomposeReview carousel pattern (ADR: consistent UX across phases)
     - Option 0 = gray "no resonance", options 1+ = green resonance (same as reframings)
+    - custom_argument enriches existing claim card (not a new entity)
     - Fallback to ClaimCard list when no resonance data (backward compat with old sessions)
     - Auto-collapse 400ms after all claims reviewed
 */
@@ -36,19 +38,24 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [expandedDetails, setExpandedDetails] = useState<Set<number>>(new Set());
 
-  // -- Manual input --
-  const [addedClaims, setAddedClaims] = useState<string[]>([]);
-  const [claimInput, setClaimInput] = useState("");
+  // -- Custom argument state (per-claim) --
+  const [customArgTexts, setCustomArgTexts] = useState<Map<number, string>>(new Map());
+  const [customArgInput, setCustomArgInput] = useState<Map<number, string>>(new Map());
+  const [showCustomArgInput, setShowCustomArgInput] = useState<Map<number, boolean>>(new Map());
 
   // -- Legacy fallback state --
   const [feedback, setFeedback] = useState<Map<number, ClaimFeedback>>(new Map());
+
+  function updateMap<K, V>(setter: React.Dispatch<React.SetStateAction<Map<K, V>>>, key: K, value: NoInfer<V>) {
+    setter(prev => { const next = new Map(prev); next.set(key, value); return next; });
+  }
 
   // -- Derived --
   const totalClaims = claims.length;
   const hasResonanceData = claims.some(c => c.resonance_options && c.resonance_options.length > 0);
   const allReviewed = totalClaims > 0 && responses.size >= totalClaims;
-  const hasResonance = Array.from(responses.values()).some(opt => opt > 0);
-  const canSubmit = hasResonance || addedClaims.length > 0;
+  const hasResonance = Array.from(responses.values()).some(opt => opt > 0) || customArgTexts.size > 0;
+  const canSubmit = hasResonance;
   const isLastCard = currentCard >= totalClaims - 1;
   const isFirstCard = currentCard <= 0;
 
@@ -69,6 +76,9 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
 
   const selectOption = useCallback((claimIndex: number, optionIndex: number) => {
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+
+    // Clear custom argument when selecting predefined option
+    setCustomArgTexts(prev => { const next = new Map(prev); next.delete(claimIndex); return next; });
 
     setResponses((prev) => {
       const next = new Map(prev);
@@ -92,6 +102,22 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
     containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [totalClaims, goNext]);
 
+  // -- Custom argument submission --
+  const submitCustomArg = useCallback((cardIndex: number) => {
+    const text = (customArgInput.get(cardIndex) || "").trim();
+    if (!text) return;
+    updateMap(setCustomArgTexts, cardIndex, text);
+    const optCount = claims[cardIndex]?.resonance_options?.length ?? 2;
+    setResponses(prev => { const next = new Map(prev); next.set(cardIndex, optCount); return next; });
+    updateMap(setShowCustomArgInput, cardIndex, false);
+    const totalAnswered = responses.size + 1;
+    if (totalAnswered >= totalClaims) {
+      setTimeout(() => { setDone(true); setCollapsed(true); }, 400);
+    } else if (cardIndex < totalClaims - 1) {
+      setTimeout(() => goNext(), 300);
+    }
+  }, [customArgInput, claims, responses.size, totalClaims, goNext]);
+
   // -- Details toggle --
   const toggleDetails = (index: number) => {
     setExpandedDetails((prev) => {
@@ -99,17 +125,6 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
       if (next.has(index)) next.delete(index); else next.add(index);
       return next;
     });
-  };
-
-  // -- Claim addition handlers --
-  const addClaim = () => {
-    const text = claimInput.trim();
-    if (!text) return;
-    setAddedClaims((prev) => [...prev, text]);
-    setClaimInput("");
-  };
-  const removeClaim = (index: number) => {
-    setAddedClaims((prev) => prev.filter((_, i) => i !== index));
   };
 
   // -- Legacy feedback --
@@ -135,9 +150,15 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
       const input: UserInput = {
         type: "claims_review",
         claim_responses: Array.from(responses.entries()).map(
-          ([idx, opt]) => ({ claim_index: idx, selected_option: opt }),
+          ([idx, opt]) => {
+            const resp: { claim_index: number; selected_option: number; custom_argument?: string } = {
+              claim_index: idx, selected_option: opt,
+            };
+            const custom = customArgTexts.get(idx);
+            if (custom) resp.custom_argument = custom;
+            return resp;
+          },
         ),
-        added_claims: addedClaims.length > 0 ? addedClaims : undefined,
       };
       onSubmit(input);
     } else {
@@ -149,7 +170,6 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
       onSubmit({
         type: "claims_review",
         claim_feedback,
-        added_claims: addedClaims.length > 0 ? addedClaims : undefined,
       });
     }
   };
@@ -203,7 +223,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                     const reviewed = isReviewed(i);
                     const responded = responses.get(i);
                     const dotColor = reviewed
-                      ? (responded !== undefined && responded > 0 ? "bg-green-500" : "bg-gray-400")
+                      ? (responded !== undefined && responded > 0 ? "bg-green-500" : customArgTexts.has(i) ? "bg-green-500" : "bg-gray-400")
                       : "bg-gray-300";
                     const ring = i === currentCard ? "ring-2 ring-green-400 ring-offset-1" : "";
                     return (
@@ -292,7 +312,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                     {claim.resonance_options && claim.resonance_options.length > 0 && (
                       <div className="flex flex-col gap-2">
                         {claim.resonance_options.map((option, optIdx) => {
-                          const selected = responses.get(currentCard) === optIdx;
+                          const selected = responses.get(currentCard) === optIdx && !customArgTexts.has(currentCard);
                           return (
                             <button
                               key={optIdx}
@@ -311,6 +331,40 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                             </button>
                           );
                         })}
+
+                        {/* Custom argument for claim */}
+                        {customArgTexts.has(currentCard) ? (
+                          <button
+                            onClick={() => {
+                              setCustomArgTexts(prev => { const next = new Map(prev); next.delete(currentCard); return next; });
+                              updateMap(setShowCustomArgInput, currentCard, true);
+                              updateMap(setCustomArgInput, currentCard, customArgTexts.get(currentCard) || "");
+                            }}
+                            className="w-full px-4 py-2 rounded-md text-xs font-medium transition-all text-left bg-green-500 text-white"
+                          >
+                            {customArgTexts.get(currentCard)}
+                          </button>
+                        ) : showCustomArgInput.get(currentCard) ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              autoFocus
+                              type="text"
+                              value={customArgInput.get(currentCard) || ""}
+                              onChange={e => updateMap(setCustomArgInput, currentCard, e.target.value)}
+                              onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); submitCustomArg(currentCard); } }}
+                              onBlur={() => submitCustomArg(currentCard)}
+                              placeholder={t("common.addYourArgument")}
+                              className="flex-1 px-3 py-1.5 text-xs border border-dashed border-gray-300 rounded-md bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:border-green-400"
+                            />
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => updateMap(setShowCustomArgInput, currentCard, true)}
+                            className="w-full px-4 py-2 rounded-md text-xs font-medium transition-all text-left text-gray-400 hover:text-green-600 border border-dashed border-gray-300 hover:border-green-300"
+                          >
+                            + {t("common.addYourArgument")}
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -330,39 +384,6 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
                 </div>
               </div>
             )}
-
-            {/* User-added claims — rendered as cards identical to model items */}
-            {addedClaims.map((text, i) => (
-              <div
-                key={`user-claim-${i}`}
-                className="group relative mt-3 w-full max-w-lg mx-auto p-4 rounded-lg border border-gray-200 bg-white"
-              >
-                <p className="text-gray-700 text-sm leading-relaxed pr-6">{text}</p>
-                <button
-                  onClick={() => removeClaim(i)}
-                  className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
-                  aria-label="Remove"
-                >
-                  <i className="bi bi-x-lg text-xs" />
-                </button>
-              </div>
-            ))}
-
-            {/* Add new claim — dashed card with inline input */}
-            <div className="mt-3 w-full max-w-lg mx-auto p-4 rounded-lg border border-dashed border-gray-300">
-              <div className="flex items-center gap-2">
-                <i className="bi bi-plus-lg text-gray-400 text-sm" />
-                <input
-                  type="text"
-                  value={claimInput}
-                  onChange={(e) => setClaimInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addClaim(); } }}
-                  onBlur={() => addClaim()}
-                  placeholder={t("claims.addClaim")}
-                  className="flex-1 bg-transparent text-gray-700 text-sm placeholder-gray-400 focus:outline-none"
-                />
-              </div>
-            </div>
           </div>
         )}
 
@@ -399,39 +420,6 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
           </div>
         </div>
       ))}
-
-      {/* User-added claims — rendered as cards identical to model items */}
-      {addedClaims.map((text, i) => (
-        <div
-          key={`user-claim-${i}`}
-          className="group relative p-4 rounded-lg border border-gray-200 bg-white"
-        >
-          <p className="text-gray-700 text-sm leading-relaxed pr-6">{text}</p>
-          <button
-            onClick={() => removeClaim(i)}
-            className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
-            aria-label="Remove"
-          >
-            <i className="bi bi-x-lg text-xs" />
-          </button>
-        </div>
-      ))}
-
-      {/* Add new claim — dashed card with inline input */}
-      <div className="p-4 rounded-lg border border-dashed border-gray-300">
-        <div className="flex items-center gap-2">
-          <i className="bi bi-plus-lg text-gray-400 text-sm" />
-          <input
-            type="text"
-            value={claimInput}
-            onChange={(e) => setClaimInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addClaim(); } }}
-            onBlur={() => addClaim()}
-            placeholder={t("claims.addClaim")}
-            className="flex-1 bg-transparent text-gray-700 text-sm placeholder-gray-400 focus:outline-none"
-          />
-        </div>
-      </div>
 
       <button
         onClick={handleSubmit}

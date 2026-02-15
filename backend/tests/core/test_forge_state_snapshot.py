@@ -50,8 +50,7 @@ def test_roundtrip_populated_state():
     state.state_of_art_researched = True
     state.assumptions = [{"text": "a1", "source": "s1", "options": ["Agree", "Nuance"], "selected_option": 0}]
     state.reframings = [{"text": "r1", "type": "scope_change", "selected": True}]
-    state.user_added_assumptions = ["ua1"]
-    state.user_added_reframings = ["ur1"]
+    state.user_suggested_domains = ["biology", "music"]
 
     # Phase 2
     state.morphological_box = {"parameters": [{"name": "p1", "values": ["v1"]}]}
@@ -103,8 +102,7 @@ def test_roundtrip_populated_state():
     assert restored.state_of_art_researched is True
     assert restored.assumptions == [{"text": "a1", "source": "s1", "options": ["Agree", "Nuance"], "selected_option": 0}]
     assert restored.reframings == [{"text": "r1", "type": "scope_change", "selected": True}]
-    assert restored.user_added_assumptions == ["ua1"]
-    assert restored.user_added_reframings == ["ur1"]
+    assert restored.user_suggested_domains == ["biology", "music"]
 
     # Phase 2
     assert restored.morphological_box == {"parameters": [{"name": "p1", "values": ["v1"]}]}
@@ -254,3 +252,24 @@ def test_computed_properties_correct_after_roundtrip():
     assert restored.claims_remaining == 0
     assert restored.all_claims_have_antithesis is True
     assert restored.max_rounds_reached is True
+
+
+# -- user_suggested_domains ---------------------------------------------------
+
+def test_roundtrip_includes_user_suggested_domains():
+    state = ForgeState()
+    state.user_suggested_domains = ["biology", "physics"]
+    snapshot = forge_state_to_snapshot(state)
+    restored = forge_state_from_snapshot(snapshot)
+    assert restored.user_suggested_domains == ["biology", "physics"]
+
+
+def test_from_snapshot_ignores_removed_user_added_fields():
+    """Old snapshots with user_added_* fields don't crash — graceful degradation."""
+    old_snapshot = {
+        "user_added_assumptions": ["old"],
+        "user_added_reframings": ["old"],
+        "user_added_claims": ["old"],
+    }
+    state = forge_state_from_snapshot(old_snapshot)
+    assert state.user_suggested_domains == []

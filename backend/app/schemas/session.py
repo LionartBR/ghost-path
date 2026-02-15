@@ -47,18 +47,21 @@ class AssumptionResponse(BaseModel):
     """Per-assumption user response during decompose_review."""
     assumption_index: int = Field(ge=0)
     selected_option: int = Field(ge=0)
+    custom_argument: str | None = Field(None, max_length=500)
 
 
 class ReframingResponse(BaseModel):
     """Per-reframing user resonance response during decompose_review."""
     reframing_index: int = Field(ge=0)
     selected_option: int = Field(ge=0)
+    custom_argument: str | None = Field(None, max_length=500)
 
 
 class AnalogyResponse(BaseModel):
     """Per-analogy user resonance response during explore_review."""
     analogy_index: int = Field(ge=0)
     selected_option: int = Field(ge=0)
+    custom_argument: str | None = Field(None, max_length=500)
 
 
 class ClaimFeedback(BaseModel):
@@ -74,6 +77,7 @@ class ClaimResponse(BaseModel):
     """Per-claim resonance selection during claims_review."""
     claim_index: int = Field(ge=0)
     selected_option: int = Field(ge=0)
+    custom_argument: str | None = Field(None, max_length=500)
 
 
 # --- Claim verdict (Phase 4 review) ------------------------------------------
@@ -108,10 +112,8 @@ class UserInput(BaseModel):
 
     # type == "decompose_review"
     assumption_responses: list[AssumptionResponse] | None = None
-    added_assumptions: list[str] | None = None
     reframing_responses: list[ReframingResponse] | None = None
     selected_reframings: list[int] | None = None  # backward compat
-    added_reframings: list[str] | None = None
 
     # type == "explore_review"
     analogy_responses: list[AnalogyResponse] | None = None
@@ -122,7 +124,6 @@ class UserInput(BaseModel):
 
     # type == "claims_review"
     claim_responses: list[ClaimResponse] | None = None
-    added_claims: list[str] | None = None
     claim_feedback: list[ClaimFeedback] | None = None  # backward compat
 
     # type == "verdicts"
@@ -159,14 +160,17 @@ def _validate_decompose_review(user_input: "UserInput") -> None:
         user_input.reframing_responses
         and any(r.selected_option > 0 for r in user_input.reframing_responses)
     )
-    has_selection = (
-        (user_input.selected_reframings and len(user_input.selected_reframings) > 0)
-        or (user_input.added_reframings and len(user_input.added_reframings) > 0)
+    has_custom_arg = (
+        user_input.reframing_responses
+        and any(r.custom_argument for r in user_input.reframing_responses)
     )
-    if not (has_resonance or has_selection):
+    has_selection = (
+        user_input.selected_reframings and len(user_input.selected_reframings) > 0
+    )
+    if not (has_resonance or has_custom_arg or has_selection):
         raise ValueError(
             "decompose_review requires >= 1 reframing with resonance "
-            "(selected_option > 0) or >= 1 selected/added reframing",
+            "(selected_option > 0), custom argument, or >= 1 selected reframing",
         )
 
 
@@ -195,14 +199,9 @@ def _validate_claims_review(user_input: "UserInput") -> None:
     has_feedback = (
         user_input.claim_feedback and len(user_input.claim_feedback) > 0
     )
-    has_custom = (
-        user_input.added_claims
-        and any(c.strip() for c in user_input.added_claims)
-    )
-    if not (has_responses or has_feedback or has_custom):
+    if not (has_responses or has_feedback):
         raise ValueError(
-            "claims_review requires claim_responses, "
-            "claim_feedback, or added_claims",
+            "claims_review requires claim_responses or claim_feedback",
         )
 
 

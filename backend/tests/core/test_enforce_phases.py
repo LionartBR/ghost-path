@@ -105,37 +105,8 @@ def test_decompose_fails_without_selected_reframing():
     assert "select" in error["message"].lower()
 
 
-def test_decompose_passes_with_user_added_reframings():
-    state = ForgeState()
-    state.fundamentals = ["f1"]
-    state.state_of_art_researched = True
-    state.assumptions = [{"text": f"a{i}"} for i in range(3)]
-    state.reframings = [
-        {"text": f"r{i}", "type": "scope_change", "selected": False}
-        for i in range(3)
-    ]
-    state.user_added_reframings = ["my own reframing"]
-    error = check_decompose_complete(state)
-    assert error is None
-
-
 def test_decompose_succeeds_with_complete_state():
     state = _decomposed_state()
-    error = check_decompose_complete(state)
-    assert error is None
-
-
-def test_decompose_counts_user_added_assumptions():
-    state = ForgeState()
-    state.fundamentals = ["f1"]
-    state.state_of_art_researched = True
-    state.assumptions = [{"text": "a1"}]
-    state.user_added_assumptions = ["ua1", "ua2"]
-    state.reframings = [
-        {"text": "r1", "type": "scope_change", "selected": True},
-        {"text": "r2", "type": "scope_change", "selected": False},
-        {"text": "r3", "type": "scope_change", "selected": False},
-    ]
     error = check_decompose_complete(state)
     assert error is None
 

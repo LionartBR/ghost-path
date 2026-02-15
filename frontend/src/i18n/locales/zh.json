@@ -36,8 +36,8 @@
   "decompose.reframings": "重构",
   "decompose.confirm": "确认",
   "decompose.reject": "拒绝",
-  "decompose.addAssumption": "添加新假设...",
-  "decompose.addReframing": "添加新重构...",
+  "decompose.suggestDomain": "建议探索领域",
+  "decompose.suggestDomainPlaceholder": "建议一个探索领域...",
   "decompose.edit": "编辑",
   "decompose.submitReview": "提交审查",
 
@@ -64,7 +64,6 @@
   "claims.title": "审查知识主张",
   "claims.description": "每个主张都是通过辩证综合锻造而成。评估它是否引起共鸣——它是否开辟了新方向或改变了你看待问题的方式？",
   "claims.evidenceValid": "证据有效且支持该主张",
-  "claims.addClaim": "添加您自己的主张...",
   "claims.showDetails": "显示详情",
   "claims.hideDetails": "隐藏详情",
   "claims.edit": "编辑",
@@ -144,6 +143,7 @@
   "score.falsifiability": "可证伪性",
   "score.significance": "重要性",
 
+  "common.addYourArgument": "添加您的论点...",
   "common.show": "显示",
   "common.hide": "隐藏",
   "common.reasoning": "推理",
