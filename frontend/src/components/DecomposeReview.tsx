@@ -22,6 +22,56 @@ import React, { useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { DecomposeReviewData, UserInput } from "../types";
 
+const ChipInput: React.FC<{
+  items: string[];
+  inputValue: string;
+  onInputChange: (v: string) => void;
+  onAdd: () => void;
+  onRemove: (i: number) => void;
+  placeholder: string;
+  className?: string;
+}> = ({ items, inputValue, onInputChange, onAdd, onRemove, placeholder, className }) => (
+  <div className={className}>
+    <div className="flex items-center gap-2">
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => onInputChange(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onAdd(); } }}
+        placeholder={placeholder}
+        className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+      />
+      <button
+        onClick={onAdd}
+        disabled={!inputValue.trim()}
+        className="flex-shrink-0 w-9 h-9 rounded-md flex items-center justify-center transition-colors bg-white border border-gray-200 text-gray-500 hover:border-green-400 hover:text-green-600 disabled:text-gray-300 disabled:hover:border-gray-200 disabled:cursor-not-allowed"
+        aria-label="Add"
+      >
+        <i className="bi bi-plus-lg text-sm" />
+      </button>
+    </div>
+    {items.length > 0 && (
+      <div className="flex flex-wrap gap-2 mt-2">
+        {items.map((text, i) => (
+          <span
+            key={i}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200 text-green-700 text-xs"
+          >
+            {text}
+            <button
+              onClick={() => onRemove(i)}
+              className="text-green-400 hover:text-red-500 transition-colors leading-none"
+              aria-label="Remove"
+            >
+              &times;
+            </button>
+          </span>
+        ))}
+      </div>
+    )}
+  </div>
+);
+
 interface DecomposeReviewProps {
   data: DecomposeReviewData;
   onSubmit: (input: UserInput) => void;
@@ -47,9 +97,11 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
   const [reframingsCollapsed, setReframingsCollapsed] = useState(false);
   const [selectedReframings, setSelectedReframings] = useState<Set<number>>(new Set());
 
-  // -- Shared state --
-  const [newAssumption, setNewAssumption] = useState("");
-  const [newReframing, setNewReframing] = useState("");
+  // -- Custom items (tag-input pattern) --
+  const [addedAssumptions, setAddedAssumptions] = useState<string[]>([]);
+  const [assumptionInput, setAssumptionInput] = useState("");
+  const [addedReframings, setAddedReframings] = useState<string[]>([]);
+  const [reframingInput, setReframingInput] = useState("");
 
   // -- Assumptions derived --
   const totalAssumptions = data.assumptions.length;
@@ -152,6 +204,26 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
     });
   };
 
+  // -- Tag-input handlers --
+  const registerAssumption = () => {
+    const text = assumptionInput.trim();
+    if (!text) return;
+    setAddedAssumptions((prev) => [...prev, text]);
+    setAssumptionInput("");
+  };
+  const removeAssumption = (index: number) => {
+    setAddedAssumptions((prev) => prev.filter((_, i) => i !== index));
+  };
+  const registerReframing = () => {
+    const text = reframingInput.trim();
+    if (!text) return;
+    setAddedReframings((prev) => [...prev, text]);
+    setReframingInput("");
+  };
+  const removeReframing = (index: number) => {
+    setAddedReframings((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // -- Submit --
   const handleSubmit = () => {
     const input: UserInput = {
@@ -159,8 +231,8 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
       assumption_responses: Array.from(assumptionResponses.entries()).map(
         ([idx, opt]) => ({ assumption_index: idx, selected_option: opt }),
       ),
-      added_assumptions: newAssumption.trim() ? [newAssumption.trim()] : undefined,
-      added_reframings: newReframing.trim() ? [newReframing.trim()] : undefined,
+      added_assumptions: addedAssumptions.length > 0 ? addedAssumptions : undefined,
+      added_reframings: addedReframings.length > 0 ? addedReframings : undefined,
     };
     if (hasResonanceData) {
       input.reframing_responses = Array.from(reframingResponses.entries()).map(
@@ -328,12 +400,14 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
             </div>
           )}
 
-          <input
-            type="text"
-            value={newAssumption}
-            onChange={(e) => setNewAssumption(e.target.value)}
+          <ChipInput
+            items={addedAssumptions}
+            inputValue={assumptionInput}
+            onInputChange={setAssumptionInput}
+            onAdd={registerAssumption}
+            onRemove={removeAssumption}
             placeholder={t("decompose.addAssumption")}
-            className="mt-4 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+            className="mt-4"
           />
         </div>
       )}
@@ -482,12 +556,14 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                 </div>
               )}
 
-              <input
-                type="text"
-                value={newReframing}
-                onChange={(e) => setNewReframing(e.target.value)}
+              <ChipInput
+                items={addedReframings}
+                inputValue={reframingInput}
+                onInputChange={setReframingInput}
+                onAdd={registerReframing}
+                onRemove={removeReframing}
                 placeholder={t("decompose.addReframing")}
-                className="mt-4 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                className="mt-4"
               />
             </div>
           ) : (
@@ -532,12 +608,14 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                   </label>
                 ))}
               </div>
-              <input
-                type="text"
-                value={newReframing}
-                onChange={(e) => setNewReframing(e.target.value)}
+              <ChipInput
+                items={addedReframings}
+                inputValue={reframingInput}
+                onInputChange={setReframingInput}
+                onAdd={registerReframing}
+                onRemove={removeReframing}
                 placeholder={t("decompose.addReframing")}
-                className="mt-3 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                className="mt-3"
               />
             </div>
           )}
