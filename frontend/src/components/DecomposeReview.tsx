@@ -23,6 +23,7 @@ Design Decisions:
 import React, { useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { DecomposeReviewData, UserInput } from "../types";
+import ClaimMarkdown from "./ClaimMarkdown";
 
 interface DecomposeReviewProps {
   data: DecomposeReviewData;
@@ -348,9 +349,9 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                   <p className="text-xs text-gray-400 font-medium mb-2">
                     {currentCard + 1} / {totalAssumptions}
                   </p>
-                  <p className="text-gray-700 text-sm leading-relaxed mb-4">
+                  <ClaimMarkdown className="text-gray-700 text-sm leading-relaxed mb-4">
                     {assumption.text}
-                  </p>
+                  </ClaimMarkdown>
                   {assumption.options && assumption.options.length > 0 ? (
                     <div className="flex flex-col gap-2">
                       {assumption.options.map((option, optIdx) => {
@@ -532,22 +533,22 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                         {currentReframingCard + 1} / {totalReframings}
                       </p>
                       <div className="text-left max-w-md mx-auto mb-2">
-                        <p className="text-gray-700 text-sm leading-relaxed">
+                        <ClaimMarkdown className="text-gray-700 text-sm leading-relaxed">
                           {reframing.text}
-                        </p>
+                        </ClaimMarkdown>
                         {reframing.reasoning && (
-                          <p className="text-xs text-gray-400 italic mt-2">
+                          <ClaimMarkdown className="text-xs text-gray-400 italic mt-2">
                             {reframing.reasoning}
-                          </p>
+                          </ClaimMarkdown>
                         )}
                       </div>
 
                       {/* Resonance prompt */}
                       {reframing.resonance_prompt && (
                         <div className="text-left max-w-md mx-auto mb-4">
-                          <p className="text-gray-500 text-sm italic font-medium">
+                          <ClaimMarkdown className="text-gray-500 text-sm italic font-medium">
                             {reframing.resonance_prompt}
-                          </p>
+                          </ClaimMarkdown>
                         </div>
                       )}
 
@@ -661,7 +662,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                       className="mt-0.5 mr-3 rounded border-gray-300 text-green-600 focus:ring-green-500"
                     />
                     <div>
-                      <p className="text-gray-700 text-sm">{r.text}</p>
+                      <ClaimMarkdown className="text-gray-700 text-sm">{r.text}</ClaimMarkdown>
                       <p className="text-xs text-gray-400 mt-1 inline-flex items-center gap-1">
                         <i className="bi bi-tag text-[10px]" />
                         {r.type}

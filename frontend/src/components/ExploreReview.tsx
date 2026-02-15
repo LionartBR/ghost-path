@@ -18,6 +18,7 @@ Design Decisions:
 import React, { useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { ExploreReviewData, UserInput } from "../types";
+import ClaimMarkdown from "./ClaimMarkdown";
 
 interface ExploreReviewProps {
   data: ExploreReviewData;
@@ -249,19 +250,19 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
 
                 <div className="text-left max-w-md mx-auto mb-3">
                   {analogy.target_application && (
-                    <p className="text-xs text-gray-400 mb-2">{analogy.target_application}</p>
+                    <ClaimMarkdown className="text-xs text-gray-400 mb-2">{analogy.target_application}</ClaimMarkdown>
                   )}
-                  <p className="text-gray-600 text-sm leading-relaxed">
+                  <ClaimMarkdown className="text-gray-600 text-sm leading-relaxed">
                     {analogy.description}
-                  </p>
+                  </ClaimMarkdown>
                 </div>
 
                 {/* Resonance prompt */}
                 {analogy.resonance_prompt && (
                   <div className="text-left max-w-md mx-auto mb-4">
-                    <p className="text-gray-500 text-sm italic">
+                    <ClaimMarkdown className="text-gray-500 text-sm italic">
                       {analogy.resonance_prompt}
-                    </p>
+                    </ClaimMarkdown>
                   </div>
                 )}
 
@@ -365,7 +366,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
                     {starredAnalogies.has(i) ? t("explore.starred") : t("explore.star")}
                   </button>
                 </div>
-                <p className="text-gray-600 text-sm mb-2">{a.description}</p>
+                <ClaimMarkdown className="text-gray-600 text-sm mb-2">{a.description}</ClaimMarkdown>
               </div>
             ))}
           </div>
@@ -454,7 +455,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
                     {contradiction.property_b}
                   </span>
                 </div>
-                <p className="text-gray-600 text-sm">{contradiction.description}</p>
+                <ClaimMarkdown className="text-gray-600 text-sm">{contradiction.description}</ClaimMarkdown>
               </div>
             ))}
           </div>

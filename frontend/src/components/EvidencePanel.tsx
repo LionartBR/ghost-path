@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Evidence } from "../types";
+import ClaimMarkdown from "./ClaimMarkdown";
 
 interface EvidencePanelProps {
   evidence: Evidence[];
@@ -87,9 +88,9 @@ export default function EvidencePanel({ evidence }: EvidencePanelProps) {
                     </span>
                   )}
                 </div>
-                <p className="text-gray-600 text-sm leading-relaxed">
+                <ClaimMarkdown className="text-gray-600 text-sm leading-relaxed">
                   {item.summary}
-                </p>
+                </ClaimMarkdown>
               </div>
             ))
           )}

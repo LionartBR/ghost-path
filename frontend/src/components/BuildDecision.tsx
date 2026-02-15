@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { BuildReviewData, UserInput, BuildDecision as BuildDecisionType } from "../types";
 import UserInsightForm from "./UserInsightForm";
+import ClaimMarkdown from "./ClaimMarkdown";
 
 interface BuildDecisionProps {
   data: BuildReviewData;
@@ -68,7 +69,7 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
             {data.gaps.map((gap, i) => (
               <li key={i} className="flex items-start gap-2">
                 <span className="text-blue-500 text-sm mt-0.5">&#9650;</span>
-                <span className="text-gray-600 text-sm">{gap}</span>
+                <ClaimMarkdown className="text-gray-600 text-sm">{gap}</ClaimMarkdown>
               </li>
             ))}
           </ul>
