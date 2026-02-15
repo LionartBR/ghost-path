@@ -13,7 +13,7 @@ Design Decisions:
     - Auto-collapse 400ms after all claims reviewed
 */
 
-import React, { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { Claim, ClaimFeedback, UserInput } from "../types";
 import ClaimCard from "./ClaimCard";

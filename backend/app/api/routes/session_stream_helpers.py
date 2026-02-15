@@ -313,14 +313,14 @@ async def apply_user_input(
             await sync_state_to_db(session, state, db)
         case "explore_review":
             if body.analogy_responses:
-                for resp in body.analogy_responses:
-                    idx = resp.analogy_index
+                for a_resp in body.analogy_responses:
+                    idx = a_resp.analogy_index
                     if idx < len(state.cross_domain_analogies):
                         analogy = state.cross_domain_analogies[idx]
-                        if resp.selected_option > 0:
+                        if a_resp.selected_option > 0:
                             analogy["starred"] = True
                             options = analogy.get("resonance_options", [])
-                            opt_idx = resp.selected_option
+                            opt_idx = a_resp.selected_option
                             if opt_idx < len(options):
                                 analogy["user_resonance"] = options[opt_idx]
                             analogy["selected_resonance_option"] = opt_idx
@@ -333,12 +333,12 @@ async def apply_user_input(
             await sync_state_to_db(session, state, db)
         case "claims_review":
             if body.claim_responses:
-                for resp in body.claim_responses:
-                    idx = resp.claim_index
+                for c_resp in body.claim_responses:
+                    idx = c_resp.claim_index
                     if idx < len(state.current_round_claims):
                         state.current_round_claims[idx][
                             "user_resonance"
-                        ] = resp.selected_option
+                        ] = c_resp.selected_option
             if body.added_claims:
                 state.user_added_claims = [
                     c.strip() for c in body.added_claims if c.strip()
@@ -366,14 +366,14 @@ async def apply_user_input(
 def _apply_decompose(body: UserInput, state: ForgeState) -> None:
     """Apply decompose review selections to ForgeState."""
     if body.reframing_responses:
-        for resp in body.reframing_responses:
-            idx = resp.reframing_index
+        for r_resp in body.reframing_responses:
+            idx = r_resp.reframing_index
             if idx < len(state.reframings):
                 reframing = state.reframings[idx]
-                if resp.selected_option > 0:
+                if r_resp.selected_option > 0:
                     reframing["selected"] = True
                     options = reframing.get("resonance_options", [])
-                    opt_idx = resp.selected_option
+                    opt_idx = r_resp.selected_option
                     if opt_idx < len(options):
                         reframing["user_resonance"] = options[opt_idx]
                     reframing["selected_resonance_option"] = opt_idx
@@ -386,10 +386,10 @@ def _apply_decompose(body: UserInput, state: ForgeState) -> None:
     if body.added_assumptions:
         state.user_added_assumptions.extend(body.added_assumptions)
     if body.assumption_responses:
-        for resp in body.assumption_responses:
-            idx = resp.assumption_index
+        for as_resp in body.assumption_responses:
+            idx = as_resp.assumption_index
             if idx < len(state.assumptions):
-                state.assumptions[idx]["selected_option"] = resp.selected_option
+                state.assumptions[idx]["selected_option"] = as_resp.selected_option
 
 
 async def _apply_verdicts(
