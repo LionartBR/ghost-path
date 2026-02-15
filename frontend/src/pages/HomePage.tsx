@@ -168,7 +168,7 @@ export function HomePage() {
                           <button
                             onClick={(e) => handleDeleteClick(e, session.id)}
                             className="animate-pulse px-2 py-0.5 rounded-full text-xs font-medium
-                                       bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                                       bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
                           >
                             {t("sessions.confirmDelete")}
                           </button>
@@ -177,7 +177,7 @@ export function HomePage() {
                             onClick={(e) => handleDeleteClick(e, session.id)}
                             className="opacity-0 group-hover:opacity-100 transition-opacity
                                        w-6 h-6 flex items-center justify-center rounded-full
-                                       text-gray-400 hover:text-blue-500 hover:bg-blue-50"
+                                       text-gray-400 hover:text-red-500 hover:bg-red-50"
                             aria-label={t("sessions.delete")}
                           >
                             &times;
