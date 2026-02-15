@@ -48,7 +48,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="TRIZ API", version="5.0.0", lifespan=lifespan,
+    title="TRIZ API",
+    version="5.0.0",
+    lifespan=lifespan,
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
 )
 
 # CORS — configured from settings, not hardcoded

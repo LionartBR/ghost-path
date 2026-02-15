@@ -10,6 +10,7 @@ export default function UserInsightForm({ onSubmit, onCancel }: UserInsightFormP
   const { t } = useTranslation();
   const [insight, setInsight] = useState("");
   const [urls, setUrls] = useState<string[]>([""]);
+  const [error, setError] = useState("");
 
   const addUrlField = () => {
     setUrls([...urls, ""]);
@@ -27,9 +28,10 @@ export default function UserInsightForm({ onSubmit, onCancel }: UserInsightFormP
 
   const handleSubmit = () => {
     if (!insight.trim()) {
-      alert(t("insight.required"));
+      setError(t("insight.required"));
       return;
     }
+    setError("");
     const filteredUrls = urls.filter((url) => url.trim() !== "");
     onSubmit(insight, filteredUrls);
   };
@@ -94,6 +96,10 @@ export default function UserInsightForm({ onSubmit, onCancel }: UserInsightFormP
           </div>
         </div>
       </div>
+
+      {error && (
+        <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2">{error}</p>
+      )}
 
       <div className="flex gap-3">
         <button

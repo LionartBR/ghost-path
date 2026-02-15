@@ -14,10 +14,13 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [selectedClaimId, setSelectedClaimId] = useState<string>("");
 
+  const [error, setError] = useState<string>("");
+
   const handleDecision = (decision: BuildDecisionType) => {
+    setError("");
     if (decision === "deep_dive") {
       if (!selectedClaimId) {
-        alert(t("build.selectClaim"));
+        setError(t("build.selectClaim"));
         return;
       }
       onSubmit({
@@ -140,6 +143,10 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
           )}
         </div>
       </div>
+
+      {error && (
+        <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2">{error}</p>
+      )}
 
       {data.max_rounds_reached && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

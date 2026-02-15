@@ -35,8 +35,8 @@ class Settings(BaseSettings):
     database_pool_size: int = 20
     database_max_overflow: int = 10
 
-    # Anthropic
-    anthropic_api_key: str = "sk-ant-placeholder"
+    # Anthropic — no default: app fails fast if key is missing
+    anthropic_api_key: str
     anthropic_max_retries: int = 3
     anthropic_timeout_seconds: int = 300
     anthropic_base_delay_ms: int = 1000
