@@ -15,6 +15,7 @@ import asyncio
 import json
 import logging
 
+from app.core.context_compaction import optimize_context
 from app.core.domain_types import SessionId
 from app.services.tool_dispatch import ToolDispatch, PAUSE_TOOLS
 from app.core.forge_state import ForgeState
@@ -89,6 +90,13 @@ class AgentRunner:
                 yield done_event(error=False)
                 return
             self._last_response = None
+            # Context optimization before each API call (ADR: always-on, reduces token growth)
+            optimized = optimize_context(
+                messages, forge_state.current_phase.value, forge_state.locale.value,
+            )
+            if len(optimized) < len(messages):
+                messages.clear()
+                messages.extend(optimized)
             async for sse in self._stream_api_call(
                 system, messages, forge_state, ctx,
             ):
