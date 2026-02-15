@@ -25,20 +25,20 @@ interface VerdictPanelProps {
 
 const VERDICT_STYLES: Record<VerdictType, { active: string; inactive: string }> = {
   accept: {
-    active: "bg-blue-600 text-white shadow-sm shadow-blue-200",
-    inactive: "bg-white border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600",
+    active: "bg-emerald-600 text-white shadow-sm shadow-emerald-200",
+    inactive: "bg-white border border-gray-200 text-gray-600 hover:border-emerald-300 hover:text-emerald-600",
   },
   reject: {
-    active: "bg-blue-400 text-white shadow-sm shadow-blue-200",
-    inactive: "bg-white border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600",
+    active: "bg-red-500 text-white shadow-sm shadow-red-200",
+    inactive: "bg-white border border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-500",
   },
   qualify: {
-    active: "bg-blue-500 text-white shadow-sm shadow-blue-200",
-    inactive: "bg-white border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600",
+    active: "bg-amber-500 text-white shadow-sm shadow-amber-200",
+    inactive: "bg-white border border-gray-200 text-gray-600 hover:border-amber-300 hover:text-amber-600",
   },
   merge: {
-    active: "bg-blue-500 text-white shadow-sm shadow-blue-200",
-    inactive: "bg-white border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600",
+    active: "bg-violet-500 text-white shadow-sm shadow-violet-200",
+    inactive: "bg-white border border-gray-200 text-gray-600 hover:border-violet-300 hover:text-violet-600",
   },
 };
 
@@ -137,8 +137,8 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5">
-        <h2 className="flex items-center gap-2.5 text-sm font-semibold text-blue-600 uppercase tracking-wide">
+      <div className="bg-white border border-gray-200/80 border-l-4 border-l-amber-400 rounded-xl shadow-sm p-5">
+        <h2 className="flex items-center gap-2.5 text-sm font-semibold text-amber-600 uppercase tracking-wide">
           <i className="bi bi-clipboard-check text-base" />
           {t("verdicts.title")}
         </h2>
@@ -149,14 +149,14 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
 
       {/* Carousel */}
       {totalClaims > 0 && (
-        <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5">
+        <div className="bg-white border border-gray-200/80 border-l-4 border-l-amber-400 rounded-xl shadow-sm p-5">
           <div className="flex flex-col items-center">
             {/* Progress dots */}
             <div className="flex items-center gap-1.5 mb-4">
               {claims.map((_, i) => {
                 const reviewed = isReviewed(i);
-                const dotColor = reviewed ? "bg-blue-500" : "bg-gray-300";
-                const ring = i === currentCard ? "ring-2 ring-blue-400 ring-offset-1" : "";
+                const dotColor = reviewed ? "bg-amber-500" : "bg-gray-300";
+                const ring = i === currentCard ? "ring-2 ring-amber-400 ring-offset-1" : "";
                 return (
                   <button
                     key={i}
@@ -177,7 +177,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                 className={`flex-shrink-0 w-9 h-9 mt-4 rounded-full flex items-center justify-center transition-colors ${
                   isFirstCard
                     ? "text-gray-300 cursor-not-allowed"
-                    : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                    : "text-gray-500 hover:bg-amber-50 hover:text-amber-600"
                 }`}
                 aria-label="Previous claim"
               >
@@ -226,7 +226,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                       onChange={(e) =>
                         updateVerdict(currentCard, "rejection_reason", e.target.value)
                       }
-                      className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
+                      className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent placeholder-gray-400"
                     />
                   </div>
                 )}
@@ -242,7 +242,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                       onChange={(e) =>
                         updateVerdict(currentCard, "qualification", e.target.value)
                       }
-                      className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400"
+                      className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent placeholder-gray-400"
                     />
                   </div>
                 )}
@@ -257,7 +257,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                       onChange={(e) =>
                         updateVerdict(currentCard, "merge_with_claim_id", e.target.value)
                       }
-                      className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
                     >
                       <option value="">{t("verdicts.selectClaim")}</option>
                       {claims.map((c, origIdx) =>
@@ -279,7 +279,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                 className={`flex-shrink-0 w-9 h-9 mt-4 rounded-full flex items-center justify-center transition-colors ${
                   isLastCard
                     ? "text-gray-300 cursor-not-allowed"
-                    : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                    : "text-gray-500 hover:bg-amber-50 hover:text-amber-600"
                 }`}
                 aria-label="Next claim"
               >
@@ -293,7 +293,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
       {/* Submit */}
       <button
         onClick={handleSubmit}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm py-3 px-6 rounded-lg shadow-md shadow-blue-200/50 hover:shadow-lg hover:shadow-blue-300/50 transition-all"
+        className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm py-3 px-6 rounded-lg shadow-md shadow-amber-200/50 hover:shadow-lg hover:shadow-amber-300/50 transition-all"
       >
         {t("verdicts.submit")}
       </button>

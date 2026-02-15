@@ -45,10 +45,10 @@ const CONFIDENCE_KEY: Record<string, string> = {
 };
 
 const SCORE_COLORS: Record<string, string> = {
-  novelty: "bg-blue-500",
-  groundedness: "bg-blue-500",
-  falsifiability: "bg-blue-500",
-  significance: "bg-blue-500",
+  novelty: "bg-violet-500",
+  groundedness: "bg-amber-500",
+  falsifiability: "bg-cyan-500",
+  significance: "bg-rose-500",
 };
 
 const SCORE_KEY: Record<string, string> = {
