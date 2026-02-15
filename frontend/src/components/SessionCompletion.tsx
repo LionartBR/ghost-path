@@ -12,6 +12,7 @@ Design Decisions:
     - Hero shows agent-generated problem_summary (falls back to raw problem)
     - Semantic stat colors: emerald=validated, rose=rejected, amber=qualified, etc.
     - No max-w-4xl — component fills parent grid column like all other phases
+    - Micro-animations: hero-enter, glow-pulse, badge-pop, divider-reveal, section-rise, stat hover
 */
 
 import { useTranslation } from "react-i18next";
@@ -46,7 +47,10 @@ interface StatCardProps {
 function StatCard({ value, label, color, delay }: StatCardProps) {
   return (
     <div
-      className="bg-white rounded-xl border border-gray-200/80 p-4 text-center shadow-sm animate-stat-count-up opacity-0"
+      className="bg-white rounded-xl border border-gray-200/80 p-4 text-center shadow-sm
+        animate-stat-count-up opacity-0
+        hover:scale-105 hover:shadow-md hover:border-gray-300/80
+        active:scale-100 transition-all duration-200 cursor-default"
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className={`text-3xl font-extrabold ${color}`}>{value}</div>
@@ -62,11 +66,11 @@ export default function SessionCompletion({ data }: SessionCompletionProps) {
   const hasGraph = graph.nodes.length > 0;
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-slate-800 via-blue-900 to-indigo-900 rounded-2xl p-8 text-white shadow-xl shadow-indigo-300/30">
+    <div className="w-full space-y-6">
+      {/* Hero Section — scale+fade entrance */}
+      <div className="animate-hero-enter bg-gradient-to-br from-slate-800 via-blue-900 to-indigo-900 rounded-2xl p-8 text-white shadow-xl shadow-indigo-300/30">
         <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 w-12 h-12 bg-amber-400/20 ring-1 ring-amber-300/40 rounded-xl flex items-center justify-center">
+          <div className="flex-shrink-0 w-12 h-12 bg-amber-400/20 ring-1 ring-amber-300/40 rounded-xl flex items-center justify-center animate-glow-pulse">
             <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -81,13 +85,19 @@ export default function SessionCompletion({ data }: SessionCompletionProps) {
           </div>
         </div>
         <div className="flex gap-3 mt-6">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/15 rounded-full text-xs font-medium">
+          <span
+            className="animate-badge-pop inline-flex items-center gap-1.5 px-3 py-1 bg-white/15 hover:bg-white/25 rounded-full text-xs font-medium transition-colors duration-200"
+            style={{ animationDelay: "300ms" }}
+          >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             {t("completion.hero.duration")}: {formatDuration(stats.duration_seconds, t)}
           </span>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/15 rounded-full text-xs font-medium">
+          <span
+            className="animate-badge-pop inline-flex items-center gap-1.5 px-3 py-1 bg-white/15 hover:bg-white/25 rounded-full text-xs font-medium transition-colors duration-200"
+            style={{ animationDelay: "420ms" }}
+          >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
@@ -96,24 +106,30 @@ export default function SessionCompletion({ data }: SessionCompletionProps) {
         </div>
       </div>
 
-      {/* Gold accent divider */}
-      <div className="h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
+      {/* Gold accent divider — reveals from center */}
+      <div
+        className="h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent animate-divider-reveal"
+        style={{ animationDelay: "400ms" }}
+      />
 
-      {/* Stats Grid — semantic colors per stat type */}
+      {/* Stats Grid — semantic colors, hover lift */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard value={stats.claims_validated} label={t("completion.stats.claimsValidated")} color="text-emerald-600" delay={100} />
-        <StatCard value={stats.claims_rejected} label={t("completion.stats.claimsRejected")} color="text-rose-500" delay={150} />
-        <StatCard value={stats.claims_qualified} label={t("completion.stats.claimsQualified")} color="text-amber-500" delay={200} />
-        <StatCard value={stats.evidence_collected} label={t("completion.stats.evidenceCollected")} color="text-blue-600" delay={250} />
-        <StatCard value={stats.analogies_used} label={t("completion.stats.analogiesUsed")} color="text-violet-500" delay={300} />
-        <StatCard value={stats.contradictions_found} label={t("completion.stats.contradictions")} color="text-orange-500" delay={350} />
-        <StatCard value={stats.fundamentals_identified} label={t("completion.stats.fundamentals")} color="text-slate-600" delay={400} />
-        <StatCard value={stats.assumptions_examined} label={t("completion.stats.assumptions")} color="text-teal-500" delay={450} />
+        <StatCard value={stats.claims_validated} label={t("completion.stats.claimsValidated")} color="text-emerald-600" delay={500} />
+        <StatCard value={stats.claims_rejected} label={t("completion.stats.claimsRejected")} color="text-rose-500" delay={560} />
+        <StatCard value={stats.claims_qualified} label={t("completion.stats.claimsQualified")} color="text-amber-500" delay={620} />
+        <StatCard value={stats.evidence_collected} label={t("completion.stats.evidenceCollected")} color="text-blue-600" delay={680} />
+        <StatCard value={stats.analogies_used} label={t("completion.stats.analogiesUsed")} color="text-violet-500" delay={740} />
+        <StatCard value={stats.contradictions_found} label={t("completion.stats.contradictions")} color="text-orange-500" delay={800} />
+        <StatCard value={stats.fundamentals_identified} label={t("completion.stats.fundamentals")} color="text-slate-600" delay={860} />
+        <StatCard value={stats.assumptions_examined} label={t("completion.stats.assumptions")} color="text-teal-500" delay={920} />
       </div>
 
-      {/* Knowledge Graph */}
+      {/* Knowledge Graph — rises in after stats */}
       {hasGraph && (
-        <div className="bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 overflow-hidden">
+        <div
+          className="animate-section-rise bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 overflow-hidden hover:shadow-lg transition-shadow duration-300"
+          style={{ animationDelay: "1000ms" }}
+        >
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">{t("completion.graph.title")}</h2>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -129,8 +145,13 @@ export default function SessionCompletion({ data }: SessionCompletionProps) {
         </div>
       )}
 
-      {/* Knowledge Document — no wrapper title (component has its own header) */}
-      <KnowledgeDocument markdown={markdown} />
+      {/* Knowledge Document — rises in last */}
+      <div
+        className="animate-section-rise"
+        style={{ animationDelay: hasGraph ? "1200ms" : "1000ms" }}
+      >
+        <KnowledgeDocument markdown={markdown} />
+      </div>
     </div>
   );
 }

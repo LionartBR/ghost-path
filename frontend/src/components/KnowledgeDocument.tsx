@@ -25,12 +25,12 @@ export default function KnowledgeDocument({
   };
 
   return (
-    <div className="w-full bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40">
+    <div className="w-full bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 hover:shadow-lg transition-shadow duration-300">
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">{t("document.title")}</h2>
         <button
           onClick={handleDownload}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-all"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-all duration-200 hover:scale-[1.03] hover:shadow-md active:scale-[0.97]"
         >
           {t("document.download")}
         </button>
