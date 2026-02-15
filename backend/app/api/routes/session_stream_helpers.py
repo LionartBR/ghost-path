@@ -4,6 +4,7 @@ Invariants:
     - apply_user_input mutates ForgeState + triggers phase transition (never commits)
     - sync_state_to_db mirrors ForgeState phase/round/status to Session for observability
     - update_claim_verdict persists user verdict to KnowledgeClaim (never crashes)
+    - _persist_reframing_selections / _persist_analogy_stars sync user picks to DB
 
 Design Decisions:
     - Extracted from session_agent_stream.py to respect ExMA import fan-out < 10
@@ -175,9 +176,11 @@ async def apply_user_input(
     match body.type:
         case "decompose_review":
             _apply_decompose(body, state)
+            await _persist_reframing_selections(db, session.id, state)
             state.transition_to(Phase.EXPLORE)
         case "explore_review":
             _apply_explore(body, state)
+            await _persist_analogy_stars(db, session.id, state)
             state.transition_to(Phase.SYNTHESIZE)
         case "claims_review":
             _apply_claims(body, state)
@@ -318,6 +321,52 @@ async def _apply_build_decision(
 
 
 # -- DB sync helpers -----------------------------------------------------------
+
+async def _persist_reframing_selections(
+    db: AsyncSession, session_id, state: ForgeState,
+) -> None:
+    """Persist selected reframings from ForgeState to DB. Never crashes.
+
+    ADR: Match by created_at order — ForgeState list index == DB row order.
+    Same pattern as update_claim_verdict: best-effort, log on failure.
+    """
+    try:
+        from app.models.problem_reframing import ProblemReframing
+        result = await db.execute(
+            select(ProblemReframing)
+            .where(ProblemReframing.session_id == session_id)
+            .order_by(ProblemReframing.created_at),
+        )
+        db_rows = list(result.scalars().all())
+        for idx, ref in enumerate(state.reframings):
+            if ref.get("selected") and idx < len(db_rows):
+                db_rows[idx].selected = True
+    except Exception as e:
+        logger.warning("Failed to persist reframing selections: %s", e)
+
+
+async def _persist_analogy_stars(
+    db: AsyncSession, session_id, state: ForgeState,
+) -> None:
+    """Persist starred analogies from ForgeState to DB. Never crashes.
+
+    ADR: Match by created_at order — ForgeState list index == DB row order.
+    Same pattern as update_claim_verdict: best-effort, log on failure.
+    """
+    try:
+        from app.models.cross_domain_analogy import CrossDomainAnalogy
+        result = await db.execute(
+            select(CrossDomainAnalogy)
+            .where(CrossDomainAnalogy.session_id == session_id)
+            .order_by(CrossDomainAnalogy.created_at),
+        )
+        db_rows = list(result.scalars().all())
+        for idx, analogy in enumerate(state.cross_domain_analogies):
+            if analogy.get("starred") and idx < len(db_rows):
+                db_rows[idx].starred = True
+    except Exception as e:
+        logger.warning("Failed to persist analogy stars: %s", e)
+
 
 async def update_claim_verdict(
     db: AsyncSession, claim_id: str | None, verdict: str,
