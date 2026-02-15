@@ -33,6 +33,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
   const [currentCard, setCurrentCard] = useState(0);
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const analogiesCardRef = useRef<HTMLDivElement>(null);
 
   // Backward compat: star toggle for analogies without resonance data
   const [starredAnalogies, setStarredAnalogies] = useState<Set<number>>(new Set());
@@ -71,6 +72,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
       }
       return next;
     });
+    analogiesCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     if (analogyIndex < totalAnalogies - 1) {
       autoAdvanceTimer.current = setTimeout(() => goNext(), 300);
@@ -83,6 +85,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
       if (next.has(index)) next.delete(index); else next.add(index);
       return next;
     });
+    analogiesCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const resonatedCount = Array.from(analogyResponses.values()).filter((opt) => opt > 0).length;
@@ -116,7 +119,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
     <div className="space-y-4">
 
       {/* ── Analogies ── */}
-      <div className={`bg-white border border-gray-200/80 border-l-4 rounded-xl shadow-sm p-5 transition-all ${
+      <div ref={analogiesCardRef} className={`scroll-mt-4 bg-white border border-gray-200/80 border-l-4 rounded-xl shadow-sm p-5 transition-all ${
         resonatedCount > 0 ? "border-l-green-500" : "border-l-gray-300"
       }`}>
         <h3 className={`flex items-center gap-2.5 text-sm font-semibold uppercase tracking-wide mb-4 ${

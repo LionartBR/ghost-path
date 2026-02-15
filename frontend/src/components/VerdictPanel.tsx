@@ -56,6 +56,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
   const [currentCard, setCurrentCard] = useState(0);
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   const totalClaims = claims.length;
   const isLastCard = currentCard >= totalClaims - 1;
@@ -105,6 +106,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
       updated.set(claimIndex, { ...current, verdict });
       return updated;
     });
+    carouselRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     if (claimIndex < totalClaims - 1) {
       autoAdvanceTimer.current = setTimeout(() => goNext(), 300);
@@ -149,7 +151,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
 
       {/* Carousel */}
       {totalClaims > 0 && (
-        <div className="bg-white border border-gray-200/80 border-l-4 border-l-amber-400 rounded-xl shadow-sm p-5">
+        <div ref={carouselRef} className="scroll-mt-4 bg-white border border-gray-200/80 border-l-4 border-l-amber-400 rounded-xl shadow-sm p-5">
           <div className="flex flex-col items-center">
             {/* Progress dots */}
             <div className="flex items-center gap-1.5 mb-4">

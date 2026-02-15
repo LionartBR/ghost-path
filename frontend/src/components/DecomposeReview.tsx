@@ -93,6 +93,8 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
   const [currentReframingCard, setCurrentReframingCard] = useState(0);
   const [reframingSlideDirection, setReframingSlideDirection] = useState<"left" | "right">("right");
   const reframingAutoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const assumptionsCardRef = useRef<HTMLDivElement>(null);
+  const reframingsCardRef = useRef<HTMLDivElement>(null);
   const [reframingsDone, setReframingsDone] = useState(false);
   const [reframingsCollapsed, setReframingsCollapsed] = useState(false);
   const [selectedReframings, setSelectedReframings] = useState<Set<number>>(new Set());
@@ -154,6 +156,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
 
       return next;
     });
+    assumptionsCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [totalAssumptions, goNext]);
 
   // -- Reframings carousel navigation --
@@ -193,6 +196,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
 
       return next;
     });
+    reframingsCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [totalReframings, goNextReframing]);
 
   // -- Checkbox fallback toggle --
@@ -202,6 +206,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
       if (next.has(index)) next.delete(index); else next.add(index);
       return next;
     });
+    reframingsCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   // -- Tag-input handlers --
@@ -278,7 +283,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
           </div>
         </div>
       ) : (
-        <div className={`bg-white border border-gray-200/80 border-l-4 rounded-xl shadow-sm p-5 transition-all ${
+        <div ref={assumptionsCardRef} className={`scroll-mt-4 bg-white border border-gray-200/80 border-l-4 rounded-xl shadow-sm p-5 transition-all ${
           allAssumptionsReviewed ? "border-l-green-500" : "border-l-gray-300"
         } ${assumptionsDone ? "animate-fade-in" : ""}`}>
           <h3 className={`flex items-center gap-2.5 text-sm font-semibold uppercase tracking-wide mb-4 ${
@@ -434,7 +439,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
             </div>
           ) : hasResonanceData ? (
             /* Resonance carousel — mirrors analogy carousel from Phase 2 */
-            <div className={`bg-white border border-gray-200/80 border-l-4 rounded-xl shadow-sm p-5 animate-fade-in ${
+            <div ref={reframingsCardRef} className={`scroll-mt-4 bg-white border border-gray-200/80 border-l-4 rounded-xl shadow-sm p-5 animate-fade-in ${
               hasResonanceSelection ? "border-l-green-500" : "border-l-gray-300"
             } ${reframingsDone ? "animate-fade-in" : ""}`}>
               <h3 className={`flex items-center gap-2.5 text-sm font-semibold uppercase tracking-wide mb-4 ${
@@ -568,7 +573,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
             </div>
           ) : (
             /* Checkbox fallback — backward compat with old sessions */
-            <div className={`bg-white border border-gray-200/80 border-l-4 rounded-xl shadow-sm p-5 animate-fade-in ${
+            <div ref={reframingsCardRef} className={`scroll-mt-4 bg-white border border-gray-200/80 border-l-4 rounded-xl shadow-sm p-5 animate-fade-in ${
               selectedReframings.size > 0 ? "border-l-green-500" : "border-l-gray-300"
             }`}>
               <h3 className={`flex items-center gap-2.5 text-sm font-semibold uppercase tracking-wide mb-4 ${

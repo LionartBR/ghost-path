@@ -31,6 +31,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
   const [currentCard, setCurrentCard] = useState(0);
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [done, setDone] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [expandedDetails, setExpandedDetails] = useState<Set<number>>(new Set());
@@ -87,6 +88,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
 
       return next;
     });
+    containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [totalClaims, goNext]);
 
   // -- Details toggle --
@@ -166,7 +168,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
             </div>
           </div>
         ) : (
-          <div className={`bg-white border border-gray-200/80 border-l-4 rounded-xl shadow-sm p-5 transition-all ${
+          <div ref={containerRef} className={`scroll-mt-4 bg-white border border-gray-200/80 border-l-4 rounded-xl shadow-sm p-5 transition-all ${
             hasResonance ? "border-l-green-500" : "border-l-gray-300"
           } ${done ? "animate-fade-in" : ""}`}>
             <h3 className={`flex items-center gap-2.5 text-sm font-semibold uppercase tracking-wide mb-4 ${
