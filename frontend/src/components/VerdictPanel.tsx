@@ -1,7 +1,7 @@
 /* VerdictPanel — Phase 4 verdict UI with carousel navigation and auto-collapse.
 
 Invariants:
-    - All claims default to "accept" if no explicit verdict set
+    - All verdict buttons start unselected — user must explicitly choose
     - Carousel follows centralized container pattern (max-w-lg) matching Phases 1-3
     - Verdict selection auto-advances to next card after brief visual feedback (300ms)
     - Auto-collapses into summary bar after all verdicts reviewed (400ms)
@@ -127,7 +127,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
     onSubmit({ type: "verdicts", verdicts: verdictList });
   };
 
-  const currentVerdict = verdicts.get(currentCard)?.verdict || "accept";
+  const currentVerdict = verdicts.get(currentCard)?.verdict;
   const claim = claims[currentCard];
   const animationClass = slideDirection === "right" ? "animate-slide-in-right" : "animate-slide-in-left";
 
