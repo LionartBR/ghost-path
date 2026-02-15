@@ -122,6 +122,13 @@ For each direction: state a thesis (with evidence) -> find antithesis \
 (web_search for counter-evidence) -> create synthesis claim. Each claim \
 includes a falsifiability condition (how to disprove it).
 Tools: state_thesis, find_antithesis, create_synthesis
+RESONANCE ASSESSMENT (create_synthesis): For EACH synthesis, you MUST generate \
+a resonance_prompt and resonance_options. The prompt should probe whether this \
+synthesis transcends the thesis-antithesis contradiction in a structurally \
+meaningful way. Option 0 MUST be a "doesn't resonate / no new direction" variant. \
+Options 1+ probe increasing STRUCTURAL resonance (opens new directions, changes \
+how the user sees the problem). Do NOT probe epistemic certainty — probe whether \
+the synthesis shifts the user's conceptual framework.
 When done: the system emits review_claims and pauses.
 
 ### Phase 4: VALIDATE

@@ -102,7 +102,7 @@ class SynthesizeHandlers:
             if found:
                 self.state.previous_claims_referenced = True
 
-        # Add to round buffer
+        # Add to round buffer (resonance fields optional for backward compat)
         claim_data = {
             "claim_text": claim_text,
             "reasoning": reasoning,
@@ -110,6 +110,8 @@ class SynthesizeHandlers:
             "confidence": confidence,
             "evidence": evidence_list,
             "builds_on_claim_id": builds_on_claim_id,
+            "resonance_prompt": input_data.get("resonance_prompt"),
+            "resonance_options": input_data.get("resonance_options"),
         }
         self.state.current_round_claims.append(claim_data)
 

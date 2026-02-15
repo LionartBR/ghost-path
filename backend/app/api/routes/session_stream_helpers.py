@@ -145,6 +145,8 @@ def format_user_input(body: UserInput, state: ForgeState, problem: str) -> str:
         starred_analogies=body.starred_analogies,
         suggested_domains=body.suggested_domains,
         added_contradictions=body.added_contradictions,
+        claim_responses=body.claim_responses,
+        added_claims=body.added_claims,
         claim_feedback=body.claim_feedback,
         verdicts=body.verdicts,
         decision=body.decision,
@@ -330,6 +332,17 @@ async def apply_user_input(
             session.message_history = []
             await sync_state_to_db(session, state, db)
         case "claims_review":
+            if body.claim_responses:
+                for resp in body.claim_responses:
+                    idx = resp.claim_index
+                    if idx < len(state.current_round_claims):
+                        state.current_round_claims[idx][
+                            "user_resonance"
+                        ] = resp.selected_option
+            if body.added_claims:
+                state.user_added_claims = [
+                    c.strip() for c in body.added_claims if c.strip()
+                ]
             state.transition_to(Phase.VALIDATE)
             session.message_history = []
             await sync_state_to_db(session, state, db)

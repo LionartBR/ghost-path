@@ -52,6 +52,7 @@ class ForgeState:
     current_round_claims: list[dict] = field(default_factory=list)  # max 3
     theses_stated: int = 0
     antitheses_searched: set[int] = field(default_factory=set)
+    user_added_claims: list[str] = field(default_factory=list)
 
     # === Phase 4: Validate ===
     falsification_attempted: set[int] = field(default_factory=set)
@@ -205,6 +206,7 @@ class ForgeState:
             "current_round_claims": self.current_round_claims,
             "theses_stated": self.theses_stated,
             "antitheses_searched": sorted(self.antitheses_searched),
+            "user_added_claims": self.user_added_claims,
             # Phase 4
             "falsification_attempted": sorted(self.falsification_attempted),
             "novelty_checked": sorted(self.novelty_checked),
@@ -237,7 +239,8 @@ class ForgeState:
         "user_added_reframings": [], "cross_domain_analogies": [],
         "cross_domain_search_count": 0, "contradictions": [],
         "adjacent_possible": [], "current_round_claims": [],
-        "theses_stated": 0, "knowledge_graph_nodes": [],
+        "theses_stated": 0, "user_added_claims": [],
+        "knowledge_graph_nodes": [],
         "knowledge_graph_edges": [], "negative_knowledge": [],
         "gaps": [], "negative_knowledge_consulted": False,
         "previous_claims_referenced": False, "deep_dive_active": False,
@@ -293,4 +296,5 @@ class ForgeState:
         self.negative_knowledge_consulted = False
         self.previous_claims_referenced = False
         self.web_searches_this_phase = []
+        self.user_added_claims = []
         # NOTE: knowledge_graph_*, negative_knowledge, gaps PERSIST across rounds

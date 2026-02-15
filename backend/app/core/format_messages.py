@@ -38,6 +38,9 @@ def _labels(locale: Locale) -> dict[str, str]:
         "added_contradictions": "Added contradictions:",
         "reviewed_claims": "The user reviewed the claims:",
         "claim_n": "Claim #{idx}:",
+        "claim_resonance": "  Resonance: {text}",
+        "claim_no_resonance": "  No resonance (user rejected)",
+        "added_claims": "User-contributed claims:",
         "evidence_valid": "  Evidence valid:",
         "counter_example": "  Counter-example:",
         "missing_factor": "  Missing factor:",
@@ -68,6 +71,8 @@ def format_user_input(
     starred_analogies: list[int] | None = None,
     suggested_domains: list[str] | None = None,
     added_contradictions: list[str] | None = None,
+    claim_responses: list | None = None,
+    added_claims: list[str] | None = None,
     claim_feedback: list | None = None,
     verdicts: list | None = None,
     decision: str | None = None,
@@ -102,6 +107,8 @@ def format_user_input(
             return _format_claims_review(
                 locale_prefix, pt, lbl, forge_state,
                 claim_feedback, locale,
+                claim_responses=claim_responses,
+                added_claims=added_claims,
             )
         case "verdicts":
             return _format_verdicts(
@@ -203,16 +210,27 @@ def _format_explore_review(
     return "\n".join(parts)
 
 
-def _format_claims_review(prefix, pt, lbl, forge_state, feedback, locale):
-    """Format claims_review input."""
+def _format_claims_review(
+    prefix, pt, lbl, forge_state, feedback, locale,
+    *, claim_responses=None, added_claims=None,
+):
+    """Format claims_review input — resonance (new) or feedback (legacy)."""
     parts = [prefix, f"\n{lbl['reviewed_claims']}"]
     if forge_state:
         ctx = _digest.build_phase3_context(forge_state, locale)
         if ctx:
             parts.append(ctx)
-    if feedback:
+    if claim_responses and forge_state:
+        _append_claim_responses(parts, claim_responses, forge_state, lbl)
+    elif feedback:
         for fb in feedback:
             _append_claim_feedback(parts, fb, lbl)
+    if added_claims:
+        cleaned = [c.strip() for c in added_claims if c.strip()]
+        if cleaned:
+            parts.append(lbl["added_claims"])
+            for c in cleaned:
+                parts.append(f"  - {c}")
     instr = _pt_br.CLAIMS_INSTRUCTION if pt else (
         "Proceed to Phase 4 (VALIDATE). For each claim, attempt "
         "falsification (use web_search to disprove), check novelty "
@@ -222,8 +240,30 @@ def _format_claims_review(prefix, pt, lbl, forge_state, feedback, locale):
     return "\n".join(parts)
 
 
+def _append_claim_responses(
+    parts: list, responses, forge_state, lbl: dict,
+) -> None:
+    """Append resonance responses — resolves option text from ForgeState claims."""
+    for resp in responses:
+        idx = _attr_or_key(resp, "claim_index", 0)
+        opt_idx = _attr_or_key(resp, "selected_option", 0)
+        parts.append(lbl["claim_n"].format(idx=idx))
+        if opt_idx == 0:
+            parts.append(lbl["claim_no_resonance"])
+        elif idx < len(forge_state.current_round_claims):
+            claim = forge_state.current_round_claims[idx]
+            options = claim.get("resonance_options", [])
+            opt_text = (
+                options[opt_idx] if opt_idx < len(options)
+                else f"option {opt_idx}"
+            )
+            parts.append(lbl["claim_resonance"].format(text=opt_text))
+        else:
+            parts.append(lbl["claim_resonance"].format(text=f"option {opt_idx}"))
+
+
 def _append_claim_feedback(parts: list, fb, lbl: dict) -> None:
-    """Append a single claim's feedback lines to parts."""
+    """Append a single claim's feedback lines to parts (legacy format)."""
     idx = _attr_or_key(fb, "claim_index", 0)
     valid = _attr_or_key(fb, "evidence_valid", True)
     parts.append(lbl['claim_n'].format(idx=idx))

@@ -1,19 +1,52 @@
-"""Resume message tests — pure tests for build_resume_message.
+"""Format message tests — pure tests for build_resume_message and format_user_input.
 
 Tests cover:
     - Decompose delegates to build_initial_stream_message
     - Each phase produces phase-appropriate instructions
     - PT_BR locale produces Portuguese instructions
     - All phases are covered (no KeyError / unmatched branch)
+    - claims_review with claim_responses (resonance) formats correctly
+    - claims_review with added_claims (user custom) formats correctly
+    - claims_review with feedback (legacy backward compat) formats correctly
+    - claims_review PT_BR produces Portuguese labels
 """
 
 from app.core.domain_types import Locale, Phase
-from app.core.format_messages import build_resume_message
+from app.core.format_messages import build_resume_message, format_user_input
+from app.core.forge_state import ForgeState
 from app.core.language_strings import get_phase_prefix
 
 
 def _prefix(locale: Locale = Locale.EN) -> str:
     return get_phase_prefix(locale, "test problem")
+
+
+def _make_state_with_claims() -> ForgeState:
+    """ForgeState with 2 claims including resonance data."""
+    state = ForgeState()
+    state.current_phase = Phase.SYNTHESIZE
+    state.current_round_claims = [
+        {
+            "claim_text": "Distributed consensus as information routing",
+            "resonance_prompt": "Does this shift how you see the problem?",
+            "resonance_options": [
+                "Doesn't resonate",
+                "Interesting but incremental",
+                "Opens a new direction",
+                "Fundamentally changes my view",
+            ],
+        },
+        {
+            "claim_text": "Conflict resolution through structural alignment",
+            "resonance_prompt": "Does this open new directions?",
+            "resonance_options": [
+                "No new directions",
+                "Some new angles",
+                "Significant shift",
+            ],
+        },
+    ]
+    return state
 
 
 # --- Decompose delegates to initial message ----------------------------------
@@ -78,3 +111,108 @@ def test_resume_synthesize_pt_br():
         _prefix(Locale.PT_BR), Phase.SYNTHESIZE, "test problem", Locale.PT_BR,
     )
     assert "Fase 3" in msg or "SYNTHESIZE" in msg
+
+
+# --- claims_review with resonance (claim_responses) --------------------------
+
+def test_claims_review_resonance_formats_selected_option_text():
+    state = _make_state_with_claims()
+    msg = format_user_input(
+        "claims_review", _prefix(), locale=Locale.EN, forge_state=state,
+        claim_responses=[
+            {"claim_index": 0, "selected_option": 2},
+            {"claim_index": 1, "selected_option": 0},
+        ],
+    )
+    assert "Opens a new direction" in msg
+    assert "No resonance" in msg
+
+
+def test_claims_review_resonance_no_resonance_option_zero():
+    state = _make_state_with_claims()
+    msg = format_user_input(
+        "claims_review", _prefix(), locale=Locale.EN, forge_state=state,
+        claim_responses=[{"claim_index": 0, "selected_option": 0}],
+    )
+    assert "No resonance (user rejected)" in msg
+
+
+def test_claims_review_resonance_includes_phase_instruction():
+    state = _make_state_with_claims()
+    msg = format_user_input(
+        "claims_review", _prefix(), locale=Locale.EN, forge_state=state,
+        claim_responses=[{"claim_index": 0, "selected_option": 1}],
+    )
+    assert "Phase 4" in msg or "VALIDATE" in msg
+
+
+# --- claims_review with added_claims -----------------------------------------
+
+def test_claims_review_added_claims_included():
+    state = _make_state_with_claims()
+    msg = format_user_input(
+        "claims_review", _prefix(), locale=Locale.EN, forge_state=state,
+        claim_responses=[{"claim_index": 0, "selected_option": 1}],
+        added_claims=["My custom claim about AI safety"],
+    )
+    assert "My custom claim about AI safety" in msg
+    assert "User-contributed claims:" in msg
+
+
+def test_claims_review_added_claims_strips_whitespace():
+    state = _make_state_with_claims()
+    msg = format_user_input(
+        "claims_review", _prefix(), locale=Locale.EN, forge_state=state,
+        added_claims=["  valid claim  ", "  ", ""],
+    )
+    assert "valid claim" in msg
+    # empty/whitespace-only claims should NOT appear
+    assert msg.count("- ") == 1
+
+
+# --- claims_review with legacy feedback (backward compat) --------------------
+
+def test_claims_review_legacy_feedback_formats_evidence_valid():
+    state = _make_state_with_claims()
+    msg = format_user_input(
+        "claims_review", _prefix(), locale=Locale.EN, forge_state=state,
+        claim_feedback=[
+            {"claim_index": 0, "evidence_valid": True, "counter_example": "X"},
+        ],
+    )
+    assert "Evidence valid:" in msg
+    assert "Counter-example: X" in msg
+
+
+# --- claims_review PT_BR locale ---------------------------------------------
+
+def test_claims_review_resonance_pt_br():
+    state = _make_state_with_claims()
+    msg = format_user_input(
+        "claims_review", _prefix(Locale.PT_BR),
+        locale=Locale.PT_BR, forge_state=state,
+        claim_responses=[{"claim_index": 0, "selected_option": 2}],
+    )
+    assert "Opens a new direction" in msg
+    assert "Sem ressonância" not in msg  # option 2 is not zero
+
+
+def test_claims_review_no_resonance_pt_br():
+    state = _make_state_with_claims()
+    msg = format_user_input(
+        "claims_review", _prefix(Locale.PT_BR),
+        locale=Locale.PT_BR, forge_state=state,
+        claim_responses=[{"claim_index": 0, "selected_option": 0}],
+    )
+    assert "Sem ressonância (usuário rejeitou)" in msg
+
+
+def test_claims_review_added_claims_pt_br():
+    state = _make_state_with_claims()
+    msg = format_user_input(
+        "claims_review", _prefix(Locale.PT_BR),
+        locale=Locale.PT_BR, forge_state=state,
+        added_claims=["Minha afirmação sobre IA"],
+    )
+    assert "Afirmações contribuídas pelo usuário:" in msg
+    assert "Minha afirmação sobre IA" in msg

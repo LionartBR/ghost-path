@@ -62,12 +62,18 @@ class AnalogyResponse(BaseModel):
 
 
 class ClaimFeedback(BaseModel):
-    """Per-claim user feedback during claims_review."""
+    """Per-claim user feedback during claims_review (legacy format)."""
     claim_index: int = Field(ge=0)  # upper bound checked by check_claim_index_valid()
     evidence_valid: bool
     counter_example: str | None = Field(None, max_length=2000)
     synthesis_ignores: str | None = Field(None, max_length=2000)
     additional_evidence: str | None = Field(None, max_length=2000)
+
+
+class ClaimResponse(BaseModel):
+    """Per-claim resonance selection during claims_review."""
+    claim_index: int = Field(ge=0)
+    selected_option: int = Field(ge=0)
 
 
 # --- Claim verdict (Phase 4 review) ------------------------------------------
@@ -115,7 +121,9 @@ class UserInput(BaseModel):
     added_parameters: list[dict] | None = None
 
     # type == "claims_review"
-    claim_feedback: list[ClaimFeedback] | None = None
+    claim_responses: list[ClaimResponse] | None = None
+    added_claims: list[str] | None = None
+    claim_feedback: list[ClaimFeedback] | None = None  # backward compat
 
     # type == "verdicts"
     verdicts: list[ClaimVerdict] | None = None
@@ -160,8 +168,21 @@ class UserInput(BaseModel):
                 )
 
         elif self.type == "claims_review":
-            if not self.claim_feedback:
-                raise ValueError("claims_review requires claim_feedback list")
+            has_responses = (
+                self.claim_responses and len(self.claim_responses) > 0
+            )
+            has_feedback = (
+                self.claim_feedback and len(self.claim_feedback) > 0
+            )
+            has_custom = (
+                self.added_claims
+                and any(c.strip() for c in self.added_claims)
+            )
+            if not (has_responses or has_feedback or has_custom):
+                raise ValueError(
+                    "claims_review requires claim_responses, "
+                    "claim_feedback, or added_claims",
+                )
 
         elif self.type == "verdicts":
             if not self.verdicts:

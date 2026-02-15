@@ -47,6 +47,13 @@ Para cada direção: declare uma tese (com evidências) -> encontre antítese \
 (web_search para contra-evidências) -> crie uma síntese. Cada afirmação \
 inclui uma condição de falseabilidade (como refutá-la).
 Ferramentas: state_thesis, find_antithesis, create_synthesis
+AVALIAÇÃO DE RESSONÂNCIA (create_synthesis): Para CADA síntese, você DEVE gerar \
+um resonance_prompt e resonance_options. O prompt deve sondar se esta síntese \
+transcende a contradição tese-antítese de forma estruturalmente significativa. \
+A opção 0 DEVE ser uma variante de "não ressoa / não abre novos caminhos". \
+As opções 1+ sondam ressonância ESTRUTURAL crescente (abre novas direções, muda \
+como o usuário vê o problema). NÃO sonde certeza epistêmica — sonde se a síntese \
+desloca o quadro conceitual do usuário.
 Ao terminar: o sistema emite review_claims e pausa.
 
 ### Fase 4: VALIDATE

@@ -108,7 +108,13 @@ TOOLS_SYNTHESIZE = [
             "This is the 'synthesis' in dialectical reasoning — a new understanding that transcends the contradiction. "
             "You must provide a falsifiability condition (HOW to disprove this claim), confidence level, "
             "and all supporting evidence. The antithesis must already exist for this claim. "
-            "This adds one claim to the current round (max 3 claims per round)."
+            "This adds one claim to the current round (max 3 claims per round).\n\n"
+            "RESONANCE ASSESSMENT: You MUST generate a resonance_prompt (question probing "
+            "whether this synthesis transcends the thesis-antithesis contradiction in a way "
+            "that opens new directions) and resonance_options (3-4 graduated options). "
+            "Option 0 MUST be a 'doesn't resonate / no new direction' variant. "
+            "Options 1+ represent increasing structural resonance — how much the synthesis "
+            "shifts the user's understanding. Focus on STRUCTURAL impact, not epistemic certainty."
         ),
         "input_schema": {
             "type": "object",
@@ -170,6 +176,29 @@ TOOLS_SYNTHESIZE = [
                 "builds_on_claim_id": {
                     "type": "string",
                     "description": "Optional: UUID of a previous claim this synthesis builds on"
+                },
+                "resonance_prompt": {
+                    "type": "string",
+                    "description": (
+                        "A question probing whether this synthesis transcends the "
+                        "thesis-antithesis contradiction in a structurally meaningful way. "
+                        "Example: 'Does framing distributed consensus as an information "
+                        "routing problem open directions you hadn\\'t considered?'"
+                    )
+                },
+                "resonance_options": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "3-4 options from 'no resonance' to 'fundamentally shifts my "
+                        "understanding'. Option 0 MUST be a 'doesn\\'t resonate' variant. "
+                        "Example: ['Doesn\\'t open new directions', "
+                        "'Interesting but incremental', "
+                        "'Opens a direction I hadn\\'t considered', "
+                        "'Fundamentally changes how I see the problem']"
+                    ),
+                    "minItems": 3,
+                    "maxItems": 4
                 }
             },
             "required": [
@@ -180,7 +209,9 @@ TOOLS_SYNTHESIZE = [
                 "antithesis_text",
                 "falsifiability_condition",
                 "confidence",
-                "evidence"
+                "evidence",
+                "resonance_prompt",
+                "resonance_options"
             ]
         }
     }

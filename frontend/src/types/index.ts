@@ -55,6 +55,9 @@ export interface Claim {
   verdict?: VerdictType;
   qualification?: string;
   score_reasoning?: string;
+  resonance_prompt?: string;
+  resonance_options?: string[];
+  user_resonance?: number | null;
 }
 
 export interface Evidence {
@@ -144,6 +147,11 @@ export interface ClaimFeedback {
   counter_example?: string;
   synthesis_ignores?: string;
   additional_evidence?: string;
+}
+
+export interface ClaimResponse {
+  claim_index: number;
+  selected_option: number;
 }
 
 export interface ClaimVerdict {
@@ -280,7 +288,9 @@ export interface UserInput {
   suggested_domains?: string[];
   added_contradictions?: string[];
   // claims_review
-  claim_feedback?: ClaimFeedback[];
+  claim_responses?: ClaimResponse[];
+  added_claims?: string[];
+  claim_feedback?: ClaimFeedback[];  // backward compat
   // verdicts
   verdicts?: ClaimVerdict[];
   // build_decision
