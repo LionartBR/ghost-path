@@ -24,7 +24,7 @@
 
   "problemInput.label": "Опишите вашу проблему",
   "problemInput.placeholder": "Какую сложную проблему вы пытаетесь решить? Укажите контекст, ограничения и что вы уже пробовали...",
-  "problemInput.submit": "Начать исследование",
+  "problemInput.submit": "Начать",
   "problemInput.creating": "Создание сессии...",
   "problemInput.tryExample": "Попробовать пример",
   "problemInput.minChars": "минимум {{count}} символов",

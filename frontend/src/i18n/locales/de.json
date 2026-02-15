@@ -24,7 +24,7 @@
 
   "problemInput.label": "Beschreiben Sie Ihr Problem",
   "problemInput.placeholder": "Welches komplexe Problem versuchen Sie zu lösen? Seien Sie spezifisch über Kontext, Einschränkungen und was Sie bereits versucht haben...",
-  "problemInput.submit": "Untersuchung starten",
+  "problemInput.submit": "Starten",
   "problemInput.creating": "Sitzung wird erstellt...",
   "problemInput.tryExample": "Beispiel ausprobieren",
   "problemInput.minChars": "mindestens {{count}} Zeichen",

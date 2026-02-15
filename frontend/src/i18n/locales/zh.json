@@ -24,7 +24,7 @@
 
   "problemInput.label": "描述您的问题",
   "problemInput.placeholder": "您想解决什么复杂问题？请详细说明背景、限制条件以及您已经尝试过的方法...",
-  "problemInput.submit": "开始调查",
+  "problemInput.submit": "开始",
   "problemInput.creating": "正在创建会话...",
   "problemInput.tryExample": "试试示例",
   "problemInput.minChars": "最少 {{count}} 个字符",

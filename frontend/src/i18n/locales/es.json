@@ -24,7 +24,7 @@
 
   "problemInput.label": "Describe tu problema",
   "problemInput.placeholder": "¿Qué problema complejo estás tratando de resolver? Sé específico sobre el contexto, las limitaciones y lo que ya has intentado...",
-  "problemInput.submit": "Iniciar Investigación",
+  "problemInput.submit": "Iniciar",
   "problemInput.creating": "Creando sesión...",
   "problemInput.tryExample": "Probar un ejemplo",
   "problemInput.minChars": "mínimo {{count}} caracteres",

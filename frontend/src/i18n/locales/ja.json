@@ -24,7 +24,7 @@
 
   "problemInput.label": "問題を説明してください",
   "problemInput.placeholder": "解決しようとしている複雑な問題は何ですか？背景、制約、既に試したことを具体的に記述してください...",
-  "problemInput.submit": "調査を開始",
+  "problemInput.submit": "開始",
   "problemInput.creating": "セッション作成中...",
   "problemInput.tryExample": "例を試す",
   "problemInput.minChars": "最低{{count}}文字必要",

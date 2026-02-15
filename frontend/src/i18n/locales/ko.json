@@ -24,7 +24,7 @@
 
   "problemInput.label": "문제를 설명하세요",
   "problemInput.placeholder": "어떤 복잡한 문제를 해결하려고 하시나요? 맥락, 제약 사항, 이미 시도한 것들을 구체적으로 작성하세요...",
-  "problemInput.submit": "조사 시작",
+  "problemInput.submit": "시작",
   "problemInput.creating": "세션 생성 중...",
   "problemInput.tryExample": "예시 시도하기",
   "problemInput.minChars": "최소 {{count}}자",
