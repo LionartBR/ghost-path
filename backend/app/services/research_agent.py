@@ -79,7 +79,15 @@ _PURPOSE_INSTRUCTIONS = {
 def _build_system_prompt(purpose: str, max_results: int) -> str:
     """Build Haiku system prompt with purpose-specific search strategy."""
     purpose_text = _PURPOSE_INSTRUCTIONS.get(purpose, _PURPOSE_INSTRUCTIONS["state_of_art"])
-    return f"""<role>
+    return _PROMPT_TEMPLATE.format(  # nosec B608
+        max_results=max_results,
+        purpose=purpose,
+        purpose_text=purpose_text,
+    )
+
+
+# LLM prompt template — not SQL. B608 false positive suppressed at call site.
+_PROMPT_TEMPLATE = """<role>
 You are a factual research assistant. You search the web and report ONLY what you find.
 You never speculate, infer, or add information beyond what search results contain.
 </role>
@@ -218,7 +226,7 @@ class ResearchAgent:
         messages = [{"role": "user", "content": user_msg}]
 
         try:
-            responses = []
+            responses: list[object] = []
             response = await self._call_with_pause_handling(
                 system, messages, responses,
             )
@@ -282,7 +290,7 @@ class ResearchAgent:
         return response
 
 
-def _response_tokens(response) -> int:
+def _response_tokens(response: object) -> int:
     """Sum input + output tokens from an API response."""
     usage = getattr(response, "usage", None)
     if not usage:
