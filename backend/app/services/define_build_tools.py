@@ -65,7 +65,7 @@ You should identify all relevant edges — don't just connect to the most recent
 
 Use this periodically (every 2-3 rounds) to step back and assess the graph's completeness. A convergence lock occurs when multiple claims depend on a missing foundational claim that hasn't been proven yet.
 
-This tool helps you decide what to investigate next. If you find gaps, use web_search or generate new claims to fill them.""",
+This tool helps you decide what to investigate next. If you find gaps, use the research tool or generate new claims to fill them.""",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -105,9 +105,8 @@ This tool helps you decide what to investigate next. If you find gaps, use web_s
         "name": "get_negative_knowledge",
         "description": """Retrieve all claims that were rejected by the user, along with their rejection reasons.
 
-This is MANDATORY under Rule #10 — you must consult negative knowledge before generating new claims to avoid proposing ideas the user has already dismissed.
-
-Call this before each round of claim generation (after round 1) to learn from past failures.""",
+MANDATORY in Round 2+ (Rule #10). Call BEFORE state_thesis in rounds after the first.
+Error: NEGATIVE_KNOWLEDGE_MISSING. Avoids re-proposing ideas the user already dismissed.""",
         "input_schema": {
             "type": "object",
             "properties": {},

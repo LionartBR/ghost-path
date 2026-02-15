@@ -6,7 +6,7 @@ Invariants:
 
 Design Decisions:
     - Tool schemas in dedicated files: explicit, no auto-discovery (ADR: ExMA anti-pattern)
-    - search_cross_domain requires web_search for target domain (enforced in handler, documented in description)
+    - search_cross_domain requires research tool for source domain (enforced in handler, documented in description)
     - Morphological box requires minimum 3x3 parameter space for meaningful exploration
 """
 
@@ -62,24 +62,16 @@ exploration of the solution space, preventing fixation on conventional combinati
     },
     {
         "name": "search_cross_domain",
-        "description": """Find structural analogies in a semantically distant domain.
-
-CRITICAL: You MUST use web_search to research the source domain BEFORE calling this tool.
-This ensures analogies are grounded in real-world patterns, not training data.
-
-The tool maps patterns from one domain to another based on structural similarity,
-not surface features. Semantic distance matters:
-- near: same industry, different application (automotive → aerospace)
-- medium: different industry, similar constraints (supply chain → blood distribution)
-- far: completely different domain with no obvious surface similarity to the problem
-
-The further the semantic distance, the more non-obvious the insight. Focus on HOW the source
-domain solves analogous problems (mechanisms, principles, trade-offs), not what it looks like.
-
-RESONANCE ASSESSMENT: You MUST generate a resonance_prompt (question probing the structural
-connection) and resonance_options (3-4 options from 'no connection' to 'deep structural match').
-Option 0 must always be a 'no structural connection' variant. The user's selection tells Phase 3
-WHY this analogy resonated, not just that it did.""",
+        "description": (
+            "Find structural analogies in a semantically distant domain.\n\n"
+            "CRITICAL: You MUST call the research tool for the source domain BEFORE this tool. "
+            "Error: CROSS_DOMAIN_NOT_SEARCHED.\n\n"
+            "Semantic distance: near (same industry), medium (different industry, similar "
+            "constraints), far (no obvious surface similarity). Further = more non-obvious insight. "
+            "Focus on HOW the source domain solves analogous problems (mechanisms, principles).\n\n"
+            "RESONANCE: Generate resonance_prompt + resonance_options (3-4). "
+            "Option 0 = 'no structural connection'. User selection tells Phase 3 WHY it resonated."
+        ),
         "input_schema": {
             "type": "object",
             "properties": {
@@ -112,7 +104,7 @@ WHY this analogy resonated, not just that it did.""",
                         "type": "string"
                     },
                     "description": (
-                        "Key findings from web_search about the source domain — mechanisms, "
+                        "Key findings from research about the source domain — mechanisms, "
                         "patterns, or principles that will be mapped"
                     ),
                     "minItems": 1

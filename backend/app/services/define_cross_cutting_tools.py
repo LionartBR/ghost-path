@@ -17,7 +17,7 @@ TOOLS_CROSS_CUTTING = [
         "description": """Get current session status — phase, round, claims count, gaps count, context usage.
 
 Use this to orient yourself after user input or when deciding what to do next. It shows:
-- Current phase (FRAME/DISCOVER/VERIFY/BUILD/CRYSTALLIZE)
+- Current phase (DECOMPOSE/EXPLORE/SYNTHESIZE/VALIDATE/BUILD/CRYSTALLIZE)
 - Round number within the phase
 - Total claims generated/accepted/rejected
 - Identified gaps count
@@ -111,8 +111,7 @@ This makes the investigation collaborative.""",
         "description": (
             "Write or update a section of the working Knowledge Document.\n\n"
             "Call this during each phase to capture discoveries while context "
-            "is fresh. The system enforces this — you cannot complete a phase "
-            "without updating at least one document section.\n\n"
+            "is fresh. Best practice: update at least one section per phase.\n\n"
             "Phase-to-section mapping:\n"
             '- DECOMPOSE: "problem_context" (problem landscape, reframings, gaps)\n'
             '- EXPLORE: "cross_domain_patterns" (analogies), "technical_details" (morphological params)\n'

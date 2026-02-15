@@ -8,7 +8,7 @@ Design Decisions:
     - Tool schemas in dedicated files: explicit, no auto-discovery (ADR: ExMA anti-pattern)
     - Falsification and novelty are separate concerns, checked independently
     - Scoring requires both falsification and novelty to be completed first
-    - All validation steps require web_search to ensure grounding in real-world evidence
+    - All validation steps require the research tool to ensure grounding in real-world evidence
 """
 
 TOOLS_VALIDATE = [
@@ -16,9 +16,9 @@ TOOLS_VALIDATE = [
         "name": "attempt_falsification",
         "description": (
             "Attempt to disprove a knowledge claim using the falsifiability condition. "
-            "This is Popperian falsification — actively trying to break your own claim. "
-            "You MUST use web_search to find evidence that could disprove the claim. "
-            "If the claim survives falsification attempts, it gains epistemic strength. "
+            "You MUST call the research tool to find disproving evidence BEFORE this tool. "
+            "Error: FALSIFICATION_NOT_SEARCHED. "
+            "If the claim survives, it gains epistemic strength. "
             "If it fails, mark falsified=true and explain what disproved it."
         ),
         "input_schema": {
@@ -43,6 +43,7 @@ TOOLS_VALIDATE = [
                 "evidence": {
                     "type": "array",
                     "description": "Web-sourced evidence from the falsification attempt",
+                    "minItems": 1,
                     "items": {
                         "type": "object",
                         "properties": {
@@ -70,10 +71,10 @@ TOOLS_VALIDATE = [
         "name": "check_novelty",
         "description": (
             "Verify that a knowledge claim is not already well-known or documented. "
-            "You MUST use web_search to find existing knowledge, research, or publications. "
+            "You SHOULD call the research tool first to find existing knowledge or publications. "
             "If the claim is already known, mark is_novel=false and cite what exists. "
-            "If the claim represents a new connection, framing, or insight, mark is_novel=true "
-            "and explain what makes it novel compared to existing knowledge."
+            "If the claim represents a new connection or insight, mark is_novel=true "
+            "and explain what makes it novel."
         ),
         "input_schema": {
             "type": "object",
@@ -84,7 +85,7 @@ TOOLS_VALIDATE = [
                 },
                 "existing_knowledge": {
                     "type": "array",
-                    "description": "What existing knowledge was found via web_search",
+                    "description": "What existing knowledge was found via research",
                     "items": {
                         "type": "string",
                         "description": "Description of existing knowledge or research found"
@@ -109,10 +110,9 @@ TOOLS_VALIDATE = [
         "name": "score_claim",
         "description": (
             "Compute final scores for a validated knowledge claim. "
-            "You can only call this AFTER both attempt_falsification and check_novelty for this claim. "
-            "Provide four scores (0.0-1.0): novelty (how new), groundedness (evidence strength), "
-            "falsifiability (how testable), significance (potential impact). "
-            "Also provide reasoning explaining the scores."
+            "Requires both attempt_falsification and check_novelty completed first. "
+            "Error: FALSIFICATION_MISSING or NOVELTY_UNCHECKED. "
+            "Four scores (0.0-1.0): novelty, groundedness, falsifiability, significance."
         ),
         "input_schema": {
             "type": "object",

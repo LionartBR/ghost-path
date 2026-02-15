@@ -33,6 +33,7 @@ TOOLS_SYNTHESIZE = [
                 "supporting_evidence": {
                     "type": "array",
                     "description": "Web-sourced evidence supporting this thesis",
+                    "minItems": 1,
                     "items": {
                         "type": "object",
                         "properties": {
@@ -61,7 +62,8 @@ TOOLS_SYNTHESIZE = [
         "description": (
             "Search for contradicting evidence or counter-arguments to a thesis. "
             "This is the 'antithesis' in dialectical reasoning — what challenges your position. "
-            "You MUST use web_search to find real contradicting evidence before calling this. "
+            "You MUST call the research tool to find real contradicting evidence before this. "
+            "Error: ANTITHESIS_NOT_SEARCHED. "
             "The stronger the antithesis, the more robust the eventual synthesis will be."
         ),
         "input_schema": {
@@ -78,6 +80,7 @@ TOOLS_SYNTHESIZE = [
                 "contradicting_evidence": {
                     "type": "array",
                     "description": "Web-sourced evidence that contradicts the thesis",
+                    "minItems": 1,
                     "items": {
                         "type": "object",
                         "properties": {
@@ -104,17 +107,13 @@ TOOLS_SYNTHESIZE = [
     {
         "name": "create_synthesis",
         "description": (
-            "Generate a knowledge claim by synthesizing thesis and antithesis. "
-            "This is the 'synthesis' in dialectical reasoning — a new understanding that transcends the contradiction. "
-            "You must provide a falsifiability condition (HOW to disprove this claim), confidence level, "
-            "and all supporting evidence. The antithesis must already exist for this claim. "
-            "This adds one claim to the current round (max 3 claims per round).\n\n"
-            "RESONANCE ASSESSMENT: You MUST generate a resonance_prompt (question probing "
-            "whether this synthesis transcends the thesis-antithesis contradiction in a way "
-            "that opens new directions) and resonance_options (3-4 graduated options). "
-            "Option 0 MUST be a 'doesn't resonate / no new direction' variant. "
-            "Options 1+ represent increasing structural resonance — how much the synthesis "
-            "shifts the user's understanding. Focus on STRUCTURAL impact, not epistemic certainty."
+            "Synthesize thesis + antithesis into a knowledge claim. "
+            "Requires: falsifiability_condition, confidence, evidence, and a prior antithesis "
+            "for this claim_index. Error: ANTITHESIS_MISSING or CLAIM_LIMIT_EXCEEDED.\n\n"
+            "In Round 2+, builds_on_claim_id is REQUIRED (Rule #9). "
+            "Error: NOT_CUMULATIVE.\n\n"
+            "RESONANCE: Generate resonance_prompt + resonance_options (3-4). "
+            "Option 0 = 'doesn't resonate'. Focus on STRUCTURAL impact, not epistemic certainty."
         ),
         "input_schema": {
             "type": "object",
@@ -154,6 +153,7 @@ TOOLS_SYNTHESIZE = [
                 "evidence": {
                     "type": "array",
                     "description": "All supporting evidence for this synthesis",
+                    "minItems": 1,
                     "items": {
                         "type": "object",
                         "properties": {

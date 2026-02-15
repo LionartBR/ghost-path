@@ -6,7 +6,7 @@ Invariants:
 
 Design Decisions:
     - Tool schemas in dedicated files: explicit, no auto-discovery (ADR: ExMA anti-pattern)
-    - map_state_of_art requires web_search first (enforced in handler, documented in description)
+    - map_state_of_art requires research tool first (enforced in handler, documented in description)
 """
 
 TOOLS_DECOMPOSE = [
@@ -51,19 +51,14 @@ Returns a list of fundamental elements that form the foundation for deeper analy
     },
     {
         "name": "map_state_of_art",
-        "description": """Research and map the current state of knowledge in a domain.
-
-CRITICAL: You MUST use web_search to gather current information BEFORE calling this tool.
-This tool synthesizes web search findings into a coherent state-of-art summary.
-
-Captures:
-- Current best practices and approaches
-- Recent breakthroughs or innovations
-- Known limitations and open problems
-- Key researchers or organizations
-- Performance benchmarks
-
-This establishes the baseline against which novelty will be measured.""",
+        "description": (
+            "Research and map the current state of knowledge in a domain.\n\n"
+            "CRITICAL: You MUST call the research tool BEFORE this tool. "
+            "Error: STATE_OF_ART_NOT_RESEARCHED.\n\n"
+            "Captures: best practices, recent breakthroughs, known limitations, "
+            "key researchers, performance benchmarks. "
+            "Establishes the baseline against which novelty will be measured."
+        ),
         "input_schema": {
             "type": "object",
             "properties": {
@@ -80,10 +75,10 @@ This establishes the baseline against which novelty will be measured.""",
                         "type": "string"
                     },
                     "description": (
-                        "List of key findings from web_search — each should be a concise, "
+                        "List of key findings from research — each a concise, "
                         "factual statement about current state of art"
                     ),
-                    "minItems": 1
+                    "minItems": 3
                 }
             },
             "required": ["domain", "key_findings"]
@@ -101,7 +96,7 @@ Assumptions are beliefs taken for granted that constrain the solution space. Com
 - Causal: what causes what
 
 Each assumption should cite its source (problem statement, current approaches, domain norms,
-etc.). Challenging these assumptions later (in EDGE phase) unlocks non-obvious solutions.""",
+etc.). Challenging these assumptions later (in EXPLORE phase) unlocks non-obvious solutions.""",
         "input_schema": {
             "type": "object",
             "properties": {
