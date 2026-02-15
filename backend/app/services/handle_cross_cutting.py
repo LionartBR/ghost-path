@@ -1,14 +1,16 @@
-"""Cross-Cutting Handlers — tools available across all phases (4 methods).
+"""Cross-Cutting Handlers — tools available across all phases (5 methods).
 
 Invariants:
     - get_session_status is always available, never gated
     - submit_user_insight creates a user_contributed claim node in the graph
     - update_working_document sets document_updated_this_phase gate flag
+    - search_research_archive is read-only (no state mutation)
 
 Design Decisions:
     - These tools don't belong to any specific phase — they're utility tools
     - submit_user_insight is called by the agent when processing build_decision.add_insight
     - update_working_document enforced by agent_runner document gate
+    - search_research_archive delegates to pure core function (impureim sandwich)
 """
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +20,23 @@ from app.core.forge_state import ForgeState
 from app.core.repository_protocols import SessionLike
 from app.models.knowledge_claim import KnowledgeClaim
 from app.models.evidence import Evidence
+
+
+def _compact_web_searches(state: ForgeState) -> list[dict]:
+    """Compact summaries of research archive for recall_phase_context.
+
+    ADR: Returns preview (150 chars) instead of full entries (~4KB each).
+    For full detail with keyword filtering, use search_research_archive tool.
+    """
+    return [
+        {
+            "query": e.get("query", ""),
+            "phase": e.get("phase", ""),
+            "purpose": e.get("purpose", ""),
+            "summary_preview": e.get("summary", "")[:150],
+        }
+        for e in state.research_archive
+    ]
 
 
 # ADR: artifact map for recall_phase_context — module-level constant, not per-call.
@@ -35,12 +54,12 @@ _ARTIFACT_MAP = {
     ("build", "graph_edges"): lambda s: s.knowledge_graph_edges,
     ("build", "negative_knowledge"): lambda s: s.negative_knowledge,
     ("build", "gaps"): lambda s: s.gaps,
-    # web_searches: research archive accessible from any phase
-    ("decompose", "web_searches"): lambda s: s.research_archive,
-    ("explore", "web_searches"): lambda s: s.research_archive,
-    ("synthesize", "web_searches"): lambda s: s.research_archive,
-    ("validate", "web_searches"): lambda s: s.research_archive,
-    ("build", "web_searches"): lambda s: s.research_archive,
+    # web_searches: compact summaries (use search_research_archive for full detail)
+    ("decompose", "web_searches"): _compact_web_searches,
+    ("explore", "web_searches"): _compact_web_searches,
+    ("synthesize", "web_searches"): _compact_web_searches,
+    ("validate", "web_searches"): _compact_web_searches,
+    ("build", "web_searches"): _compact_web_searches,
 }
 
 
@@ -146,6 +165,19 @@ class CrossCuttingHandlers:
             "evidence_count": len(evidence_urls),
             "total_graph_nodes": len(self.state.knowledge_graph_nodes),
         }
+
+    async def search_research_archive(
+        self, session: SessionLike, input_data: dict,
+    ) -> dict:
+        """Search past research entries by keyword/phase/purpose. Read-only."""
+        from app.core.search_research import search_research_archive as core_search
+        return core_search(
+            self.state.research_archive,
+            input_data.get("keywords", []),
+            input_data.get("phase"),
+            input_data.get("purpose"),
+            min(input_data.get("max_results", 3), 10),
+        )
 
     _VALID_SECTIONS = frozenset({
         "core_insight", "problem_context", "reasoning_chain",

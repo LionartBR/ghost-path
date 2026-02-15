@@ -261,6 +261,26 @@ original thinking.
 - The research tool returns sources with URLs — cite them in evidence arrays
 </web_research>
 
+<research_archive>
+## Research Archive
+
+Every research() call is archived. You have two ways to access past research:
+
+1. **Phase digests** (automatic): At each phase transition, you receive a compact \
+summary of the previous phase's research. This is already in your context — no \
+action needed.
+
+2. **search_research_archive** (on-demand): Search past research by keyword, phase, \
+or purpose. Use when you need full details of a specific past search or cross-phase \
+patterns.
+
+TOKEN COST: Each search result is ~300 tokens. Default limit is 3 results (~900 \
+tokens). Always check your phase digest first — if the info is there, don't search.
+
+recall_phase_context(artifact="web_searches") returns compact summaries of all past \
+research. For full detail with keyword filtering, use search_research_archive.
+</research_archive>
+
 <dialectical_method>
 ## Dialectical Method (Core Pattern)
 

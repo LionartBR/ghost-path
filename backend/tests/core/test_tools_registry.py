@@ -3,10 +3,11 @@
 Tests cover:
     - Each phase gets correct tool count (phase + cross-cutting + research)
     - recall_phase_context excluded from DECOMPOSE (nothing to recall)
-    - recall_phase_context included in EXPLORE and later phases
+    - search_research_archive excluded from DECOMPOSE (nothing to search)
+    - recall_phase_context + search_research_archive included in EXPLORE and later
     - research excluded from CRYSTALLIZE (write-only phase)
     - update_working_document available in all phases
-    - ALL_TOOLS backward compat has 23 entries (22 custom + 1 research)
+    - ALL_TOOLS backward compat has 24 entries (23 custom + 1 research)
 
 Design Decisions:
     - Tool counts validated per phase as integration-level contract
@@ -23,7 +24,7 @@ def _tool_names(phase: Phase) -> set[str]:
 
 
 def test_decompose_has_correct_tools():
-    """4 decompose + 3 cross-cutting (no recall) + research = 8."""
+    """4 decompose + 3 cross-cutting (no recall/search) + research = 8."""
     tools = get_phase_tools(Phase.DECOMPOSE)
     assert len(tools) == 8
     names = _tool_names(Phase.DECOMPOSE)
@@ -33,45 +34,48 @@ def test_decompose_has_correct_tools():
 
 
 def test_explore_has_correct_tools():
-    """4 explore + 4 cross-cutting (incl recall) + research = 9."""
+    """4 explore + 5 cross-cutting (incl recall + search_research) + research = 10."""
     tools = get_phase_tools(Phase.EXPLORE)
-    assert len(tools) == 9
+    assert len(tools) == 10
     names = _tool_names(Phase.EXPLORE)
     assert "build_morphological_box" in names
     assert "recall_phase_context" in names
+    assert "search_research_archive" in names
 
 
 def test_synthesize_has_correct_tools():
-    """3 synthesize + 4 cross-cutting (incl recall) + research = 8."""
+    """3 synthesize + 5 cross-cutting (incl recall + search_research) + research = 9."""
     tools = get_phase_tools(Phase.SYNTHESIZE)
-    assert len(tools) == 8
+    assert len(tools) == 9
     names = _tool_names(Phase.SYNTHESIZE)
     assert "state_thesis" in names
     assert "recall_phase_context" in names
 
 
 def test_validate_has_correct_tools():
-    """3 validate + 4 cross-cutting + research = 8."""
+    """3 validate + 5 cross-cutting + research = 9."""
     tools = get_phase_tools(Phase.VALIDATE)
-    assert len(tools) == 8
+    assert len(tools) == 9
 
 
 def test_build_has_correct_tools():
-    """3 build + 4 cross-cutting + research = 8."""
+    """3 build + 5 cross-cutting + research = 9."""
     tools = get_phase_tools(Phase.BUILD)
-    assert len(tools) == 8
+    assert len(tools) == 9
     names = _tool_names(Phase.BUILD)
     assert "add_to_knowledge_graph" in names
     assert "recall_phase_context" in names
+    assert "search_research_archive" in names
 
 
 def test_crystallize_has_correct_tools():
-    """1 crystallize + 4 cross-cutting (incl recall) - research = 5."""
+    """1 crystallize + 5 cross-cutting (incl recall + search) - research = 6."""
     tools = get_phase_tools(Phase.CRYSTALLIZE)
-    assert len(tools) == 5
+    assert len(tools) == 6
     names = _tool_names(Phase.CRYSTALLIZE)
     assert "generate_knowledge_document" in names
     assert "recall_phase_context" in names
+    assert "search_research_archive" in names
 
 
 def test_recall_excluded_from_decompose():
@@ -80,10 +84,22 @@ def test_recall_excluded_from_decompose():
     assert "recall_phase_context" not in names
 
 
+def test_search_research_archive_excluded_from_decompose():
+    """search_research_archive not in DECOMPOSE (nothing to search)."""
+    names = _tool_names(Phase.DECOMPOSE)
+    assert "search_research_archive" not in names
+
+
 def test_recall_included_in_explore():
     """recall_phase_context available from EXPLORE onward."""
     names = _tool_names(Phase.EXPLORE)
     assert "recall_phase_context" in names
+
+
+def test_search_research_archive_included_in_explore():
+    """search_research_archive available from EXPLORE onward."""
+    names = _tool_names(Phase.EXPLORE)
+    assert "search_research_archive" in names
 
 
 def test_research_excluded_from_crystallize():
@@ -93,10 +109,11 @@ def test_research_excluded_from_crystallize():
 
 
 def test_all_tools_backward_compat():
-    """ALL_TOOLS still has 23 entries (22 custom + 1 research)."""
-    assert len(ALL_TOOLS) == 23
+    """ALL_TOOLS has 24 entries (23 custom + 1 research)."""
+    assert len(ALL_TOOLS) == 24
     names = {t.get("name", "") for t in ALL_TOOLS}
     assert "recall_phase_context" in names
+    assert "search_research_archive" in names
     assert "research" in names
     assert "decompose_to_fundamentals" in names
     assert "generate_knowledge_document" in names

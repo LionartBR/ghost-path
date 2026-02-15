@@ -66,6 +66,52 @@ This makes the investigation collaborative.""",
         }
     },
     {
+        "name": "search_research_archive",
+        "description": (
+            "Search past research results by keyword, phase, or purpose. "
+            "Returns matching entries with full summaries and source URLs.\n\n"
+            "TOKEN COST WARNING: Each result is ~300 tokens. Default limit: "
+            "3 results (~900 tokens). Use targeted keyword searches.\n\n"
+            "When to use:\n"
+            "- Need full details of a specific past search\n"
+            "- Looking for cross-phase patterns (e.g., 'What did we learn about X?')\n"
+            "- Need source URLs from earlier phases\n\n"
+            "Your phase digest already contains compact summaries of recent "
+            "research — check there first before searching."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "keywords": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Keywords to search (AND logic: all must match)",
+                },
+                "phase": {
+                    "type": "string",
+                    "enum": [
+                        "decompose", "explore", "synthesize",
+                        "validate", "build",
+                    ],
+                    "description": "Limit to a specific phase (optional)",
+                },
+                "purpose": {
+                    "type": "string",
+                    "enum": [
+                        "state_of_art", "evidence_for", "evidence_against",
+                        "cross_domain", "novelty_check", "falsification",
+                    ],
+                    "description": "Limit to a specific research purpose (optional)",
+                },
+                "max_results": {
+                    "type": "integer",
+                    "description": "Max entries to return (1-10). Each ~300 tokens.",
+                },
+            },
+            "required": ["keywords"],
+        },
+    },
+    {
         "name": "recall_phase_context",
         "description": (
             "Retrieve detailed artifacts from a completed phase. "
@@ -78,7 +124,9 @@ This makes the investigation collaborative.""",
             "- explore: morphological_box, analogies, contradictions, adjacent_possible, web_searches\n"
             "- synthesize: claims, web_searches\n"
             "- validate: claims, web_searches\n"
-            "- build: graph_nodes, graph_edges, negative_knowledge, gaps, web_searches"
+            "- build: graph_nodes, graph_edges, negative_knowledge, gaps, web_searches\n\n"
+            "Note: web_searches returns compact summaries. For full detail "
+            "with keyword filtering, use search_research_archive instead."
         ),
         "input_schema": {
             "type": "object",

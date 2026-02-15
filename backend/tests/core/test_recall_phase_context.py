@@ -205,3 +205,58 @@ async def test_recall_crystallize_blocked_in_round2(db):
     )
     assert result["status"] == "error"
     assert result["error_code"] == "PHASE_NOT_COMPLETED"
+
+
+# --- Compact web_searches tests ------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_recall_web_searches_returns_compact_summaries(db):
+    """web_searches artifact returns compact summaries, not full entries."""
+    state = ForgeState()
+    state.current_phase = Phase.EXPLORE
+    state.research_archive = [
+        {
+            "query": "TRIZ methods 2025",
+            "phase": "decompose",
+            "purpose": "state_of_art",
+            "summary": "Found 5 methods for TRIZ innovation",
+            "sources": [{"url": "http://example.com", "title": "Example"}],
+        },
+    ]
+    handler = _make_handler(state, db)
+    result = await handler.recall_phase_context(
+        FakeSession(), {"phase": "decompose", "artifact": "web_searches"},
+    )
+    assert result["status"] == "ok"
+    data = result["data"]
+    assert len(data) == 1
+    assert data[0]["query"] == "TRIZ methods 2025"
+    assert data[0]["phase"] == "decompose"
+    assert data[0]["purpose"] == "state_of_art"
+    assert "summary_preview" in data[0]
+    # Full sources should NOT be in compact summary
+    assert "sources" not in data[0]
+
+
+@pytest.mark.asyncio
+async def test_recall_web_searches_compact_has_preview_truncated(db):
+    """summary_preview truncated to 150 chars."""
+    state = ForgeState()
+    state.current_phase = Phase.EXPLORE
+    long_summary = "A" * 300
+    state.research_archive = [
+        {
+            "query": "long query",
+            "phase": "decompose",
+            "purpose": "state_of_art",
+            "summary": long_summary,
+            "sources": [],
+        },
+    ]
+    handler = _make_handler(state, db)
+    result = await handler.recall_phase_context(
+        FakeSession(), {"phase": "decompose", "artifact": "web_searches"},
+    )
+    preview = result["data"][0]["summary_preview"]
+    assert len(preview) == 150

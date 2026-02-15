@@ -136,3 +136,21 @@ def test_system_prompt_pt_br_contains_working_document_section():
     assert "<working_document>" in prompt
     assert "update_working_document" in prompt
     assert "implementation_guide" in prompt
+
+
+# --- Research archive section tests ----------------------------------------
+
+
+def test_system_prompt_contains_research_archive_section():
+    """English prompt includes the <research_archive> guidance."""
+    prompt = build_system_prompt(Locale.EN)
+    assert "<research_archive>" in prompt
+    assert "search_research_archive" in prompt
+    assert "Phase digests" in prompt
+
+
+def test_pt_br_prompt_contains_research_archive_section():
+    """Portuguese prompt includes the translated research archive guidance."""
+    prompt = build_system_prompt(Locale.PT_BR)
+    assert "<research_archive>" in prompt
+    assert "search_research_archive" in prompt

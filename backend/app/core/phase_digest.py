@@ -17,6 +17,7 @@ from typing import Any
 from app.core.domain_types import Locale
 from app.core.forge_state import ForgeState
 from app.core import format_messages_pt_br as _pt_br
+from app.core.research_digest import build_research_digest
 
 # Re-export crystallize context builder (used by format_messages.py)
 from app.core.phase_digest_crystallize import build_crystallize_context  # noqa: F401
@@ -135,7 +136,11 @@ def build_phase2_context(
         _pt_br.DIGEST_PHASE2_HEADER if pt else
         "Phase 2 findings (use these to derive synthesis directions):"
     )
-    return f"\n{header}\n" + "\n".join(parts) + "\n"
+    result = f"\n{header}\n" + "\n".join(parts) + "\n"
+    research = build_research_digest(state.research_archive, "decompose", locale)
+    if research:
+        result += research
+    return result
 
 
 def _append_selected_reframings_p2(
@@ -226,7 +231,11 @@ def build_phase3_context(state: ForgeState, locale: Locale) -> str:
         lfc = "Condição de falsificabilidade" if pt else "Falsifiability"
         lev = "evidências" if pt else "evidence items"
         parts.append(f"  [{i}] {text}\n      {lfc}: {fc}\n      {ev_count} {lev}")
-    return "\n" + "\n".join(parts) + "\n"
+    result = "\n" + "\n".join(parts) + "\n"
+    research = build_research_digest(state.research_archive, "explore", locale)
+    if research:
+        result += research
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -269,7 +278,11 @@ def build_phase4_context(
         e = len(state.knowledge_graph_edges)
         lg = "Grafo" if pt else "Graph"
         parts.append(f"  {lg}: {n} nodes, {e} edges")
-    return "\n" + "\n".join(parts) + "\n"
+    result = "\n" + "\n".join(parts) + "\n"
+    research = build_research_digest(state.research_archive, "synthesize", locale)
+    if research:
+        result += research
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -302,4 +315,8 @@ def build_continue_context(state: ForgeState, locale: Locale) -> str:
         _pt_br.DIGEST_CONTINUE_HEADER.format(round=rnd) if pt else
         f"Cumulative context (round {rnd}):"
     )
-    return f"{header}\n" + "\n".join(parts) + "\n\n"
+    result = f"{header}\n" + "\n".join(parts) + "\n"
+    research = build_research_digest(state.research_archive, "build", locale)
+    if research:
+        result += research
+    return result + "\n"

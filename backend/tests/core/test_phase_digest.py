@@ -365,3 +365,52 @@ def test_phase1_selected_reframings_fallback_when_no_responses():
     assert "Reframing B" in result
     assert "Reframing A" not in result
     assert "User resonance:" not in result
+
+
+# ---------------------------------------------------------------------------
+# Research Digest Injection
+# ---------------------------------------------------------------------------
+
+def test_phase2_includes_phase1_research_digest():
+    """Phase 2 context should include research from decompose phase."""
+    state = ForgeState()
+    state.contradictions = [{"property_a": "X", "property_b": "Y"}]
+    state.research_archive = [
+        {"query": "TRIZ methods", "summary": "Found methods", "phase": "decompose", "purpose": "state_of_art"},
+    ]
+    result = build_phase2_context(state, Locale.EN)
+    assert "TRIZ methods" in result
+    assert "Previous phase research:" in result
+
+
+def test_phase3_includes_phase2_research_digest():
+    """Phase 3 context should include research from explore phase."""
+    state = ForgeState()
+    state.current_round_claims = [
+        {"claim_text": "Some claim", "falsifiability_condition": "Cond", "evidence": []},
+    ]
+    state.research_archive = [
+        {"query": "biology analogy", "summary": "Immune system", "phase": "explore", "purpose": "cross_domain"},
+    ]
+    result = build_phase3_context(state, Locale.EN)
+    assert "biology analogy" in result
+
+
+def test_phase2_no_research_omits_digest():
+    """Phase 2 with no decompose research should not include research section."""
+    state = ForgeState()
+    state.contradictions = [{"property_a": "X", "property_b": "Y"}]
+    state.research_archive = []
+    result = build_phase2_context(state, Locale.EN)
+    assert "Previous phase research:" not in result
+
+
+def test_phase2_research_digest_excludes_other_phases():
+    """Phase 2 should only show decompose research, not explore research."""
+    state = ForgeState()
+    state.contradictions = [{"property_a": "X", "property_b": "Y"}]
+    state.research_archive = [
+        {"query": "explore query", "summary": "Explore data", "phase": "explore", "purpose": "cross_domain"},
+    ]
+    result = build_phase2_context(state, Locale.EN)
+    assert "explore query" not in result

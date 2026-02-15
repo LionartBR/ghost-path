@@ -34,11 +34,14 @@ WEB_SEARCH_TOOL: dict[str, Any] = {
     "max_uses": 10,
 }
 
+# ADR: search_research_archive grouped with recall_phase_context — both excluded
+# from DECOMPOSE (nothing to search/recall in first phase).
+_PHASE_RECALL_NAMES = frozenset({"recall_phase_context", "search_research_archive"})
 _CROSS_CUTTING_BASE = [
-    t for t in TOOLS_CROSS_CUTTING if t["name"] != "recall_phase_context"
+    t for t in TOOLS_CROSS_CUTTING if t["name"] not in _PHASE_RECALL_NAMES
 ]
-_RECALL_TOOL = [
-    t for t in TOOLS_CROSS_CUTTING if t["name"] == "recall_phase_context"
+_RECALL_TOOLS = [
+    t for t in TOOLS_CROSS_CUTTING if t["name"] in _PHASE_RECALL_NAMES
 ]
 
 _PHASE_TOOLS = {
@@ -61,7 +64,7 @@ def get_phase_tools(phase: Phase) -> list[dict]:
     tools = list(_PHASE_TOOLS[phase])
     tools.extend(_CROSS_CUTTING_BASE)
     if phase != Phase.DECOMPOSE:
-        tools.extend(_RECALL_TOOL)
+        tools.extend(_RECALL_TOOLS)
     if phase != Phase.CRYSTALLIZE:
         tools.append(RESEARCH_TOOL)
     return tools
@@ -75,7 +78,7 @@ ALL_TOOLS: list[dict] = [
     *TOOLS_VALIDATE,         # 3 tools
     *TOOLS_BUILD,            # 3 tools
     *TOOLS_CRYSTALLIZE,      # 1 tool
-    *TOOLS_CROSS_CUTTING,    # 4 tools (incl recall_phase_context + update_working_document)
+    *TOOLS_CROSS_CUTTING,    # 5 tools (incl recall + search_research_archive + update_working_document)
     RESEARCH_TOOL,           # 1 research delegation tool
 ]
-# Total: 22 custom + 1 research = 23
+# Total: 23 custom + 1 research = 24

@@ -188,6 +188,28 @@ de pensamento original.
 - A ferramenta research retorna fontes com URLs — cite-as nos arrays de evidências
 </web_research>
 
+<research_archive>
+## Arquivo de Pesquisa
+
+Cada chamada research() é arquivada. Você tem duas formas de acessar pesquisas passadas:
+
+1. **Resumos de fase** (automático): A cada transição de fase, você recebe um resumo \
+compacto das pesquisas da fase anterior. Isto já está no seu contexto — nenhuma ação \
+necessária.
+
+2. **search_research_archive** (sob demanda): Busque pesquisas passadas por palavra-chave, \
+fase ou propósito. Use quando precisar de detalhes completos de uma busca específica ou \
+padrões entre fases.
+
+CUSTO DE TOKENS: Cada resultado de busca é ~300 tokens. Limite padrão é 3 resultados \
+(~900 tokens). Sempre verifique o resumo de fase primeiro — se a informação está lá, \
+não busque.
+
+recall_phase_context(artifact="web_searches") retorna resumos compactos de todas as \
+pesquisas. Para detalhes completos com filtragem por palavra-chave, use \
+search_research_archive.
+</research_archive>
+
 <dialectical_method>
 ## Método Dialético (Padrão Central)
 
