@@ -27,8 +27,12 @@ function getNextPhase(input: UserInput): Phase | null {
       return "synthesize";
     case "claims_review":
       return "validate";
-    case "verdicts":
-      return "build";
+    case "verdicts": {
+      const allRejected =
+        input.verdicts?.length &&
+        input.verdicts.every((v) => v.verdict === "reject");
+      return allRejected ? "synthesize" : "build";
+    }
     case "build_decision":
       return input.decision === "resolve" ? "crystallize" : "synthesize";
     default:

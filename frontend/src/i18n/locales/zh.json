@@ -159,6 +159,7 @@
   "transition.toBuild": "幸存者浮现。将验证过的主张编织成知识图谱——每个节点都在辩证的烈火中赢得了自己的位置。",
   "transition.toCrystallize": "锻造已完成。将一切蒸馏为最终的知识文档——从辩证过程中结晶的知识。",
   "transition.toSynthesizeReturn": "带着我们所学和所否定的，新一轮辩证创造开始了。",
+  "transition.toSynthesizeRejected": "所有主张均被否决。从根本不同的角度重新思考——从失败中学到的经验引导下一轮。",
 
   "completion.hero.title": "调查完成",
   "completion.hero.duration": "持续时间",

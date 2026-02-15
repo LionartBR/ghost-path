@@ -54,7 +54,9 @@ export const PhaseTransitionCard: React.FC<PhaseTransitionCardProps> = ({
   const narrativeKey =
     to === "synthesize" && from === "build"
       ? "transition.toSynthesizeReturn"
-      : `transition.to${to.charAt(0).toUpperCase() + to.slice(1)}`;
+      : to === "synthesize" && from === "validate"
+        ? "transition.toSynthesizeRejected"
+        : `transition.to${to.charAt(0).toUpperCase() + to.slice(1)}`;
 
   const animClass = entered ? "" : "animate-phase-enter";
 

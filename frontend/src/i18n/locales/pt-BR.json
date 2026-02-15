@@ -159,6 +159,7 @@
   "transition.toBuild": "Sobreviventes emergem. Tecendo afirmações validadas num grafo de conhecimento — cada nó conquistou seu lugar pelo fogo dialético.",
   "transition.toCrystallize": "A forja se encerra. Destilando tudo em um Documento de Conhecimento final — conhecimento cristalizado do processo dialético.",
   "transition.toSynthesizeReturn": "Munidos do que aprendemos e do que rejeitamos, uma nova rodada de criação dialética começa.",
+  "transition.toSynthesizeRejected": "Todas as afirmações foram rejeitadas. Repensando de um ângulo fundamentalmente diferente \u2014 o que aprendemos com a falha guia a próxima rodada.",
 
   "completion.hero.title": "Investigação Concluída",
   "completion.hero.duration": "Duração",

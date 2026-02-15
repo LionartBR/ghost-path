@@ -159,6 +159,7 @@
   "transition.toBuild": "생존자가 나타납니다. 검증된 주장을 지식 그래프로 엮어갑니다 — 각 노드는 변증법의 불로 자리를 얻었습니다.",
   "transition.toCrystallize": "단조가 끝났습니다. 모든 것을 최종 지식 문서로 증류합니다 — 변증법 과정에서 결정화된 지식.",
   "transition.toSynthesizeReturn": "배운 것과 거부한 것을 무장하고, 새로운 변증법적 창조의 라운드가 시작됩니다.",
+  "transition.toSynthesizeRejected": "모든 주장이 거부되었습니다. 근본적으로 다른 각도에서 재고합니다 — 실패에서 배운 것이 다음 라운드를 이끕니다.",
 
   "completion.hero.title": "조사 완료",
   "completion.hero.duration": "소요 시간",

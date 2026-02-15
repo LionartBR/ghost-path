@@ -85,6 +85,14 @@ VERDICTS_INSTRUCTION = (
     "ao grafo de conhecimento, analise lacunas e apresente a revisão de construção."
 )
 
+VERDICTS_ALL_REJECTED = (
+    "Todas as afirmações foram rejeitadas. Retornando à Fase 3 (SYNTHESIZE) "
+    "para uma nova rodada dialética. Chame get_negative_knowledge "
+    "primeiro (Regra #10), revise o que falhou e por quê, depois referencie "
+    "pelo menos uma afirmação anterior (Regra #9). Gere até 3 novas "
+    "afirmações com uma abordagem fundamentalmente diferente."
+)
+
 BUILD_CONTINUE = (
     "O usuário quer continuar com outra rodada. "
     "Volte para a Fase 3 (SYNTHESIZE). Lembre-se: chame "

@@ -159,6 +159,7 @@
   "transition.toBuild": "Survivors emerge. Weaving validated claims into a knowledge graph — each node earned its place through dialectical fire.",
   "transition.toCrystallize": "The forge is done. Distilling everything into a final Knowledge Document — crystallized knowledge from the dialectical process.",
   "transition.toSynthesizeReturn": "Armed with what we learned and what we rejected, a new round of dialectical creation begins.",
+  "transition.toSynthesizeRejected": "All claims were rejected. Rethinking from a fundamentally different angle \u2014 what we learned from failure steers the next round.",
 
   "completion.hero.title": "Investigation Complete",
   "completion.hero.duration": "Duration",

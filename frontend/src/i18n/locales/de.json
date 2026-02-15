@@ -159,6 +159,7 @@
   "transition.toBuild": "Überlebende treten hervor. Validierte Behauptungen werden zu einem Wissensgraphen verwoben — jeder Knoten hat sich im dialektischen Feuer bewährt.",
   "transition.toCrystallize": "Die Schmiede ist beendet. Alles wird zu einem finalen Wissensdokument destilliert — kristallisiertes Wissen aus dem dialektischen Prozess.",
   "transition.toSynthesizeReturn": "Bewaffnet mit dem, was wir gelernt und verworfen haben, beginnt eine neue Runde dialektischer Schöpfung.",
+  "transition.toSynthesizeRejected": "Alle Behauptungen wurden abgelehnt. Wir denken aus einem grundlegend anderen Blickwinkel neu \u2014 was wir aus dem Scheitern gelernt haben, lenkt die nächste Runde.",
 
   "completion.hero.title": "Untersuchung abgeschlossen",
   "completion.hero.duration": "Dauer",

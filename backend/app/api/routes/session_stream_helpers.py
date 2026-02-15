@@ -348,7 +348,15 @@ async def apply_user_input(
             await sync_state_to_db(session, state, db)
         case "verdicts":
             await _apply_verdicts(body, state, db)
-            state.transition_to(Phase.BUILD)
+            all_rejected = (
+                body.verdicts
+                and all(v.verdict == "reject" for v in body.verdicts)
+            )
+            if all_rejected and not state.max_rounds_reached:
+                state.reset_for_new_round()
+                state.transition_to(Phase.SYNTHESIZE)
+            else:
+                state.transition_to(Phase.BUILD)
             session.message_history = []
             await sync_state_to_db(session, state, db)
         case "build_decision":

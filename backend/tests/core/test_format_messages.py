@@ -216,3 +216,78 @@ def test_claims_review_added_claims_pt_br():
     )
     assert "Afirmações contribuídas pelo usuário:" in msg
     assert "Minha afirmação sobre IA" in msg
+
+
+# --- verdicts: all-rejected bypass ------------------------------------------
+
+def _make_state_for_verdicts() -> ForgeState:
+    """ForgeState in VALIDATE phase with 3 claims."""
+    state = ForgeState()
+    state.current_phase = Phase.VALIDATE
+    state.current_round_claims = [
+        {"claim_text": f"Claim {i}", "claim_id": f"id-{i}"} for i in range(3)
+    ]
+    return state
+
+
+def test_format_verdicts_all_rejected_emits_synthesize_instruction():
+    """When all verdicts are reject, message should instruct SYNTHESIZE, not BUILD."""
+    state = _make_state_for_verdicts()
+    verdicts = [
+        {"claim_index": 0, "verdict": "reject", "rejection_reason": "weak"},
+        {"claim_index": 1, "verdict": "reject", "rejection_reason": "no evidence"},
+        {"claim_index": 2, "verdict": "reject", "rejection_reason": "redundant"},
+    ]
+    msg = format_user_input(
+        "verdicts", _prefix(), locale=Locale.EN, forge_state=state,
+        verdicts=verdicts,
+    )
+    assert "Phase 3" in msg or "SYNTHESIZE" in msg
+    assert "get_negative_knowledge" in msg
+    assert "Phase 5" not in msg
+    assert "BUILD" not in msg
+
+
+def test_format_verdicts_mixed_emits_build_instruction():
+    """When some verdicts are accept, message should instruct BUILD."""
+    state = _make_state_for_verdicts()
+    verdicts = [
+        {"claim_index": 0, "verdict": "accept"},
+        {"claim_index": 1, "verdict": "reject", "rejection_reason": "weak"},
+        {"claim_index": 2, "verdict": "qualify", "qualification": "only if X"},
+    ]
+    msg = format_user_input(
+        "verdicts", _prefix(), locale=Locale.EN, forge_state=state,
+        verdicts=verdicts,
+    )
+    assert "Phase 5" in msg or "BUILD" in msg
+
+
+def test_format_verdicts_all_rejected_at_max_rounds_emits_build_instruction():
+    """At max rounds, even all-rejected should route to BUILD (user must resolve)."""
+    state = _make_state_for_verdicts()
+    state.current_round = 4  # MAX_ROUNDS_PER_SESSION - 1 = 4
+    verdicts = [
+        {"claim_index": 0, "verdict": "reject", "rejection_reason": "R1"},
+        {"claim_index": 1, "verdict": "reject", "rejection_reason": "R2"},
+        {"claim_index": 2, "verdict": "reject", "rejection_reason": "R3"},
+    ]
+    msg = format_user_input(
+        "verdicts", _prefix(), locale=Locale.EN, forge_state=state,
+        verdicts=verdicts,
+    )
+    assert "Phase 5" in msg or "BUILD" in msg
+
+
+def test_format_verdicts_all_rejected_pt_br_emits_synthesize_instruction():
+    """PT_BR: all-rejected should emit Portuguese synthesize instruction."""
+    state = _make_state_for_verdicts()
+    verdicts = [
+        {"claim_index": 0, "verdict": "reject", "rejection_reason": "fraca"},
+    ]
+    msg = format_user_input(
+        "verdicts", _prefix(Locale.PT_BR), locale=Locale.PT_BR,
+        forge_state=state, verdicts=verdicts,
+    )
+    assert "Fase 3" in msg or "SYNTHESIZE" in msg
+    assert "get_negative_knowledge" in msg

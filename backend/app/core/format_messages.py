@@ -291,10 +291,24 @@ def _format_verdicts(prefix, pt, lbl, forge_state, verdicts, locale):
     if verdicts:
         for v in verdicts:
             _append_verdict_detail(parts, v, lbl)
-    instr = _pt_br.VERDICTS_INSTRUCTION if pt else (
-        "Proceed to Phase 5 (BUILD). Add accepted/qualified claims to "
-        "the knowledge graph, analyze gaps, and present the build review."
+    # ADR: check from verdicts param (available before state mutation)
+    all_rejected = verdicts and all(
+        _attr_or_key(v, "verdict", "accept") == "reject" for v in verdicts
     )
+    max_rounds = forge_state and forge_state.max_rounds_reached
+    if all_rejected and not max_rounds:
+        instr = _pt_br.VERDICTS_ALL_REJECTED if pt else (
+            "All claims were rejected. Returning to Phase 3 (SYNTHESIZE) "
+            "for a new dialectical round. Call get_negative_knowledge "
+            "first (Rule #10), review what failed and why, then reference "
+            "at least one previous claim (Rule #9). Generate up to 3 new "
+            "claims taking a fundamentally different approach."
+        )
+    else:
+        instr = _pt_br.VERDICTS_INSTRUCTION if pt else (
+            "Proceed to Phase 5 (BUILD). Add accepted/qualified claims to "
+            "the knowledge graph, analyze gaps, and present the build review."
+        )
     parts.append(instr)
     return "\n".join(parts)
 

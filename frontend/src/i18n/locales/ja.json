@@ -159,6 +159,7 @@
   "transition.toBuild": "生存者が現れます。検証された主張を知識グラフに編み込みます——各ノードは弁証法の炎で己の場所を勝ち取りました。",
   "transition.toCrystallize": "鍛造は完了しました。全てを最終的な知識文書に蒸留します——弁証法プロセスから結晶化された知識。",
   "transition.toSynthesizeReturn": "学んだことと却下したことを武器に、新たな弁証法的創造のラウンドが始まります。",
+  "transition.toSynthesizeRejected": "すべての主張が却下されました。根本的に異なる角度から再考します——失敗から学んだことが次のラウンドを導きます。",
 
   "completion.hero.title": "調査完了",
   "completion.hero.duration": "所要時間",
