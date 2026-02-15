@@ -165,6 +165,52 @@ class ResilientAnthropicClient:
                 str(e), "client_error", context=context,
             )
 
+    async def create_message_raw(
+        self,
+        *,
+        model: str,
+        max_tokens: int,
+        system: SystemParam,
+        tools: list,
+        messages: list,
+        betas: list[str] | None = None,
+        context: ErrorContext | None = None,
+    ):
+        """Create message with explicit betas (for Haiku research calls).
+
+        Unlike create_message(), caller controls which betas are sent.
+        Haiku needs web-search beta but NOT 1M-context beta.
+        Reuses retry/backoff logic from create_message().
+        """
+        for attempt in range(self.max_retries + 1):
+            try:
+                response: object  # BetaMessage | Message — union avoids mypy narrowing
+                if betas:
+                    response = await self.client.beta.messages.create(
+                        model=model, max_tokens=max_tokens,
+                        system=system, tools=tools, messages=messages,
+                        betas=betas,
+                    )
+                else:
+                    response = await self.client.messages.create(
+                        model=model, max_tokens=max_tokens,
+                        system=system, tools=tools, messages=messages,
+                    )
+                self._log_success(response, attempt)
+                return response
+            except RateLimitError as e:
+                await self._handle_rate_limit(e, attempt, context)
+            except (APIConnectionError, InternalServerError) as e:
+                await self._handle_transient_error(e, attempt, context)
+            except APITimeoutError:
+                raise AnthropicAPIError(
+                    "API timeout", "timeout", context=context,
+                )
+            except APIError as e:
+                raise AnthropicAPIError(
+                    str(e), "client_error", context=context,
+                )
+
     async def _call_api(self, **kwargs):
         """Route to beta or standard endpoint based on config."""
         if self.betas:
