@@ -269,6 +269,46 @@ async def test_token_accounting_cumulative_across_iterations(
     assert last_ctx["input_tokens"] == 100 + 200 + 80
     assert last_ctx["output_tokens"] == 50 + 75 + 20
 
+    # cache counters zero when no caching
+    assert last_ctx["cache_creation_tokens"] == 0
+    assert last_ctx["cache_read_tokens"] == 0
+
+
+async def test_token_accounting_includes_cache_tokens(
+    test_db, seed_session, mock_dispatch,
+):
+    """Cache creation + cache read tokens counted as input tokens.
+
+    With prompt caching, system prompt and tool definitions appear as
+    cache_creation (first call) or cache_read (subsequent calls), not
+    in input_tokens. All three buckets must be summed for accurate billing.
+    """
+    state = ForgeState()
+    client = MockAnthropicClient([
+        # 1st call: 50 input + 5000 cache_creation = 5050 input total, 30 out
+        tool_response("tool_a", {}, tokens=(50, 30), cache=(5000, 0)),
+        # 2nd call: 80 input + 5000 cache_read = 5080 input total, 40 out
+        text_response("Done.", tokens=(80, 40), cache=(0, 5000)),
+    ])
+    runner = AgentRunner(test_db, client)
+
+    events = await _collect(runner, seed_session, "Go", state)
+
+    await test_db.refresh(seed_session)
+    # input = (50+5000) + (80+5000) = 10130
+    assert seed_session.total_input_tokens == 10130
+    assert seed_session.total_output_tokens == 30 + 40
+    assert seed_session.total_tokens_used == 10130 + 70
+    assert seed_session.total_cache_creation_tokens == 5000
+    assert seed_session.total_cache_read_tokens == 5000
+
+    # SSE context_usage includes cache breakdown
+    ctx_events = _events_of_type(events, "context_usage")
+    last_ctx = ctx_events[-1]["data"]
+    assert last_ctx["input_tokens"] == 10130
+    assert last_ctx["cache_creation_tokens"] == 5000
+    assert last_ctx["cache_read_tokens"] == 5000
+
 
 async def test_state_persisted_on_normal_completion(
     test_db, seed_session, mock_dispatch,

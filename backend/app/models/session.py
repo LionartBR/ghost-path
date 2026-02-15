@@ -57,6 +57,12 @@ class Session(Base):
     total_output_tokens: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0,
     )
+    total_cache_creation_tokens: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0,
+    )
+    total_cache_read_tokens: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0,
+    )
     forge_state_snapshot: Mapped[dict | None] = mapped_column(
         JSON, nullable=True,
     )

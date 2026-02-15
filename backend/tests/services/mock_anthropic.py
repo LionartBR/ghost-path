@@ -38,20 +38,31 @@ class _Block:
 
 
 class _Usage:
-    """Mock token usage."""
+    """Mock token usage (includes prompt caching fields)."""
 
-    def __init__(self, input_tokens=100, output_tokens=50):
+    def __init__(
+        self, input_tokens=100, output_tokens=50,
+        cache_creation_input_tokens=0, cache_read_input_tokens=0,
+    ):
         self.input_tokens = input_tokens
         self.output_tokens = output_tokens
+        self.cache_creation_input_tokens = cache_creation_input_tokens
+        self.cache_read_input_tokens = cache_read_input_tokens
 
 
 class _Message:
     """Mock Message returned by stream.get_final_message()."""
 
-    def __init__(self, content, stop_reason="end_turn", input_tokens=100, output_tokens=50):
+    def __init__(
+        self, content, stop_reason="end_turn", input_tokens=100, output_tokens=50,
+        cache_creation=0, cache_read=0,
+    ):
         self.content = content
         self.stop_reason = stop_reason
-        self.usage = _Usage(input_tokens, output_tokens)
+        self.usage = _Usage(
+            input_tokens, output_tokens,
+            cache_creation, cache_read,
+        )
 
 
 class _StreamEvent:
@@ -117,8 +128,8 @@ class MockAnthropicClient:
 # -- Builder helpers -----------------------------------------------------------
 
 
-def text_response(text, stop_reason="end_turn", tokens=(100, 50)):
-    """Build a text-only response stream."""
+def text_response(text, stop_reason="end_turn", tokens=(100, 50), cache=(0, 0)):
+    """Build a text-only response stream. cache=(creation, read)."""
     text_block = _Block(type="text", text=text)
     events = [
         _StreamEvent(
@@ -130,12 +141,15 @@ def text_response(text, stop_reason="end_turn", tokens=(100, 50)):
             delta=_Delta("text_delta", text=text),
         ),
     ]
-    message = _Message([text_block], stop_reason, tokens[0], tokens[1])
+    message = _Message(
+        [text_block], stop_reason, tokens[0], tokens[1],
+        cache[0], cache[1],
+    )
     return _Stream(events, message)
 
 
-def tool_response(name, tool_input, stop_reason="tool_use", tokens=(150, 80)):
-    """Build a single tool_use response stream."""
+def tool_response(name, tool_input, stop_reason="tool_use", tokens=(150, 80), cache=(0, 0)):
+    """Build a single tool_use response stream. cache=(creation, read)."""
     tool_id = f"toolu_{name}_test"
     tool_block = _Block(type="tool_use", id=tool_id, name=name, input=tool_input)
     events = [
@@ -144,12 +158,15 @@ def tool_response(name, tool_input, stop_reason="tool_use", tokens=(150, 80)):
             content_block=_Block(type="tool_use", id=tool_id, name=name, input={}),
         ),
     ]
-    message = _Message([tool_block], stop_reason, tokens[0], tokens[1])
+    message = _Message(
+        [tool_block], stop_reason, tokens[0], tokens[1],
+        cache[0], cache[1],
+    )
     return _Stream(events, message)
 
 
-def mixed_response(text, tools, stop_reason="tool_use", tokens=(200, 120)):
-    """Build a response with text + multiple tool_use blocks."""
+def mixed_response(text, tools, stop_reason="tool_use", tokens=(200, 120), cache=(0, 0)):
+    """Build a response with text + multiple tool_use blocks. cache=(creation, read)."""
     text_block = _Block(type="text", text=text)
     events = [
         _StreamEvent(
@@ -173,12 +190,15 @@ def mixed_response(text, tools, stop_reason="tool_use", tokens=(200, 120)):
                 content_block=_Block(type="tool_use", id=tid, name=t["name"], input={}),
             ),
         )
-    message = _Message(content, stop_reason, tokens[0], tokens[1])
+    message = _Message(
+        content, stop_reason, tokens[0], tokens[1],
+        cache[0], cache[1],
+    )
     return _Stream(events, message)
 
 
-def web_search_response(query, n_results=3, tokens=(100, 300)):
-    """Build a web_search server-side tool response (pause_turn)."""
+def web_search_response(query, n_results=3, tokens=(100, 300), cache=(0, 0)):
+    """Build a web_search server-side tool response (pause_turn). cache=(creation, read)."""
     search_results = [
         {"type": "web_search_result", "url": f"https://example.com/{i}", "title": f"Result {i}"}
         for i in range(n_results)
@@ -194,5 +214,8 @@ def web_search_response(query, n_results=3, tokens=(100, 300)):
             content_block=_Block(type="server_tool_use", name="web_search", input={"query": query}),
         ),
     ]
-    message = _Message(content, "pause_turn", tokens[0], tokens[1])
+    message = _Message(
+        content, "pause_turn", tokens[0], tokens[1],
+        cache[0], cache[1],
+    )
     return _Stream(events, message)

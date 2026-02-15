@@ -29,6 +29,8 @@ class SessionLike(Protocol):
     total_tokens_used: int
     total_input_tokens: int
     total_output_tokens: int
+    total_cache_creation_tokens: int
+    total_cache_read_tokens: int
     message_history: list
     forge_state_snapshot: dict | None
 

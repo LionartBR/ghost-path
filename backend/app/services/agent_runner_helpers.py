@@ -70,6 +70,8 @@ def get_context_usage(session: SessionLike) -> dict:
         "usage_percentage": round((used / max_t) * 100, 2),
         "input_tokens": session.total_input_tokens,
         "output_tokens": session.total_output_tokens,
+        "cache_creation_tokens": session.total_cache_creation_tokens,
+        "cache_read_tokens": session.total_cache_read_tokens,
     }
 
 

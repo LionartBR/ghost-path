@@ -234,12 +234,25 @@ class AgentRunner:
         return tool_results, should_pause, sse_events
 
     def _account_tokens(self, session, response):
-        """Add token usage from response to session (total + directional)."""
-        inp = response.usage.input_tokens
-        out = response.usage.output_tokens
+        """Add token usage from response to session (total + directional).
+
+        With prompt caching, Anthropic splits input tokens into three buckets:
+        - input_tokens: non-cached input (billed at base rate)
+        - cache_creation_input_tokens: tokens written to cache (billed at 1.25x)
+        - cache_read_input_tokens: tokens read from cache (billed at 0.1x)
+        All three represent real input sent to the model (including system prompt
+        and tool definitions), so all must be counted.
+        """
+        usage = response.usage
+        cache_create = getattr(usage, "cache_creation_input_tokens", 0) or 0
+        cache_read = getattr(usage, "cache_read_input_tokens", 0) or 0
+        inp = usage.input_tokens + cache_create + cache_read
+        out = usage.output_tokens
         session.total_tokens_used += inp + out
         session.total_input_tokens += inp
         session.total_output_tokens += out
+        session.total_cache_creation_tokens += cache_create
+        session.total_cache_read_tokens += cache_read
 
     async def _save_state(self, session, messages, forge_state):
         """Save message history + ForgeState snapshot. Never crashes."""
