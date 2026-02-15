@@ -36,13 +36,11 @@ export function HomePage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [exampleIndex, setExampleIndex] = useState(0);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
-  const [sessionsError, setSessionsError] = useState(false);
-
   useEffect(() => {
     let cancelled = false;
     listSessions()
       .then((data) => { if (!cancelled) setSessions(data.sessions); })
-      .catch(() => { if (!cancelled) setSessionsError(true); });
+      .catch(() => { /* silently ignore — empty state is fine */ });
     return () => { cancelled = true; };
   }, []);
 
@@ -131,12 +129,7 @@ export function HomePage() {
           )}
         </div>
 
-        {/* Sessions error */}
-        {sessionsError && (
-          <div className="mt-8 w-full bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-            <p className="text-red-600 text-sm">{t("errors.loadingSessions")}</p>
-          </div>
-        )}
+        {/* Sessions silently fail — no error shown when backend unreachable or no sessions */}
 
         {/* Recent sessions */}
         {sessions.length > 0 && (
