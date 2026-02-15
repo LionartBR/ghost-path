@@ -167,7 +167,7 @@
   "errors.createSession": "Failed to create session",
   "errors.loadSession": "Failed to load session",
 
-  "session.cancel": "Cancel Pipeline",
+  "session.cancel": "Stop",
 
   "transition.toExplore": "We've dismantled assumptions. Now we search distant domains for structural patterns nobody has connected to your problem yet.",
   "transition.toSynthesize": "The landscape is mapped. Time to confront opposing ideas through dialectic and forge something that transcends both sides.",

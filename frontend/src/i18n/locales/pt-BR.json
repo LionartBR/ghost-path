@@ -167,7 +167,7 @@
   "errors.createSession": "Falha ao criar sessão",
   "errors.loadSession": "Falha ao carregar sessão",
 
-  "session.cancel": "Cancelar Pipeline",
+  "session.cancel": "Parar",
 
   "transition.toExplore": "Pressupostos desmontados. Agora buscamos em domínios distantes padrões estruturais que ninguém conectou ao seu problema ainda.",
   "transition.toSynthesize": "O terreno está mapeado. Hora de confrontar ideias opostas pela dialética e forjar algo que transcenda ambos os lados.",

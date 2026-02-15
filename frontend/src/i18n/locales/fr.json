@@ -167,7 +167,7 @@
   "errors.createSession": "Échec de la création de la session",
   "errors.loadSession": "Échec du chargement de la session",
 
-  "session.cancel": "Annuler le Pipeline",
+  "session.cancel": "Arrêter",
 
   "transition.toExplore": "Hypothèses déconstruites. Nous cherchons maintenant dans des domaines lointains des motifs structurels que personne n'a encore reliés à votre problème.",
   "transition.toSynthesize": "Le terrain est cartographié. Il est temps de confronter des idées opposées par la dialectique et de forger quelque chose qui transcende les deux côtés.",
