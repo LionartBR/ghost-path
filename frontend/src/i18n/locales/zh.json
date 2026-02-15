@@ -168,6 +168,7 @@
   "errors.loadSession": "加载会话失败",
 
   "session.cancel": "取消流水线",
+  "session.cancelled_message": "用户已停止会话。",
 
   "transition.toExplore": "假设已被拆解。现在我们在遥远的领域中搜索尚未与您的问题建立联系的结构性模式。",
   "transition.toSynthesize": "地形已绘制完毕。是时候通过辩证法对抗对立观点，锻造超越双方的全新认知。",

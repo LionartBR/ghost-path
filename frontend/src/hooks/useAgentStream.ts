@@ -1,6 +1,7 @@
 /* useAgentStream — SSE consumer for TRIZ's 6-phase pipeline. */
 
 import { useCallback, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { streamSession, sendUserInput, cancelSession } from "../api/client";
 import type {
   SSEEvent,
@@ -94,6 +95,7 @@ const initialState: AgentStreamState = {
 };
 
 export function useAgentStream(sessionId: string | null) {
+  const { t } = useTranslation();
   const [state, setState] = useState<AgentStreamState>(initialState);
   const controllerRef = useRef<AbortController | null>(null);
   /* Guard ref: prevents StrictMode from calling startStream() twice.
@@ -337,8 +339,19 @@ export function useAgentStream(sessionId: string | null) {
         console.error("Failed to cancel session:", err);
       }
     }
-    setState((s) => ({ ...s, isStreaming: false }));
-  }, [sessionId]);
+    /* ADR: inject cancellation message client-side because the SSE stream
+       is already closed before the backend can emit its "Session cancelled."
+       agent_text event. Without this, AgentActivity shows stale state. */
+    setState((s) => ({
+      ...s,
+      isStreaming: false,
+      awaitingInput: false,
+      activityItems: [
+        ...s.activityItems,
+        { kind: "text" as const, text: `**${t("session.cancelled_message")}**` },
+      ],
+    }));
+  }, [sessionId, t]);
 
   const dismissTransition = useCallback(() => {
     setState((s) => ({ ...s, phaseTransition: null }));

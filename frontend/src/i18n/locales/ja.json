@@ -168,6 +168,7 @@
   "errors.loadSession": "セッションの読み込みに失敗しました",
 
   "session.cancel": "パイプラインをキャンセル",
+  "session.cancelled_message": "ユーザーによりセッションが停止されました。",
 
   "transition.toExplore": "前提を解体しました。今度は遠い領域から、まだ誰もあなたの問題に結びつけていない構造的パターンを探します。",
   "transition.toSynthesize": "地形が把握できました。対立するアイデアを弁証法で対峙させ、両者を超越する何かを鍛造する時です。",

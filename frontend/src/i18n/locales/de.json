@@ -168,6 +168,7 @@
   "errors.loadSession": "Sitzung konnte nicht geladen werden",
 
   "session.cancel": "Stoppen",
+  "session.cancelled_message": "Sitzung vom Benutzer gestoppt.",
 
   "transition.toExplore": "Annahmen zerlegt. Jetzt durchsuchen wir ferne Domänen nach strukturellen Mustern, die noch niemand mit Ihrem Problem verknüpft hat.",
   "transition.toSynthesize": "Das Terrain ist kartiert. Zeit, gegensätzliche Ideen durch Dialektik zu konfrontieren und etwas zu schmieden, das beide Seiten transzendiert.",

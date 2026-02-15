@@ -168,6 +168,7 @@
   "errors.loadSession": "세션 로드 실패",
 
   "session.cancel": "파이프라인 취소",
+  "session.cancelled_message": "사용자에 의해 세션이 중지되었습니다.",
 
   "transition.toExplore": "가정을 해체했습니다. 이제 아무도 당신의 문제에 연결하지 못한 구조적 패턴을 먼 영역에서 찾아봅니다.",
   "transition.toSynthesize": "지형이 파악되었습니다. 변증법을 통해 대립하는 아이디어를 대면하고 양쪽을 초월하는 무언가를 만들어낼 시간입니다.",

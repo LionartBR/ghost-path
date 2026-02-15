@@ -168,6 +168,7 @@
   "errors.loadSession": "Error al cargar sesión",
 
   "session.cancel": "Detener",
+  "session.cancelled_message": "Sesión detenida por el usuario.",
 
   "transition.toExplore": "Supuestos desarmados. Ahora buscamos en dominios distantes patrones estructurales que nadie ha conectado con tu problema aún.",
   "transition.toSynthesize": "El terreno está mapeado. Es hora de confrontar ideas opuestas mediante la dialéctica y forjar algo que trascienda ambos lados.",

@@ -168,6 +168,7 @@
   "errors.loadSession": "Falha ao carregar sessão",
 
   "session.cancel": "Parar",
+  "session.cancelled_message": "Sessão interrompida pelo usuário.",
 
   "transition.toExplore": "Pressupostos desmontados. Agora buscamos em domínios distantes padrões estruturais que ninguém conectou ao seu problema ainda.",
   "transition.toSynthesize": "O terreno está mapeado. Hora de confrontar ideias opostas pela dialética e forjar algo que transcenda ambos os lados.",

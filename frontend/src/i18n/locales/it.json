@@ -168,6 +168,7 @@
   "errors.loadSession": "Impossibile caricare la sessione",
 
   "session.cancel": "Fermare",
+  "session.cancelled_message": "Sessione interrotta dall'utente.",
 
   "transition.toExplore": "Presupposti smontati. Ora cerchiamo in domini distanti schemi strutturali che nessuno ha ancora collegato al tuo problema.",
   "transition.toSynthesize": "Il terreno è mappato. È ora di confrontare idee opposte attraverso la dialettica e forgiare qualcosa che trascenda entrambi i lati.",
