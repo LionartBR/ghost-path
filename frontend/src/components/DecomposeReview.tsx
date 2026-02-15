@@ -22,56 +22,6 @@ import React, { useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { DecomposeReviewData, UserInput } from "../types";
 
-const ChipInput: React.FC<{
-  items: string[];
-  inputValue: string;
-  onInputChange: (v: string) => void;
-  onAdd: () => void;
-  onRemove: (i: number) => void;
-  placeholder: string;
-  className?: string;
-}> = ({ items, inputValue, onInputChange, onAdd, onRemove, placeholder, className }) => (
-  <div className={className}>
-    <div className="flex items-center gap-2">
-      <input
-        type="text"
-        value={inputValue}
-        onChange={(e) => onInputChange(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onAdd(); } }}
-        placeholder={placeholder}
-        className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
-      />
-      <button
-        onClick={onAdd}
-        disabled={!inputValue.trim()}
-        className="flex-shrink-0 w-9 h-9 rounded-md flex items-center justify-center transition-colors bg-white border border-gray-200 text-gray-500 hover:border-green-400 hover:text-green-600 disabled:text-gray-300 disabled:hover:border-gray-200 disabled:cursor-not-allowed"
-        aria-label="Add"
-      >
-        <i className="bi bi-plus-lg text-sm" />
-      </button>
-    </div>
-    {items.length > 0 && (
-      <div className="flex flex-wrap gap-2 mt-2">
-        {items.map((text, i) => (
-          <span
-            key={i}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200 text-green-700 text-xs"
-          >
-            {text}
-            <button
-              onClick={() => onRemove(i)}
-              className="text-green-400 hover:text-red-500 transition-colors leading-none"
-              aria-label="Remove"
-            >
-              &times;
-            </button>
-          </span>
-        ))}
-      </div>
-    )}
-  </div>
-);
-
 interface DecomposeReviewProps {
   data: DecomposeReviewData;
   onSubmit: (input: UserInput) => void;
@@ -405,15 +355,38 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
             </div>
           )}
 
-          <ChipInput
-            items={addedAssumptions}
-            inputValue={assumptionInput}
-            onInputChange={setAssumptionInput}
-            onAdd={registerAssumption}
-            onRemove={removeAssumption}
-            placeholder={t("decompose.addAssumption")}
-            className="mt-4"
-          />
+          {/* User-added assumptions — rendered as cards identical to model items */}
+          {addedAssumptions.map((text, i) => (
+            <div
+              key={`user-assumption-${i}`}
+              className="group relative mt-3 w-full max-w-lg mx-auto p-4 rounded-lg border border-gray-200 bg-white"
+            >
+              <p className="text-gray-700 text-sm leading-relaxed pr-6">{text}</p>
+              <button
+                onClick={() => removeAssumption(i)}
+                className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
+                aria-label="Remove"
+              >
+                <i className="bi bi-x-lg text-xs" />
+              </button>
+            </div>
+          ))}
+
+          {/* Add new assumption — dashed card with inline input */}
+          <div className="mt-3 w-full max-w-lg mx-auto p-4 rounded-lg border border-dashed border-gray-300">
+            <div className="flex items-center gap-2">
+              <i className="bi bi-plus-lg text-gray-400 text-sm" />
+              <input
+                type="text"
+                value={assumptionInput}
+                onChange={(e) => setAssumptionInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); registerAssumption(); } }}
+                onBlur={() => registerAssumption()}
+                placeholder={t("decompose.addAssumption")}
+                className="flex-1 bg-transparent text-gray-700 text-sm placeholder-gray-400 focus:outline-none"
+              />
+            </div>
+          </div>
         </div>
       )}
 
@@ -561,15 +534,38 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                 </div>
               )}
 
-              <ChipInput
-                items={addedReframings}
-                inputValue={reframingInput}
-                onInputChange={setReframingInput}
-                onAdd={registerReframing}
-                onRemove={removeReframing}
-                placeholder={t("decompose.addReframing")}
-                className="mt-4"
-              />
+              {/* User-added reframings — rendered as cards identical to model items */}
+              {addedReframings.map((text, i) => (
+                <div
+                  key={`user-reframing-${i}`}
+                  className="group relative mt-3 w-full max-w-lg mx-auto p-4 rounded-lg border border-gray-200 bg-white"
+                >
+                  <p className="text-gray-700 text-sm leading-relaxed pr-6">{text}</p>
+                  <button
+                    onClick={() => removeReframing(i)}
+                    className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
+                    aria-label="Remove"
+                  >
+                    <i className="bi bi-x-lg text-xs" />
+                  </button>
+                </div>
+              ))}
+
+              {/* Add new reframing — dashed card with inline input */}
+              <div className="mt-3 w-full max-w-lg mx-auto p-4 rounded-lg border border-dashed border-gray-300">
+                <div className="flex items-center gap-2">
+                  <i className="bi bi-plus-lg text-gray-400 text-sm" />
+                  <input
+                    type="text"
+                    value={reframingInput}
+                    onChange={(e) => setReframingInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); registerReframing(); } }}
+                    onBlur={() => registerReframing()}
+                    placeholder={t("decompose.addReframing")}
+                    className="flex-1 bg-transparent text-gray-700 text-sm placeholder-gray-400 focus:outline-none"
+                  />
+                </div>
+              </div>
             </div>
           ) : (
             /* Checkbox fallback — backward compat with old sessions */
@@ -613,15 +609,38 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                   </label>
                 ))}
               </div>
-              <ChipInput
-                items={addedReframings}
-                inputValue={reframingInput}
-                onInputChange={setReframingInput}
-                onAdd={registerReframing}
-                onRemove={removeReframing}
-                placeholder={t("decompose.addReframing")}
-                className="mt-3"
-              />
+              {/* User-added reframings — rendered as list items identical to model items */}
+              {addedReframings.map((text, i) => (
+                <div
+                  key={`user-reframing-${i}`}
+                  className="group relative flex items-start p-3 rounded-md border bg-green-50 border-green-200 mt-2"
+                >
+                  <div className="flex-1">
+                    <p className="text-gray-700 text-sm pr-6">{text}</p>
+                  </div>
+                  <button
+                    onClick={() => removeReframing(i)}
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
+                    aria-label="Remove"
+                  >
+                    <i className="bi bi-x-lg text-xs" />
+                  </button>
+                </div>
+              ))}
+
+              {/* Add new reframing — dashed card matching list item shape */}
+              <div className="flex items-center gap-2 p-3 rounded-md border border-dashed border-gray-300 mt-2">
+                <i className="bi bi-plus-lg text-gray-400 text-sm" />
+                <input
+                  type="text"
+                  value={reframingInput}
+                  onChange={(e) => setReframingInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); registerReframing(); } }}
+                  onBlur={() => registerReframing()}
+                  placeholder={t("decompose.addReframing")}
+                  className="flex-1 bg-transparent text-gray-700 text-sm placeholder-gray-400 focus:outline-none"
+                />
+              </div>
             </div>
           )}
         </>

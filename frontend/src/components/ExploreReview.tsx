@@ -26,7 +26,8 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
   const { t } = useTranslation();
   const [morphBoxOpen, setMorphBoxOpen] = useState(false);
   const [contradictionsOpen, setContradictionsOpen] = useState(false);
-  const [newDomain, setNewDomain] = useState("");
+  const [suggestedDomains, setSuggestedDomains] = useState<string[]>([]);
+  const [domainInput, setDomainInput] = useState("");
 
   // Resonance carousel state (mirrors DecomposeReview pattern)
   const [analogyResponses, setAnalogyResponses] = useState<Map<number, number>>(new Map());
@@ -88,6 +89,17 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
     analogiesCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  // -- Domain suggestion handlers --
+  const addDomain = () => {
+    const text = domainInput.trim();
+    if (!text) return;
+    setSuggestedDomains((prev) => [...prev, text]);
+    setDomainInput("");
+  };
+  const removeDomain = (index: number) => {
+    setSuggestedDomains((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const resonatedCount = Array.from(analogyResponses.values()).filter((opt) => opt > 0).length;
   const canSubmit = hasResonanceData ? resonatedCount > 0 : starredAnalogies.size > 0;
 
@@ -98,14 +110,14 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
         analogy_responses: Array.from(analogyResponses.entries()).map(
           ([idx, opt]) => ({ analogy_index: idx, selected_option: opt }),
         ),
-        suggested_domains: newDomain.trim() ? [newDomain.trim()] : undefined,
+        suggested_domains: suggestedDomains.length > 0 ? suggestedDomains : undefined,
       };
       onSubmit(input);
     } else {
       const input: UserInput = {
         type: "explore_review",
         starred_analogies: Array.from(starredAnalogies),
-        suggested_domains: newDomain.trim() ? [newDomain.trim()] : undefined,
+        suggested_domains: suggestedDomains.length > 0 ? suggestedDomains : undefined,
       };
       onSubmit(input);
     }
@@ -276,13 +288,38 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
           </div>
         )}
 
-        <input
-          type="text"
-          value={newDomain}
-          onChange={(e) => setNewDomain(e.target.value)}
-          placeholder={t("explore.suggestDomain")}
-          className="mt-3 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
-        />
+        {/* User-added domains — rendered as cards identical to analogy grid items */}
+        {suggestedDomains.map((text, i) => (
+          <div
+            key={`user-domain-${i}`}
+            className="group relative mt-3 p-4 rounded-lg border bg-gray-50 border-gray-200"
+          >
+            <h4 className="font-semibold text-gray-900 text-sm pr-6">{text}</h4>
+            <button
+              onClick={() => removeDomain(i)}
+              className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
+              aria-label="Remove"
+            >
+              <i className="bi bi-x-lg text-xs" />
+            </button>
+          </div>
+        ))}
+
+        {/* Add new domain — dashed card with inline input */}
+        <div className="mt-3 p-4 rounded-lg border border-dashed border-gray-300">
+          <div className="flex items-center gap-2">
+            <i className="bi bi-plus-lg text-gray-400 text-sm" />
+            <input
+              type="text"
+              value={domainInput}
+              onChange={(e) => setDomainInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addDomain(); } }}
+              onBlur={() => addDomain()}
+              placeholder={t("explore.suggestDomain")}
+              className="flex-1 bg-transparent text-gray-700 text-sm placeholder-gray-400 focus:outline-none"
+            />
+          </div>
+        </div>
       </div>
 
       {/* ── Morphological Box ── */}

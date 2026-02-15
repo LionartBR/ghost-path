@@ -37,7 +37,8 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
   const [expandedDetails, setExpandedDetails] = useState<Set<number>>(new Set());
 
   // -- Manual input --
-  const [newClaim, setNewClaim] = useState("");
+  const [addedClaims, setAddedClaims] = useState<string[]>([]);
+  const [claimInput, setClaimInput] = useState("");
 
   // -- Legacy fallback state --
   const [feedback, setFeedback] = useState<Map<number, ClaimFeedback>>(new Map());
@@ -47,7 +48,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
   const hasResonanceData = claims.some(c => c.resonance_options && c.resonance_options.length > 0);
   const allReviewed = totalClaims > 0 && responses.size >= totalClaims;
   const hasResonance = Array.from(responses.values()).some(opt => opt > 0);
-  const canSubmit = hasResonance || newClaim.trim().length > 0;
+  const canSubmit = hasResonance || addedClaims.length > 0;
   const isLastCard = currentCard >= totalClaims - 1;
   const isFirstCard = currentCard <= 0;
 
@@ -100,6 +101,17 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
     });
   };
 
+  // -- Claim addition handlers --
+  const addClaim = () => {
+    const text = claimInput.trim();
+    if (!text) return;
+    setAddedClaims((prev) => [...prev, text]);
+    setClaimInput("");
+  };
+  const removeClaim = (index: number) => {
+    setAddedClaims((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // -- Legacy feedback --
   const updateFeedback = (
     claimIndex: number,
@@ -125,7 +137,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
         claim_responses: Array.from(responses.entries()).map(
           ([idx, opt]) => ({ claim_index: idx, selected_option: opt }),
         ),
-        added_claims: newClaim.trim() ? [newClaim.trim()] : undefined,
+        added_claims: addedClaims.length > 0 ? addedClaims : undefined,
       };
       onSubmit(input);
     } else {
@@ -137,7 +149,7 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
       onSubmit({
         type: "claims_review",
         claim_feedback,
-        added_claims: newClaim.trim() ? [newClaim.trim()] : undefined,
+        added_claims: addedClaims.length > 0 ? addedClaims : undefined,
       });
     }
   };
@@ -319,13 +331,38 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
               </div>
             )}
 
-            <input
-              type="text"
-              value={newClaim}
-              onChange={(e) => setNewClaim(e.target.value)}
-              placeholder={t("claims.addClaim")}
-              className="mt-4 w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
-            />
+            {/* User-added claims — rendered as cards identical to model items */}
+            {addedClaims.map((text, i) => (
+              <div
+                key={`user-claim-${i}`}
+                className="group relative mt-3 w-full max-w-lg mx-auto p-4 rounded-lg border border-gray-200 bg-white"
+              >
+                <p className="text-gray-700 text-sm leading-relaxed pr-6">{text}</p>
+                <button
+                  onClick={() => removeClaim(i)}
+                  className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
+                  aria-label="Remove"
+                >
+                  <i className="bi bi-x-lg text-xs" />
+                </button>
+              </div>
+            ))}
+
+            {/* Add new claim — dashed card with inline input */}
+            <div className="mt-3 w-full max-w-lg mx-auto p-4 rounded-lg border border-dashed border-gray-300">
+              <div className="flex items-center gap-2">
+                <i className="bi bi-plus-lg text-gray-400 text-sm" />
+                <input
+                  type="text"
+                  value={claimInput}
+                  onChange={(e) => setClaimInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addClaim(); } }}
+                  onBlur={() => addClaim()}
+                  placeholder={t("claims.addClaim")}
+                  className="flex-1 bg-transparent text-gray-700 text-sm placeholder-gray-400 focus:outline-none"
+                />
+              </div>
+            </div>
           </div>
         )}
 
@@ -363,13 +400,38 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
         </div>
       ))}
 
-      <input
-        type="text"
-        value={newClaim}
-        onChange={(e) => setNewClaim(e.target.value)}
-        placeholder={t("claims.addClaim")}
-        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-md text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
-      />
+      {/* User-added claims — rendered as cards identical to model items */}
+      {addedClaims.map((text, i) => (
+        <div
+          key={`user-claim-${i}`}
+          className="group relative p-4 rounded-lg border border-gray-200 bg-white"
+        >
+          <p className="text-gray-700 text-sm leading-relaxed pr-6">{text}</p>
+          <button
+            onClick={() => removeClaim(i)}
+            className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
+            aria-label="Remove"
+          >
+            <i className="bi bi-x-lg text-xs" />
+          </button>
+        </div>
+      ))}
+
+      {/* Add new claim — dashed card with inline input */}
+      <div className="p-4 rounded-lg border border-dashed border-gray-300">
+        <div className="flex items-center gap-2">
+          <i className="bi bi-plus-lg text-gray-400 text-sm" />
+          <input
+            type="text"
+            value={claimInput}
+            onChange={(e) => setClaimInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addClaim(); } }}
+            onBlur={() => addClaim()}
+            placeholder={t("claims.addClaim")}
+            className="flex-1 bg-transparent text-gray-700 text-sm placeholder-gray-400 focus:outline-none"
+          />
+        </div>
+      </div>
 
       <button
         onClick={handleSubmit}
