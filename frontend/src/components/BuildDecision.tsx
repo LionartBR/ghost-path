@@ -6,11 +6,14 @@ Invariants:
     - Deep Dive card shown only when !max_rounds_reached
     - Gap triage delegated to GapCarousel component (extracted for ExMA line limits)
     - When gaps=0, free-text direction input replaces carousel
-    - "Finalize" button always visible, sends decision="resolve"
-    - Card order: Graph → Negative Knowledge → Deep Dive → Gaps → Insight → Finalize
+    - Continue and Finalize buttons both carry selected gaps automatically
+    - Card order: Graph → Negative Knowledge → Deep Dive → Gaps → Insight → Continue/Finalize
 
 Design Decisions:
     - GapCarousel extracted: keeps both files under 400-line ExMA limit (ADR: file size)
+    - GapCarousel is triage-only (no CTA): parent owns submit via Continue/Finalize
+      (ADR: users clicked Finalize ignoring carousel CTA, skipping gap investigation)
+    - Selected gaps auto-included in both Continue and Finalize payloads
     - Negative Knowledge inline over separate component: ~25 lines JSX, not worth extraction
     - Collapsible neg knowledge: avoids overwhelming the decision flow with failure history
 */
@@ -32,6 +35,9 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
   // Free-text direction (when gaps=0)
   const [directionText, setDirectionText] = useState("");
 
+  // Gap selection (lifted from GapCarousel)
+  const [selectedGapIndices, setSelectedGapIndices] = useState<number[]>([]);
+
   // Insight card state
   const [showInsight, setShowInsight] = useState(false);
   const [insightText, setInsightText] = useState("");
@@ -50,22 +56,18 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
 
   // -- Handlers --
 
-  const handleInvestigate = (selectedIndices: number[]) => {
-    onSubmit({
-      type: "build_decision",
-      decision: "continue",
-      selected_gaps: selectedIndices,
-    });
-  };
-
-  const handleDirection = () => {
+  const handleContinue = () => {
     setError("");
-    if (!directionText.trim()) return;
-    onSubmit({
+    const payload: UserInput = {
       type: "build_decision",
       decision: "continue",
-      continue_direction: directionText.trim(),
-    });
+    };
+    if (selectedGapIndices.length > 0) {
+      payload.selected_gaps = selectedGapIndices;
+    } else if (directionText.trim()) {
+      payload.continue_direction = directionText.trim();
+    }
+    onSubmit(payload);
   };
 
   const handleDeepDive = () => {
@@ -97,7 +99,11 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
   };
 
   const handleFinalize = () => {
-    onSubmit({ type: "build_decision", decision: "resolve" });
+    const payload: UserInput = { type: "build_decision", decision: "resolve" };
+    if (selectedGapIndices.length > 0) {
+      payload.selected_gaps = selectedGapIndices;
+    }
+    onSubmit(payload);
   };
 
   return (
@@ -173,10 +179,10 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
         </div>
       )}
 
-      {/* Card 4: Knowledge Gaps (carousel or free-text) */}
+      {/* Card 4: Knowledge Gaps (carousel or free-text direction) */}
       {!data.max_rounds_reached && (
         gaps.length > 0 ? (
-          <GapCarousel gaps={gaps} onInvestigate={handleInvestigate} />
+          <GapCarousel gaps={gaps} onSelectionChange={setSelectedGapIndices} />
         ) : (
           <div className="bg-white border border-gray-200/80 border-l-4 border-l-gray-300 rounded-xl shadow-sm p-5">
             <h3 className="flex items-center gap-2.5 text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
@@ -188,15 +194,8 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
               value={directionText}
               onChange={(e) => setDirectionText(e.target.value)}
               rows={3}
-              className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none placeholder-gray-400 mb-3"
+              className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none placeholder-gray-400"
             />
-            <button
-              onClick={handleDirection}
-              disabled={!directionText.trim()}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm py-3 px-6 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {t("build.startRound")}
-            </button>
           </div>
         )
       )}
@@ -270,13 +269,23 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
         )}
       </div>
 
-      {/* Card 6: Finalize */}
-      <button
-        onClick={handleFinalize}
-        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm py-3 px-6 rounded-lg transition-all"
-      >
-        {t("build.finalize")}
-      </button>
+      {/* Card 6: Continue / Finalize */}
+      <div className="flex gap-3">
+        {!data.max_rounds_reached && (
+          <button
+            onClick={handleContinue}
+            className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm py-3 px-6 rounded-lg transition-all"
+          >
+            {t("build.continue")}
+          </button>
+        )}
+        <button
+          onClick={handleFinalize}
+          className={`${data.max_rounds_reached ? "w-full" : "flex-1"} bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm py-3 px-6 rounded-lg transition-all`}
+        >
+          {t("build.finalize")}
+        </button>
+      </div>
 
       {/* Error */}
       {error && (

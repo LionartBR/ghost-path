@@ -349,3 +349,47 @@ def test_build_decision_continue_with_gaps_pt_br_body():
     )
     assert "The user wants" not in result
     assert "Lacuna sobre X" in result
+
+
+def test_build_decision_resolve_with_selected_gaps_includes_gap_text():
+    """Resolve with selected gaps includes gap text for model investigation."""
+    from app.core.forge_state import ForgeState
+    state = ForgeState()
+    state.gaps = ["Missing causal mechanism", "No empirical baseline"]
+    prefix = get_phase_prefix(Locale.EN, "Test problem")
+    result = format_user_input(
+        "build_decision", prefix, locale=Locale.EN,
+        decision="resolve", forge_state=state,
+        selected_gaps=[0, 1],
+    )
+    assert "CRYSTALLIZE" in result
+    assert "Missing causal mechanism" in result
+    assert "No empirical baseline" in result
+    assert "address these user-selected gaps" in result
+
+
+def test_build_decision_resolve_without_gaps_has_no_gap_section():
+    """Resolve without gaps produces clean message without gap section."""
+    prefix = get_phase_prefix(Locale.EN, "Test problem")
+    result = format_user_input(
+        "build_decision", prefix, locale=Locale.EN,
+        decision="resolve",
+    )
+    assert "CRYSTALLIZE" in result
+    assert "address these" not in result
+
+
+def test_build_decision_resolve_with_gaps_pt_br_body():
+    """PT-BR resolve with gaps uses translated header."""
+    from app.core.forge_state import ForgeState
+    state = ForgeState()
+    state.gaps = ["Lacuna sobre mecanismo"]
+    prefix = get_phase_prefix(Locale.PT_BR, PT_PROBLEM)
+    result = format_user_input(
+        "build_decision", prefix, locale=Locale.PT_BR,
+        decision="resolve", forge_state=state,
+        selected_gaps=[0],
+    )
+    assert "Lacuna sobre mecanismo" in result
+    assert "aborde estas lacunas" in result
+    assert "address these" not in result

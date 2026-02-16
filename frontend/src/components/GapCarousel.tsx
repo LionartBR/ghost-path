@@ -5,10 +5,11 @@ Invariants:
     - Auto-advances to next unreviewed gap after action (300ms)
     - Auto-collapses into summary bar when all gaps are triaged (400ms)
     - Collapsed summary is clickable to re-expand
-    - Only "investigate" indices are sent on submit — rejected gaps are omitted
-    - CTA disabled when zero gaps selected for investigation
+    - Selection reported to parent via onSelectionChange (parent owns submit)
 
 Design Decisions:
+    - No CTA button: parent (BuildDecision) handles submit via Continue/Finalize buttons
+      (ADR: users clicked Finalize ignoring the carousel CTA, causing gap investigation to be skipped)
     - Two stacked buttons per gap over single toggle: explicit intent, no ambiguity (ADR: UX clarity)
     - GAP_ACTION_META lookup table: mirrors VerdictPanel VERDICT_META pattern for consistency
     - Semantic dots (green/red/gray): at-a-glance triage distribution, same as VerdictPanel
@@ -23,7 +24,7 @@ type GapAction = "investigate" | "reject";
 
 interface GapCarouselProps {
   gaps: string[];
-  onInvestigate: (selectedIndices: number[]) => void;
+  onSelectionChange: (selectedIndices: number[]) => void;
 }
 
 const GAP_ACTION_META: Record<GapAction, { key: string; dot: string; active: string; inactive: string }> = {
@@ -41,7 +42,7 @@ const GAP_ACTION_META: Record<GapAction, { key: string; dot: string; active: str
 
 const GAP_ACTIONS: GapAction[] = ["investigate", "reject"];
 
-export default function GapCarousel({ gaps, onInvestigate }: GapCarouselProps) {
+export default function GapCarousel({ gaps, onSelectionChange }: GapCarouselProps) {
   const { t } = useTranslation();
   const totalGaps = gaps.length;
 
@@ -87,6 +88,9 @@ export default function GapCarousel({ gaps, onInvestigate }: GapCarouselProps) {
     setGapActions((prev) => {
       const updated = new Map(prev);
       updated.set(index, action);
+      /* Notify parent of selection change */
+      const selected = [...updated.entries()].filter(([, a]) => a === "investigate").map(([i]) => i);
+      onSelectionChange(selected);
       const nextUnreviewed = findNextUnreviewed(index, updated);
       if (nextUnreviewed === null) {
         /* All triaged → auto-collapse */
@@ -98,13 +102,9 @@ export default function GapCarousel({ gaps, onInvestigate }: GapCarouselProps) {
       }
       return updated;
     });
-  }, [findNextUnreviewed, goToCard]);
+  }, [findNextUnreviewed, goToCard, onSelectionChange]);
 
   if (totalGaps === 0) return null;
-
-  const handleSubmit = () => {
-    onInvestigate(selectedIndices);
-  };
 
   const animationClass = slideDirection === "right" ? "animate-slide-in-right" : "animate-slide-in-left";
   const currentAction = gapActions.get(currentCard);
@@ -220,14 +220,6 @@ export default function GapCarousel({ gaps, onInvestigate }: GapCarouselProps) {
         </div>
       </div>
 
-      {/* CTA: Investigate selected */}
-      <button
-        onClick={handleSubmit}
-        disabled={selectedIndices.length === 0}
-        className="w-full mt-4 bg-green-600 hover:bg-green-500 text-white font-semibold text-sm py-3 px-6 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {t("build.investigateSelected", { count: selectedIndices.length })}
-      </button>
     </div>
   );
 }

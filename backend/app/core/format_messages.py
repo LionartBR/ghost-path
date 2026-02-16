@@ -361,7 +361,10 @@ def _format_build_decision(
         case "deep_dive":
             return _build_deep_dive(prefix, pt, claim_id)
         case "resolve":
-            return _build_resolve(prefix, pt, forge_state, locale)
+            return _build_resolve(
+                prefix, pt, forge_state, locale,
+                selected_gaps=selected_gaps,
+            )
         case "add_insight":
             return _build_insight(prefix, pt, insight, urls)
     fallback = _pt_br.UNKNOWN_BUILD if pt else "Unknown build decision."
@@ -406,13 +409,22 @@ def _build_deep_dive(prefix, pt, claim_id):
     return f"{prefix}\n\n{tmpl.format(claim_id=claim_id)}"
 
 
-def _build_resolve(prefix, pt, forge_state, locale):
+def _build_resolve(prefix, pt, forge_state, locale, *, selected_gaps=None):
+    ctx = _digest.build_crystallize_context(forge_state, locale) if forge_state else ""
+    gap_section = ""
+    if selected_gaps and forge_state and forge_state.gaps:
+        gap_header = (
+            _pt_br.BUILD_RESOLVE_GAPS if pt
+            else "Before generating the Knowledge Document, address these user-selected gaps:"
+        )
+        gap_items = [forge_state.gaps[i] for i in selected_gaps if i < len(forge_state.gaps)]
+        if gap_items:
+            gap_section = f"\n\n{gap_header}\n" + "\n".join(f"- {g}" for g in gap_items)
     body = _pt_br.BUILD_RESOLVE if pt else (
         "The user is satisfied with the knowledge graph. "
         "Proceed to Phase 6 (CRYSTALLIZE)."
     )
-    ctx = _digest.build_crystallize_context(forge_state, locale) if forge_state else ""
-    return f"{prefix}\n\n{ctx}{body}"
+    return f"{prefix}\n\n{ctx}{body}{gap_section}"
 
 
 def _build_insight(prefix, pt, insight, urls):

@@ -115,6 +115,7 @@ BUILD_INSIGHT = (
 
 BUILD_GAPS_FOCUS = "O usuário selecionou estas lacunas de conhecimento para investigar:"
 BUILD_DIRECTION_FOCUS = "O usuário quer que a próxima rodada foque em:"
+BUILD_RESOLVE_GAPS = "Antes de gerar o Documento de Conhecimento, aborde estas lacunas selecionadas pelo usuário:"
 
 UNKNOWN_BUILD = "Decisão de construção desconhecida."
 UNKNOWN_INPUT = "Tipo de entrada desconhecido."

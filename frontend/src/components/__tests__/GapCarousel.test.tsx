@@ -5,7 +5,7 @@ Invariants:
     - Semantic dots reflect triage state (green/red/gray)
     - Auto-advances to next unreviewed gap after action
     - Auto-collapses when all gaps triaged
-    - Submit sends only investigate indices
+    - Selection reported to parent via onSelectionChange (no submit button)
 
 Design Decisions:
     - Mock i18n with passthrough: tests verify structure, not translations
@@ -46,10 +46,10 @@ const SAMPLE_GAPS = [
 ];
 
 describe("GapCarousel", () => {
-  let onInvestigate: ReturnType<typeof vi.fn<(indices: number[]) => void>>;
+  let onSelectionChange: ReturnType<typeof vi.fn<(indices: number[]) => void>>;
 
   beforeEach(() => {
-    onInvestigate = vi.fn<(indices: number[]) => void>();
+    onSelectionChange = vi.fn<(indices: number[]) => void>();
     vi.useFakeTimers();
   });
 
@@ -58,13 +58,13 @@ describe("GapCarousel", () => {
   });
 
   test("renders two action buttons per gap: select for investigation and reject", () => {
-    render(<GapCarousel gaps={SAMPLE_GAPS} onInvestigate={onInvestigate} />);
+    render(<GapCarousel gaps={SAMPLE_GAPS} onSelectionChange={onSelectionChange} />);
     expect(screen.getByText("build.selectForInvestigation")).toBeInTheDocument();
     expect(screen.getByText("build.rejectGap")).toBeInTheDocument();
   });
 
   test("selecting investigate marks gap with green dot and shows selected state", () => {
-    render(<GapCarousel gaps={SAMPLE_GAPS} onInvestigate={onInvestigate} />);
+    render(<GapCarousel gaps={SAMPLE_GAPS} onSelectionChange={onSelectionChange} />);
 
     fireEvent.click(screen.getByText("build.selectForInvestigation"));
 
@@ -73,7 +73,7 @@ describe("GapCarousel", () => {
   });
 
   test("selecting reject marks gap with red dot and shows rejected state", () => {
-    render(<GapCarousel gaps={SAMPLE_GAPS} onInvestigate={onInvestigate} />);
+    render(<GapCarousel gaps={SAMPLE_GAPS} onSelectionChange={onSelectionChange} />);
 
     fireEvent.click(screen.getByText("build.rejectGap"));
 
@@ -82,7 +82,7 @@ describe("GapCarousel", () => {
   });
 
   test("toggling from investigate to reject switches the action", () => {
-    render(<GapCarousel gaps={SAMPLE_GAPS} onInvestigate={onInvestigate} />);
+    render(<GapCarousel gaps={SAMPLE_GAPS} onSelectionChange={onSelectionChange} />);
 
     /* Select investigate */
     fireEvent.click(screen.getByText("build.selectForInvestigation"));
@@ -101,7 +101,7 @@ describe("GapCarousel", () => {
   });
 
   test("auto-advances to next unreviewed gap after action (300ms)", () => {
-    render(<GapCarousel gaps={SAMPLE_GAPS} onInvestigate={onInvestigate} />);
+    render(<GapCarousel gaps={SAMPLE_GAPS} onSelectionChange={onSelectionChange} />);
 
     expect(screen.getByText("1 / 3")).toBeInTheDocument();
 
@@ -113,7 +113,7 @@ describe("GapCarousel", () => {
   });
 
   test("collapses into summary bar when all gaps are triaged", () => {
-    render(<GapCarousel gaps={["Gap A", "Gap B"]} onInvestigate={onInvestigate} />);
+    render(<GapCarousel gaps={["Gap A", "Gap B"]} onSelectionChange={onSelectionChange} />);
 
     /* Triage first gap */
     fireEvent.click(screen.getByText("build.selectForInvestigation"));
@@ -127,7 +127,7 @@ describe("GapCarousel", () => {
   });
 
   test("collapsed summary shows correct counts: N selected, M rejected", () => {
-    render(<GapCarousel gaps={["Gap A", "Gap B"]} onInvestigate={onInvestigate} />);
+    render(<GapCarousel gaps={["Gap A", "Gap B"]} onSelectionChange={onSelectionChange} />);
 
     fireEvent.click(screen.getByText("build.selectForInvestigation"));
     act(() => { vi.advanceTimersByTime(350); });
@@ -139,7 +139,7 @@ describe("GapCarousel", () => {
   });
 
   test("clicking collapsed summary re-expands the carousel", () => {
-    render(<GapCarousel gaps={["Gap A", "Gap B"]} onInvestigate={onInvestigate} />);
+    render(<GapCarousel gaps={["Gap A", "Gap B"]} onSelectionChange={onSelectionChange} />);
 
     /* Triage all */
     fireEvent.click(screen.getByText("build.selectForInvestigation"));
@@ -154,47 +154,26 @@ describe("GapCarousel", () => {
     expect(screen.getByTestId("gap-dots")).toBeInTheDocument();
   });
 
-  test("investigate button is disabled when no gaps are selected for investigation", () => {
-    render(<GapCarousel gaps={SAMPLE_GAPS} onInvestigate={onInvestigate} />);
-    const btn = screen.getByText(/build\.investigateSelected/);
-    expect(btn).toBeDisabled();
-  });
+  test("notifies parent with only investigate indices on each triage action", () => {
+    render(<GapCarousel gaps={["Gap A", "Gap B", "Gap C"]} onSelectionChange={onSelectionChange} />);
 
-  test("investigate button shows count of selected gaps", () => {
-    render(<GapCarousel gaps={SAMPLE_GAPS} onInvestigate={onInvestigate} />);
-
+    /* Investigate first gap → parent gets [0] */
     fireEvent.click(screen.getByText("build.selectForInvestigation"));
+    expect(onSelectionChange).toHaveBeenLastCalledWith([0]);
     act(() => { vi.advanceTimersByTime(350); });
 
-    expect(screen.getByText(/build\.investigateSelected/)).not.toBeDisabled();
-  });
-
-  test("submit sends only investigate indices, not rejected ones", () => {
-    render(<GapCarousel gaps={["Gap A", "Gap B", "Gap C"]} onInvestigate={onInvestigate} />);
-
-    /* Investigate first gap */
-    fireEvent.click(screen.getByText("build.selectForInvestigation"));
-    act(() => { vi.advanceTimersByTime(350); });
-
-    /* Reject second gap */
+    /* Reject second gap → parent still gets [0] (rejected not included) */
     fireEvent.click(screen.getByText("build.rejectGap"));
+    expect(onSelectionChange).toHaveBeenLastCalledWith([0]);
     act(() => { vi.advanceTimersByTime(350); });
 
-    /* Investigate third gap */
+    /* Investigate third gap → parent gets [0, 2] */
     fireEvent.click(screen.getByText("build.selectForInvestigation"));
-    act(() => { vi.advanceTimersByTime(450); });
-
-    /* Re-expand if collapsed */
-    const collapsed = screen.queryByTestId("gap-collapsed-summary");
-    if (collapsed) fireEvent.click(collapsed);
-
-    /* Click submit */
-    fireEvent.click(screen.getByText(/build\.investigateSelected/));
-    expect(onInvestigate).toHaveBeenCalledWith([0, 2]);
+    expect(onSelectionChange).toHaveBeenLastCalledWith([0, 2]);
   });
 
   test("renders nothing when gaps array is empty", () => {
-    const { container } = render(<GapCarousel gaps={[]} onInvestigate={onInvestigate} />);
+    const { container } = render(<GapCarousel gaps={[]} onSelectionChange={onSelectionChange} />);
     expect(container.innerHTML).toBe("");
   });
 });
