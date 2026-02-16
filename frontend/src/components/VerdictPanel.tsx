@@ -3,8 +3,8 @@
 Invariants:
     - All verdict buttons start unselected — user must explicitly choose
     - Carousel follows centralized container pattern (max-w-lg) matching Phases 1-3
-    - Verdict selection auto-advances to next card after brief visual feedback (300ms)
-    - Auto-collapses into summary bar after all verdicts reviewed (400ms)
+    - Accept auto-advances to next card (300ms); reject/qualify/merge stay for input
+    - Auto-collapses into summary bar after all accept-only verdicts reviewed (400ms)
     - Progress dots reflect verdict-semantic colors (emerald/red/amber/violet)
 
 Design Decisions:
@@ -57,6 +57,16 @@ const CONFIDENCE_KEY: Record<string, string> = {
 
 const VERDICT_LIST: VerdictType[] = ["accept", "reject", "qualify", "merge"];
 
+/* ADR: verdicts needing extra input must NOT auto-advance — user needs time to fill the field */
+const NEEDS_INPUT = new Set<VerdictType>(["reject", "qualify", "merge"]);
+
+const isVerdictComplete = (v: ClaimVerdict): boolean => {
+  if (v.verdict === "reject" && !v.rejection_reason) return false;
+  if (v.verdict === "qualify" && !v.qualification) return false;
+  if (v.verdict === "merge" && !v.merge_with_claim_id) return false;
+  return true;
+};
+
 export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
   const { t } = useTranslation();
   const [verdicts, setVerdicts] = useState<Map<number, ClaimVerdict>>(new Map());
@@ -102,10 +112,13 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
       const updated = new Map(prev);
       const current = updated.get(claimIndex) || { claim_index: claimIndex, verdict: "accept" as VerdictType };
       updated.set(claimIndex, { ...current, verdict });
-      if (updated.size >= totalClaims) {
-        autoAdvanceTimer.current = setTimeout(() => { setDone(true); setCollapsed(true); }, 400);
-      } else if (claimIndex < totalClaims - 1) {
-        autoAdvanceTimer.current = setTimeout(() => goNext(), 300);
+      /* Only auto-advance for verdicts that don't need additional input */
+      if (!NEEDS_INPUT.has(verdict)) {
+        if (updated.size >= totalClaims) {
+          autoAdvanceTimer.current = setTimeout(() => { setDone(true); setCollapsed(true); }, 400);
+        } else if (claimIndex < totalClaims - 1) {
+          autoAdvanceTimer.current = setTimeout(() => goNext(), 300);
+        }
       }
       return updated;
     });
@@ -124,12 +137,23 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
     const verdictList: ClaimVerdict[] = claims.map((_, i) =>
       verdicts.get(i) || { claim_index: i, verdict: "accept" },
     );
+    const incomplete = verdictList.findIndex((v) => !isVerdictComplete(v));
+    if (incomplete !== -1) {
+      setCollapsed(false);
+      setDone(false);
+      goToCard(incomplete, incomplete > currentCard ? "right" : "left");
+      return;
+    }
     onSubmit({ type: "verdicts", verdicts: verdictList });
   };
 
   const currentVerdict = verdicts.get(currentCard)?.verdict;
   const claim = claims[currentCard];
   const animationClass = slideDirection === "right" ? "animate-slide-in-right" : "animate-slide-in-left";
+  const allComplete = totalClaims > 0 && claims.every((_, i) => {
+    const v = verdicts.get(i);
+    return v ? isVerdictComplete(v) : true; /* unset defaults to accept — always complete */
+  });
 
   return (
     <div className="space-y-4">
@@ -297,6 +321,8 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                     <label className="block text-xs text-gray-500 mb-1">{t("verdicts.rejectionReason")}</label>
                     <input
                       type="text"
+                      autoFocus
+                      placeholder={t("verdicts.rejectionReason")}
                       value={verdicts.get(currentCard)?.rejection_reason || ""}
                       onChange={(e) => updateVerdict(currentCard, "rejection_reason", e.target.value)}
                       className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent placeholder-gray-400"
@@ -308,6 +334,8 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                     <label className="block text-xs text-gray-500 mb-1">{t("verdicts.qualification")}</label>
                     <input
                       type="text"
+                      autoFocus
+                      placeholder={t("verdicts.qualification")}
                       value={verdicts.get(currentCard)?.qualification || ""}
                       onChange={(e) => updateVerdict(currentCard, "qualification", e.target.value)}
                       className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent placeholder-gray-400"
@@ -318,6 +346,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                   <div className="animate-fade-in text-left max-w-md mx-auto mt-3">
                     <label className="block text-xs text-gray-500 mb-1">{t("verdicts.mergeWith")}</label>
                     <select
+                      autoFocus
                       value={verdicts.get(currentCard)?.merge_with_claim_id || ""}
                       onChange={(e) => updateVerdict(currentCard, "merge_with_claim_id", e.target.value)}
                       className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
@@ -351,7 +380,11 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
       {/* Submit */}
       <button
         onClick={handleSubmit}
-        className="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold text-sm py-3 px-6 rounded-lg transition-all"
+        className={`w-full font-semibold text-sm py-3 px-6 rounded-lg transition-all ${
+          allComplete
+            ? "bg-amber-600 hover:bg-amber-500 text-white"
+            : "bg-gray-200 text-gray-400 cursor-not-allowed"
+        }`}
       >
         {t("verdicts.submit")}
       </button>
