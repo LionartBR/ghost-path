@@ -227,6 +227,39 @@ class AgentRunner:
                     self._last_response = await stream.get_final_message()
                     return
 
+            except ValueError as e:
+                # Anthropic SDK raises ValueError on malformed JSON in tool
+                # params (e.g. control characters \u0000-\u001F in stream).
+                # Only handle SDK JSON parse errors; re-raise anything else.
+                if "parse tool parameter JSON" not in str(e):
+                    raise
+                can_retry = (
+                    attempt < self.MAX_STREAM_RETRIES
+                    and not yielded_content
+                )
+                if can_retry:
+                    delay = (2 ** attempt) * 1.0
+                    logger.warning(
+                        "Stream retry %d/%d after malformed JSON (%.1fs): %s",
+                        attempt + 1, self.MAX_STREAM_RETRIES, delay,
+                        str(e)[:200],
+                    )
+                    await asyncio.sleep(delay)
+                    continue
+                logger.error("Malformed JSON from model (no retries left): %s",
+                    str(e)[:200])
+                yield {
+                    "type": "error",
+                    "data": {
+                        "code": "MALFORMED_MODEL_OUTPUT",
+                        "message": "Model produced invalid output. Please retry.",
+                        "severity": "warning",
+                        "recoverable": True,
+                    },
+                }
+                yield done_event(error=True)
+                return
+
             except TrizError as e:
                 api_type = getattr(e, "api_error_type", e.code)
                 can_retry = (
