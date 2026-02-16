@@ -56,8 +56,6 @@ export default function GapCarousel({ gaps, onInvestigate }: GapCarouselProps) {
   const rejectedCount = [...gapActions.values()].filter((a) => a === "reject").length;
   const allTriaged = totalGaps > 0 && gapActions.size >= totalGaps;
 
-  if (totalGaps === 0) return null;
-
   const isFirstCard = currentCard <= 0;
   const isLastCard = currentCard >= totalGaps - 1;
 
@@ -101,6 +99,8 @@ export default function GapCarousel({ gaps, onInvestigate }: GapCarouselProps) {
       return updated;
     });
   }, [findNextUnreviewed, goToCard]);
+
+  if (totalGaps === 0) return null;
 
   const handleSubmit = () => {
     onInvestigate(selectedIndices);
