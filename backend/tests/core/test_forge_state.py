@@ -111,10 +111,17 @@ def test_max_rounds_not_reached_at_3():
     assert not state.max_rounds_reached
 
 
-def test_max_rounds_reached_at_4():
-    """Round 4 (5th round, 0-indexed) IS the last — MAX_ROUNDS_PER_SESSION=5."""
+def test_max_rounds_not_reached_at_4():
+    """Round 4 (5th round, 0-indexed) is the last allowed — can still run."""
     state = ForgeState()
     state.current_round = 4
+    assert not state.max_rounds_reached
+
+
+def test_max_rounds_reached_at_5():
+    """Round 5 (6th round, 0-indexed) exceeds MAX_ROUNDS_PER_SESSION=5."""
+    state = ForgeState()
+    state.current_round = 5
     assert state.max_rounds_reached
 
 

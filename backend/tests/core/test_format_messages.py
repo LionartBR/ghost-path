@@ -250,7 +250,7 @@ def test_format_verdicts_mixed_emits_build_instruction():
 def test_format_verdicts_all_rejected_at_max_rounds_emits_build_instruction():
     """At max rounds, even all-rejected should route to BUILD (user must resolve)."""
     state = _make_state_for_verdicts()
-    state.current_round = 4  # MAX_ROUNDS_PER_SESSION - 1 = 4
+    state.current_round = 5  # >= MAX_ROUNDS_PER_SESSION (exceeded)
     verdicts = [
         {"claim_index": 0, "verdict": "reject", "rejection_reason": "R1"},
         {"claim_index": 1, "verdict": "reject", "rejection_reason": "R2"},

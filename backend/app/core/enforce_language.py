@@ -35,7 +35,7 @@ def check_response_language(text: str, expected_locale: Locale) -> dict | None:
         return None
 
     # English is always allowed as fallback (tool names, citations, code)
-    if expected_locale == Locale.EN:
+    if detected_locale == Locale.EN:
         return None
 
     return {

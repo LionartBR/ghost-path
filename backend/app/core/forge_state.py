@@ -147,7 +147,7 @@ class ForgeState:
     @property
     def max_rounds_reached(self) -> bool:
         """Whether the session has hit the round limit (rounds 0..MAX-1)."""
-        return self.current_round >= MAX_ROUNDS_PER_SESSION - 1
+        return self.current_round >= MAX_ROUNDS_PER_SESSION
 
     # === Phase 6: Crystallize ===
     knowledge_document_markdown: str | None = None

@@ -72,11 +72,11 @@ async def create_session(
             locale=locale.value, locale_confidence=confidence,
         )
         db.add(session)
+        await db.commit()
+        await db.refresh(session)
         _forge_states[session.id] = ForgeState(
             locale=locale, locale_confidence=confidence,
         )
-        await db.commit()
-        await db.refresh(session)
         return SessionResponse(
             id=session.id,
             problem=session.problem,

@@ -39,7 +39,7 @@ def search_research_archive(
 
     Returns dict with results, counts, and token estimates.
     """
-    max_results = min(max_results, _MAX_RESULTS_CAP)
+    max_results = min(max(max_results, 1), _MAX_RESULTS_CAP)
 
     # Filter by phase and purpose first
     filtered = archive

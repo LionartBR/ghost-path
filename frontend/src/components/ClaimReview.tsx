@@ -111,7 +111,8 @@ export default function ClaimReview({ claims, onSubmit }: ClaimReviewProps) {
     const optCount = claims[cardIndex]?.resonance_options?.length ?? 2;
     setResponses(prev => { const next = new Map(prev); next.set(cardIndex, optCount); return next; });
     updateMap(setShowCustomArgInput, cardIndex, false);
-    const totalAnswered = responses.size + 1;
+    // Account for pending state update: only +1 if this card had no prior response
+    const totalAnswered = responses.has(cardIndex) ? responses.size : responses.size + 1;
     if (totalAnswered >= totalClaims) {
       setTimeout(() => { setDone(true); setCollapsed(true); }, 400);
     } else if (cardIndex < totalClaims - 1) {

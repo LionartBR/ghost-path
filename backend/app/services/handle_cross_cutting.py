@@ -280,9 +280,6 @@ class CrossCuttingHandlers:
         if error:
             return error
 
-        # Check accessibility (requested is guaranteed non-None after error check above)
-        if requested is None:
-            return {"status": "error", "error_code": "INVALID_PHASE", "message": "No phase"}
         if not self._check_phase_accessibility(requested):
             return {
                 "status": "error",

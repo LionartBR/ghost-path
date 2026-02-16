@@ -245,10 +245,18 @@ def test_max_rounds_passes_at_3():
     assert error is None
 
 
-def test_max_rounds_fails_at_4():
-    """Round 4 (5th round, 0-indexed) is the last — MAX_ROUNDS_PER_SESSION=5."""
+def test_max_rounds_passes_at_4():
+    """Round 4 (5th round, 0-indexed) is the last allowed — still passes."""
     state = ForgeState()
     state.current_round = 4
+    error = check_max_rounds(state)
+    assert error is None
+
+
+def test_max_rounds_fails_at_5():
+    """Round 5 (6th round, 0-indexed) exceeds MAX_ROUNDS_PER_SESSION=5."""
+    state = ForgeState()
+    state.current_round = 5
     error = check_max_rounds(state)
     assert error is not None
     assert error["error_code"] == "MAX_ROUNDS_EXCEEDED"

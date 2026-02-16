@@ -243,7 +243,7 @@ def test_computed_properties_correct_after_roundtrip():
         {"claim_text": "c1"}, {"claim_text": "c2"}, {"claim_text": "c3"},
     ]
     state.antitheses_searched = {0, 1, 2}
-    state.current_round = 4  # MAX_ROUNDS_PER_SESSION - 1
+    state.current_round = 5  # MAX_ROUNDS_PER_SESSION (exceeded)
 
     snapshot = forge_state_to_snapshot(state)
     restored = forge_state_from_snapshot(snapshot)

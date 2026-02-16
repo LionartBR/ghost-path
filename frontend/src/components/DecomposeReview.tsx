@@ -101,6 +101,9 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
   const selectOption = useCallback((assumptionIndex: number, optionIndex: number) => {
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
 
+    // Compute expected custom arg count after pending delete
+    const pendingCustomSize = customArgTexts.size - (customArgTexts.has(assumptionIndex) ? 1 : 0);
+
     // Clear any custom argument for this card if selecting a predefined option
     setCustomArgTexts(prev => { const next = new Map(prev); next.delete(assumptionIndex); return next; });
 
@@ -112,7 +115,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
         next.set(assumptionIndex, optionIndex);
       }
 
-      const totalAnswered = next.size + customArgTexts.size;
+      const totalAnswered = next.size + pendingCustomSize;
       if (totalAnswered >= totalAssumptions) {
         autoAdvanceTimer.current = setTimeout(() => {
           setAssumptionsDone(true);
@@ -125,7 +128,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
       return next;
     });
     assumptionsCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [totalAssumptions, goNext, customArgTexts.size]);
+  }, [totalAssumptions, goNext, customArgTexts]);
 
   // -- Custom argument submission for assumptions --
   const submitCustomArg = useCallback((cardIndex: number) => {
@@ -136,14 +139,15 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
     const optCount = data.assumptions[cardIndex]?.options?.length ?? 2;
     setAssumptionResponses(prev => { const next = new Map(prev); next.set(cardIndex, optCount); return next; });
     updateMap(setShowCustomArgInput, cardIndex, false);
-    // Auto-advance
-    const totalAnswered = assumptionResponses.size + customArgTexts.size + 1;
+    // Auto-advance (account for pending state updates: +1 for the custom arg being added)
+    const pendingResponseSize = assumptionResponses.has(cardIndex) ? assumptionResponses.size : assumptionResponses.size + 1;
+    const totalAnswered = pendingResponseSize + customArgTexts.size + (customArgTexts.has(cardIndex) ? 0 : 1);
     if (totalAnswered >= totalAssumptions) {
       setTimeout(() => { setAssumptionsDone(true); setAssumptionsCollapsed(true); }, 400);
     } else if (cardIndex < totalAssumptions - 1) {
       setTimeout(() => goNext(), 300);
     }
-  }, [customArgInput, data.assumptions, assumptionResponses.size, customArgTexts.size, totalAssumptions, goNext]);
+  }, [customArgInput, data.assumptions, assumptionResponses, customArgTexts, totalAssumptions, goNext]);
 
   // -- Reframings carousel navigation --
   const goToReframingCard = useCallback((index: number, direction: "left" | "right") => {

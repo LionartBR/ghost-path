@@ -49,17 +49,17 @@ def _events_of_type(events, t):
 async def test_language_retry_on_text_only_wrong_locale(
     test_db, seed_session, mock_dispatch,
 ):
-    """PT_BR session gets English text-only → retry with corrective message."""
+    """PT_BR session gets French text-only → retry with corrective message."""
     state = ForgeState()
     state.locale = Locale.PT_BR
     state.document_updated_this_phase = True  # bypass document gate
-    # >50 chars of English to trigger check_response_language
-    english_text = (
-        "This is a comprehensive analysis of the problem that "
-        "demonstrates clear English language output from the agent."
+    # >50 chars of French (not English, not Portuguese) to trigger mismatch
+    french_text = (
+        "Le developpement de l'intelligence artificielle a fondamentalement "
+        "change notre approche de la resolution de problemes complexes."
     )
     client = MockAnthropicClient([
-        text_response(english_text),
+        text_response(french_text),
         text_response("Análise completa do problema com resultados detalhados em português."),
     ])
     runner = AgentRunner(test_db, client)
@@ -78,16 +78,16 @@ async def test_language_retry_on_text_only_wrong_locale(
 async def test_language_nudge_on_tool_interleaved_wrong_locale(
     test_db, seed_session, mock_dispatch,
 ):
-    """PT_BR + English text with tools → nudge injected alongside tool_results."""
+    """PT_BR + French text with tools → nudge injected alongside tool_results."""
     state = ForgeState()
     state.locale = Locale.PT_BR
     state.document_updated_this_phase = True  # bypass document gate
-    english_text = (
-        "Let me decompose this problem into its fundamental components "
-        "to understand the underlying structure of the challenge."
+    french_text = (
+        "Je vais decomposer ce probleme en composants fondamentaux "
+        "pour comprendre la structure sous-jacente de ce defi complexe."
     )
     client = MockAnthropicClient([
-        mixed_response(english_text, [
+        mixed_response(french_text, [
             {"name": "decompose_to_fundamentals", "input": {"p": "test"}},
         ]),
         text_response("Agora em português, a decomposição está completa com resultados."),

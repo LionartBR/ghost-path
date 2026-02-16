@@ -307,6 +307,8 @@ async def _apply_build_decision(
 ) -> None:
     """Apply build decision to ForgeState."""
     if body.decision == "continue":
+        if state.max_rounds_reached:
+            return  # frontend hides button, but enforce server-side too
         state.reset_for_new_round()
         state.transition_to(Phase.SYNTHESIZE)
         session.message_history = []

@@ -80,6 +80,9 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
     // Clear custom argument when selecting predefined option
     setCustomArgTexts(prev => { const next = new Map(prev); next.delete(analogyIndex); return next; });
 
+    // Compute expected custom arg count after pending delete
+    const pendingCustomSize = customArgTexts.size - (customArgTexts.has(analogyIndex) ? 1 : 0);
+
     setAnalogyResponses((prev) => {
       const next = new Map(prev);
       if (next.get(analogyIndex) === optionIndex) {
@@ -88,7 +91,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
         next.set(analogyIndex, optionIndex);
       }
 
-      const totalAnswered = next.size + customArgTexts.size;
+      const totalAnswered = next.size + pendingCustomSize;
       if (totalAnswered >= totalAnalogies) {
         autoAdvanceTimer.current = setTimeout(() => {
           setAnalogiesDone(true);
@@ -101,7 +104,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
       return next;
     });
     analogiesCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [totalAnalogies, goNext, customArgTexts.size]);
+  }, [totalAnalogies, goNext, customArgTexts]);
 
   // Custom argument submission for analogies
   const submitCustomArg = useCallback((cardIndex: number) => {
@@ -111,13 +114,15 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
     const optCount = data.analogies[cardIndex]?.resonance_options?.length ?? 2;
     setAnalogyResponses(prev => { const next = new Map(prev); next.set(cardIndex, optCount); return next; });
     updateMap(setShowCustomArgInput, cardIndex, false);
-    const totalAnswered = analogyResponses.size + customArgTexts.size + 1;
+    // Account for pending state updates
+    const pendingResponseSize = analogyResponses.has(cardIndex) ? analogyResponses.size : analogyResponses.size + 1;
+    const totalAnswered = pendingResponseSize + customArgTexts.size + (customArgTexts.has(cardIndex) ? 0 : 1);
     if (totalAnswered >= totalAnalogies) {
       setTimeout(() => { setAnalogiesDone(true); setAnalogiesCollapsed(true); }, 400);
     } else if (cardIndex < totalAnalogies - 1) {
       setTimeout(() => goNext(), 300);
     }
-  }, [customArgInput, data.analogies, analogyResponses.size, customArgTexts.size, totalAnalogies, goNext]);
+  }, [customArgInput, data.analogies, analogyResponses, customArgTexts, totalAnalogies, goNext]);
 
   const toggleStar = (index: number) => {
     setStarredAnalogies((prev) => {
