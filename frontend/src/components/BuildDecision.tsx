@@ -126,25 +126,27 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
             <i className="bi bi-x-octagon text-base" />
             {t("build.negativeKnowledge")}
             <span className="ml-1 text-xs font-normal text-gray-400">({data.negative_knowledge.length})</span>
-            <span className={`ml-auto transition-transform ${showNegKnowledge ? "rotate-90" : ""}`}>&#9654;</span>
+            <span className={`ml-auto transition-transform duration-200 ${showNegKnowledge ? "rotate-90" : ""}`}>&#9654;</span>
           </button>
-          {showNegKnowledge && (
-            <div className="px-5 pb-5 space-y-3 animate-fade-in" data-testid="neg-knowledge-list">
-              {data.negative_knowledge.map((nk, i) => (
-                <div key={i} className="bg-red-50/50 border border-red-100 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-xs font-medium text-red-400 bg-red-100 px-2 py-0.5 rounded">
-                      {t("build.negKnowledgeRound", { round: nk.round })}
-                    </span>
+          <div className={`collapse-section ${showNegKnowledge ? 'open' : ''}`}>
+            <div className="collapse-inner">
+              <div className="px-5 pb-5 space-y-3" data-testid="neg-knowledge-list">
+                {data.negative_knowledge.map((nk, i) => (
+                  <div key={i} className="bg-red-50/50 border border-red-100 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-xs font-medium text-red-400 bg-red-100 px-2 py-0.5 rounded">
+                        {t("build.negKnowledgeRound", { round: nk.round })}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700 mb-1">{nk.claim_text}</p>
+                    {nk.rejection_reason && (
+                      <p className="text-xs text-red-400 italic">{nk.rejection_reason}</p>
+                    )}
                   </div>
-                  <p className="text-sm text-gray-700 mb-1">{nk.claim_text}</p>
-                  {nk.rejection_reason && (
-                    <p className="text-xs text-red-400 italic">{nk.rejection_reason}</p>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -208,10 +210,11 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
         >
           <i className="bi bi-lightbulb text-base" />
           {t("build.insightCard")}
-          <span className={`ml-auto transition-transform ${showInsight ? "rotate-90" : ""}`}>&#9654;</span>
+          <span className={`ml-auto transition-transform duration-200 ${showInsight ? "rotate-90" : ""}`}>&#9654;</span>
         </button>
-        {showInsight && (
-          <div className="px-5 pb-5 space-y-3 animate-fade-in">
+        <div className={`collapse-section ${showInsight ? 'open' : ''}`}>
+          <div className="collapse-inner">
+          <div className="px-5 pb-5 space-y-3">
             <div>
               <label className="block text-xs text-gray-500 mb-2">{t("insight.label")}</label>
               <textarea
@@ -266,7 +269,8 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
               {t("insight.submit")}
             </button>
           </div>
-        )}
+          </div>
+        </div>
       </div>
 
       {/* Card 6: Continue / Finalize */}

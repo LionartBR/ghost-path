@@ -33,7 +33,7 @@ export default function EvidencePanel({ evidence }: EvidencePanelProps) {
           </span>
         </div>
         <svg
-          className={`w-4 h-4 text-gray-400 transition-transform ${
+          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
           }`}
           fill="none"
@@ -49,53 +49,55 @@ export default function EvidencePanel({ evidence }: EvidencePanelProps) {
         </svg>
       </button>
 
-      {isOpen && (
-        <div className="border-t border-gray-100 p-5 space-y-3 max-h-96 overflow-y-auto">
-          {evidence.length === 0 ? (
-            <p className="text-gray-400 text-sm text-center py-4">
-              {t("evidence.empty")}
-            </p>
-          ) : (
-            evidence.map((item, idx) => (
-              <div
-                key={idx}
-                className="bg-gray-50 rounded-md p-3 border border-gray-100"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  {item.url ? (
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-500 font-medium text-sm flex-1"
-                    >
-                      {item.title}
-                    </a>
-                  ) : (
-                    <span className="text-gray-900 font-medium text-sm flex-1">
-                      {item.title}
-                    </span>
-                  )}
-                  {item.type && (
-                    <span
-                      className={`ml-2 px-2 py-0.5 rounded text-xs font-medium border ${
-                        EVIDENCE_TYPE_COLORS[item.type]?.bg || "bg-gray-100"
-                      } ${EVIDENCE_TYPE_COLORS[item.type]?.text || "text-gray-600"} ${
-                        EVIDENCE_TYPE_COLORS[item.type]?.border || "border-gray-200"
-                      }`}
-                    >
-                      {item.type}
-                    </span>
-                  )}
+      <div className={`collapse-section ${isOpen ? 'open' : ''}`}>
+        <div className="collapse-inner">
+          <div className="border-t border-gray-100 p-5 space-y-3 max-h-96 overflow-y-auto">
+            {evidence.length === 0 ? (
+              <p className="text-gray-400 text-sm text-center py-4">
+                {t("evidence.empty")}
+              </p>
+            ) : (
+              evidence.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="bg-gray-50 rounded-md p-3 border border-gray-100"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    {item.url ? (
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-500 font-medium text-sm flex-1"
+                      >
+                        {item.title}
+                      </a>
+                    ) : (
+                      <span className="text-gray-900 font-medium text-sm flex-1">
+                        {item.title}
+                      </span>
+                    )}
+                    {item.type && (
+                      <span
+                        className={`ml-2 px-2 py-0.5 rounded text-xs font-medium border ${
+                          EVIDENCE_TYPE_COLORS[item.type]?.bg || "bg-gray-100"
+                        } ${EVIDENCE_TYPE_COLORS[item.type]?.text || "text-gray-600"} ${
+                          EVIDENCE_TYPE_COLORS[item.type]?.border || "border-gray-200"
+                        }`}
+                      >
+                        {item.type}
+                      </span>
+                    )}
+                  </div>
+                  <ClaimMarkdown className="text-gray-600 text-sm leading-relaxed">
+                    {item.summary}
+                  </ClaimMarkdown>
                 </div>
-                <ClaimMarkdown className="text-gray-600 text-sm leading-relaxed">
-                  {item.summary}
-                </ClaimMarkdown>
-              </div>
-            ))
-          )}
+              ))
+            )}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

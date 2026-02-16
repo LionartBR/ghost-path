@@ -390,46 +390,48 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
             <span className="flex-1 text-left">
               {t("explore.morphBox")} ({data.morphological_box.parameters.length})
             </span>
-            <span className={`transition-transform text-xs ${morphBoxOpen ? "rotate-90" : ""}`}>
+            <span className={`transition-transform duration-200 text-xs ${morphBoxOpen ? "rotate-90" : ""}`}>
               &#9654;
             </span>
           </button>
-          {morphBoxOpen && (
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    {data.morphological_box.parameters.map((param, i) => (
-                      <th
-                        key={i}
-                        className="px-3 py-2 bg-blue-50 text-blue-700 text-left text-xs font-semibold uppercase tracking-wide border border-gray-200"
-                      >
-                        {param.name}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array.from({
-                    length: Math.max(
-                      ...data.morphological_box.parameters.map((p) => p.values.length)
-                    ),
-                  }).map((_, rowIndex) => (
-                    <tr key={rowIndex}>
-                      {data.morphological_box!.parameters.map((param, colIndex) => (
-                        <td
-                          key={colIndex}
-                          className="px-3 py-2 text-gray-700 text-sm border border-gray-200"
+          <div className={`collapse-section ${morphBoxOpen ? 'open' : ''}`}>
+            <div className="collapse-inner">
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr>
+                      {data.morphological_box.parameters.map((param, i) => (
+                        <th
+                          key={i}
+                          className="px-3 py-2 bg-blue-50 text-blue-700 text-left text-xs font-semibold uppercase tracking-wide border border-gray-200"
                         >
-                          {param.values[rowIndex] || ""}
-                        </td>
+                          {param.name}
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {Array.from({
+                      length: Math.max(
+                        ...data.morphological_box.parameters.map((p) => p.values.length)
+                      ),
+                    }).map((_, rowIndex) => (
+                      <tr key={rowIndex}>
+                        {data.morphological_box!.parameters.map((param, colIndex) => (
+                          <td
+                            key={colIndex}
+                            className="px-3 py-2 text-gray-700 text-sm border border-gray-200"
+                          >
+                            {param.values[rowIndex] || ""}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -443,28 +445,30 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
           <span className="flex-1 text-left">
             {t("explore.contradictions")} ({data.contradictions.length})
           </span>
-          <span className={`transition-transform text-xs ${contradictionsOpen ? "rotate-90" : ""}`}>
+          <span className={`transition-transform duration-200 text-xs ${contradictionsOpen ? "rotate-90" : ""}`}>
             &#9654;
           </span>
         </button>
-        {contradictionsOpen && (
-          <div className="mt-4 space-y-2">
-            {data.contradictions.map((contradiction, i) => (
-              <div key={i} className="p-3 bg-gray-50 rounded-md border border-gray-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs font-medium">
-                    {contradiction.property_a}
-                  </span>
-                  <i className="bi bi-arrow-left-right text-gray-400 text-xs" />
-                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs font-medium">
-                    {contradiction.property_b}
-                  </span>
+        <div className={`collapse-section ${contradictionsOpen ? 'open' : ''}`}>
+          <div className="collapse-inner">
+            <div className="mt-4 space-y-2">
+              {data.contradictions.map((contradiction, i) => (
+                <div key={i} className="p-3 bg-gray-50 rounded-md border border-gray-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs font-medium">
+                      {contradiction.property_a}
+                    </span>
+                    <i className="bi bi-arrow-left-right text-gray-400 text-xs" />
+                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs font-medium">
+                      {contradiction.property_b}
+                    </span>
+                  </div>
+                  <ClaimMarkdown className="text-gray-600 text-sm">{contradiction.description}</ClaimMarkdown>
                 </div>
-                <ClaimMarkdown className="text-gray-600 text-sm">{contradiction.description}</ClaimMarkdown>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* -- Submit -- */}
