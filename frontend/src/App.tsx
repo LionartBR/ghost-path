@@ -7,7 +7,7 @@ function Footer() {
   return (
     <footer className="w-full border-t border-gray-200/60 bg-white/60 backdrop-blur-sm py-5 px-6">
       <div className="max-w-7xl mx-auto flex flex-col items-center gap-1.5 text-xs text-gray-400">
-        <span>A Claude Code Hackathon Project</span>
+        <span className="text-sm text-gray-600 font-medium">A Claude Code Hackathon Project</span>
         <span>Developer: Arthur A. Martins</span>
         <a
           href="https://x.com/lionartmartins"
