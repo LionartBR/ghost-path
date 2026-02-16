@@ -22,6 +22,7 @@ import anthropic
 from anthropic import (
     APIError,
     APIConnectionError,
+    APIStatusError,
     RateLimitError,
     APITimeoutError,
     InternalServerError,
@@ -35,6 +36,15 @@ logger = logging.getLogger(__name__)
 
 # Union of both SDK system param types — dispatched at runtime by self.betas
 SystemParam = Union[str, Iterable[TextBlockParam], Iterable[BetaTextBlockParam]]
+
+# ADR: OverloadedError (HTTP 529) exists in SDK but isn't re-exported in v0.79.
+# Detect via status code on APIStatusError instead of relying on private import.
+_OVERLOADED_STATUS = 529
+
+
+def _is_overloaded(e: APIError) -> bool:
+    """Check if error is Anthropic 529 Overloaded."""
+    return isinstance(e, APIStatusError) and e.status_code == _OVERLOADED_STATUS
 
 
 class ResilientAnthropicClient:
@@ -106,6 +116,9 @@ class ResilientAnthropicClient:
                 )
 
             except APIError as e:
+                if _is_overloaded(e):
+                    await self._handle_transient_error(e, attempt, context)
+                    continue
                 raise AnthropicAPIError(
                     str(e), "client_error", context=context,
                 )
@@ -161,6 +174,12 @@ class ResilientAnthropicClient:
                 "API timeout during stream", "timeout", context=context,
             )
         except APIError as e:
+            if _is_overloaded(e):
+                raise AnthropicAPIError(
+                    "Anthropic API overloaded (529)",
+                    "overloaded",
+                    context=context,
+                )
             raise AnthropicAPIError(
                 str(e), "client_error", context=context,
             )
@@ -207,6 +226,9 @@ class ResilientAnthropicClient:
                     "API timeout", "timeout", context=context,
                 )
             except APIError as e:
+                if _is_overloaded(e):
+                    await self._handle_transient_error(e, attempt, context)
+                    continue
                 raise AnthropicAPIError(
                     str(e), "client_error", context=context,
                 )

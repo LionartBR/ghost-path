@@ -381,6 +381,83 @@ async def test_malformed_json_exhausts_retries(
     assert done[0]["data"]["error"] is True
 
 
+async def test_overloaded_error_retried_then_succeeds(
+    test_db, seed_session, mock_dispatch,
+):
+    """Anthropic 529 overloaded on first attempt → retry → success on second."""
+    state = ForgeState()
+    state.document_updated_this_phase = True
+
+    class _OverloadedThenSuccessClient:
+        """First call raises overloaded, second call succeeds."""
+
+        def __init__(self):
+            self.calls = []
+            self._idx = 0
+
+        @asynccontextmanager
+        async def stream_message(self, **kwargs):
+            self.calls.append(kwargs)
+            self._idx += 1
+            if self._idx == 1:
+                raise AnthropicAPIError(
+                    "Anthropic API overloaded (529)",
+                    "overloaded",
+                    context=ErrorContext(session_id=str(seed_session.id)),
+                )
+            yield text_response("Recovered after overloaded retry.")
+
+    client = _OverloadedThenSuccessClient()
+    runner = AgentRunner(test_db, client)
+
+    events = await _collect(runner, seed_session, "Go", state)
+
+    # 2 API calls: failed + retry
+    assert len(client.calls) == 2
+
+    texts = _events_of_type(events, "agent_text")
+    assert any("Recovered" in t["data"] for t in texts)
+
+    done = _events_of_type(events, "done")
+    assert done[0]["data"]["error"] is False
+
+
+async def test_overloaded_error_exhausts_retries(
+    test_db, seed_session, mock_dispatch,
+):
+    """Anthropic 529 overloaded on all attempts → error SSE + done(error=True)."""
+    state = ForgeState()
+
+    class _AlwaysOverloadedClient:
+        def __init__(self):
+            self.calls = []
+
+        @asynccontextmanager
+        async def stream_message(self, **kwargs):
+            self.calls.append(kwargs)
+            raise AnthropicAPIError(
+                "Anthropic API overloaded (529)",
+                "overloaded",
+                context=ErrorContext(session_id=str(seed_session.id)),
+            )
+            yield  # pragma: no cover
+
+    client = _AlwaysOverloadedClient()
+    runner = AgentRunner(test_db, client)
+
+    events = await _collect(runner, seed_session, "Go", state)
+
+    # MAX_STREAM_RETRIES + 1 = 3 attempts
+    assert len(client.calls) == 3
+
+    errors = _events_of_type(events, "error")
+    assert len(errors) == 1
+    assert errors[0]["data"]["code"] == "ANTHROPIC_API_ERROR"
+
+    done = _events_of_type(events, "done")
+    assert done[0]["data"]["error"] is True
+
+
 async def test_non_sdk_valueerror_still_bubbles_up(
     test_db, seed_session, mock_dispatch,
 ):

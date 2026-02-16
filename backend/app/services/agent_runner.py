@@ -54,7 +54,9 @@ class AgentRunner:
     MAX_DOC_RETRIES = 2
     MAX_STREAM_RETRIES = 2
     PERIODIC_SAVE_INTERVAL = 3
-    RETRYABLE_STREAM_CODES = frozenset({"rate_limit", "connection_error", "timeout"})
+    RETRYABLE_STREAM_CODES = frozenset({
+        "rate_limit", "connection_error", "timeout", "overloaded",
+    })
 
     def __init__(
         self, db, anthropic_client: ResilientAnthropicClient,
