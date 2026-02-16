@@ -1,26 +1,25 @@
-/* BuildDecision — Phase 5 build review with inline graph, gap carousel, and insight card.
+/* BuildDecision — Phase 5 build review layout orchestrator.
 
 Invariants:
     - Knowledge Graph rendered inline (not sidebar) when nodes exist
-    - Gaps carousel follows centralized container pattern (max-w-lg) matching Phases 1-4
-    - Gap selection is multi-select (checkboxes), no auto-advance
-    - "Investigate Gaps" requires >= 1 gap selected
-    - When gaps=0, free-text direction input replaces carousel
+    - Negative Knowledge card rendered when rejected claims exist, collapsed by default
     - Deep Dive card shown only when !max_rounds_reached
+    - Gap triage delegated to GapCarousel component (extracted for ExMA line limits)
+    - When gaps=0, free-text direction input replaces carousel
     - "Finalize" button always visible, sends decision="resolve"
+    - Card order: Graph → Negative Knowledge → Deep Dive → Gaps → Insight → Finalize
 
 Design Decisions:
-    - Gaps as carousel over list: visual consistency with Phases 1-4 (ADR: UX cohesion)
-    - KnowledgeGraph embedded inline: removes sidebar split, all content in single column
-    - Insight card inline over UserInsightForm page replacement: stays in carousel flow context
-    - Multi-select gaps without auto-advance: user reviews all gaps before acting (ADR: multi-select UX)
+    - GapCarousel extracted: keeps both files under 400-line ExMA limit (ADR: file size)
+    - Negative Knowledge inline over separate component: ~25 lines JSX, not worth extraction
+    - Collapsible neg knowledge: avoids overwhelming the decision flow with failure history
 */
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { BuildReviewData, UserInput } from "../types";
 import KnowledgeGraph from "./KnowledgeGraph";
-import ClaimMarkdown from "./ClaimMarkdown";
+import GapCarousel from "./GapCarousel";
 
 interface BuildDecisionProps {
   data: BuildReviewData;
@@ -29,11 +28,6 @@ interface BuildDecisionProps {
 
 export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
   const { t } = useTranslation();
-
-  // Gap carousel state
-  const [selectedGaps, setSelectedGaps] = useState<Set<number>>(new Set());
-  const [currentGapCard, setCurrentGapCard] = useState(0);
-  const [gapSlideDirection, setGapSlideDirection] = useState<"left" | "right">("right");
 
   // Free-text direction (when gaps=0)
   const [directionText, setDirectionText] = useState("");
@@ -46,50 +40,21 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
   // Deep dive state
   const [selectedClaimId, setSelectedClaimId] = useState("");
 
+  // Negative knowledge
+  const [showNegKnowledge, setShowNegKnowledge] = useState(false);
+
   // Validation
   const [error, setError] = useState("");
 
   const gaps = data.gaps;
-  const totalGaps = gaps.length;
-  const isFirstGap = currentGapCard <= 0;
-  const isLastGap = currentGapCard >= totalGaps - 1;
-
-  // -- Gap carousel navigation --
-
-  const goToGapCard = useCallback((index: number, direction: "left" | "right") => {
-    if (index < 0 || index >= totalGaps) return;
-    setGapSlideDirection(direction);
-    setCurrentGapCard(index);
-  }, [totalGaps]);
-
-  const goNextGap = useCallback(() => {
-    if (!isLastGap) goToGapCard(currentGapCard + 1, "right");
-  }, [currentGapCard, isLastGap, goToGapCard]);
-
-  const goPrevGap = useCallback(() => {
-    if (!isFirstGap) goToGapCard(currentGapCard - 1, "left");
-  }, [currentGapCard, isFirstGap, goToGapCard]);
 
   // -- Handlers --
 
-  const handleGapToggle = (index: number) => {
-    setSelectedGaps((prev) => {
-      const next = new Set(prev);
-      if (next.has(index)) next.delete(index); else next.add(index);
-      return next;
-    });
-  };
-
-  const handleInvestigate = () => {
-    setError("");
-    if (selectedGaps.size === 0) {
-      setError(t("build.selectClaim"));
-      return;
-    }
+  const handleInvestigate = (selectedIndices: number[]) => {
     onSubmit({
       type: "build_decision",
       decision: "continue",
-      selected_gaps: [...selectedGaps],
+      selected_gaps: selectedIndices,
     });
   };
 
@@ -135,8 +100,6 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
     onSubmit({ type: "build_decision", decision: "resolve" });
   };
 
-  const gapAnimationClass = gapSlideDirection === "right" ? "animate-slide-in-right" : "animate-slide-in-left";
-
   return (
     <div className="space-y-5">
       {/* Card 1: Knowledge Graph (inline) */}
@@ -146,7 +109,40 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
         </div>
       )}
 
-      {/* Card 2: Deep Dive (only when rounds remain) */}
+      {/* Card 2: Negative Knowledge (collapsed by default) */}
+      {data.negative_knowledge.length > 0 && (
+        <div className="bg-white border border-gray-200/80 border-l-4 border-l-red-300 rounded-xl shadow-sm">
+          <button
+            onClick={() => setShowNegKnowledge(!showNegKnowledge)}
+            className="w-full flex items-center gap-2.5 px-5 py-4 text-sm font-semibold text-red-500 uppercase tracking-wide hover:bg-red-50/30 transition-colors"
+            data-testid="neg-knowledge-toggle"
+          >
+            <i className="bi bi-x-octagon text-base" />
+            {t("build.negativeKnowledge")}
+            <span className="ml-1 text-xs font-normal text-gray-400">({data.negative_knowledge.length})</span>
+            <span className={`ml-auto transition-transform ${showNegKnowledge ? "rotate-90" : ""}`}>&#9654;</span>
+          </button>
+          {showNegKnowledge && (
+            <div className="px-5 pb-5 space-y-3 animate-fade-in" data-testid="neg-knowledge-list">
+              {data.negative_knowledge.map((nk, i) => (
+                <div key={i} className="bg-red-50/50 border border-red-100 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-xs font-medium text-red-400 bg-red-100 px-2 py-0.5 rounded">
+                      {t("build.negKnowledgeRound", { round: nk.round })}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700 mb-1">{nk.claim_text}</p>
+                  {nk.rejection_reason && (
+                    <p className="text-xs text-red-400 italic">{nk.rejection_reason}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Card 3: Deep Dive (only when rounds remain) */}
       {!data.max_rounds_reached && (
         <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5">
           <h3 className="flex items-center gap-2.5 text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
@@ -177,106 +173,11 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
         </div>
       )}
 
-      {/* Card 3: Knowledge Gaps (carousel or free-text) */}
+      {/* Card 4: Knowledge Gaps (carousel or free-text) */}
       {!data.max_rounds_reached && (
-        totalGaps > 0 ? (
-          /* Carousel when gaps exist */
-          <div className={`bg-white border border-gray-200/80 border-l-4 rounded-xl shadow-sm p-5 transition-all ${
-            selectedGaps.size > 0 ? "border-l-green-500" : "border-l-gray-300"
-          }`}>
-            <h3 className={`flex items-center gap-2.5 text-sm font-semibold uppercase tracking-wide mb-4 ${
-              selectedGaps.size > 0 ? "text-green-600" : "text-gray-400"
-            }`}>
-              <i className="bi bi-lightning text-base" />
-              {t("build.gaps")}
-              {selectedGaps.size > 0 && (
-                <span className="ml-auto text-xs text-green-500 font-normal flex items-center gap-1">
-                  <i className="bi bi-check-circle-fill text-[11px]" />
-                </span>
-              )}
-            </h3>
-
-            <div className="flex flex-col items-center">
-              {/* Progress dots — green when selected */}
-              <div className="flex items-center gap-1.5 mb-4">
-                {gaps.map((_, i) => {
-                  const dotColor = selectedGaps.has(i) ? "bg-green-500" : "bg-gray-300";
-                  const ring = i === currentGapCard ? "ring-2 ring-green-400 ring-offset-1" : "";
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => goToGapCard(i, i > currentGapCard ? "right" : "left")}
-                      className={`w-2.5 h-2.5 rounded-full transition-all ${dotColor} ${ring}`}
-                      aria-label={`Gap ${i + 1}`}
-                    />
-                  );
-                })}
-              </div>
-
-              {/* Card + navigation — centralized max-w-lg */}
-              <div className="flex items-center gap-3 w-full max-w-lg">
-                <button
-                  onClick={goPrevGap}
-                  disabled={isFirstGap}
-                  className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
-                    isFirstGap ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-green-50 hover:text-green-600"
-                  }`}
-                  aria-label="Previous gap"
-                >
-                  <i className="bi bi-chevron-left text-lg" />
-                </button>
-
-                <div key={currentGapCard} className={`flex-1 p-5 rounded-lg text-center ${gapAnimationClass}`}>
-                  <p className="text-xs text-gray-400 font-medium mb-2">{currentGapCard + 1} / {totalGaps}</p>
-                  <div className="text-left max-w-md mx-auto mb-4">
-                    <ClaimMarkdown className="text-sm text-gray-700 leading-relaxed">{gaps[currentGapCard]}</ClaimMarkdown>
-                  </div>
-                  <button
-                    onClick={() => handleGapToggle(currentGapCard)}
-                    className={`w-full py-2.5 px-4 rounded-md font-medium text-sm transition-all text-left ${
-                      selectedGaps.has(currentGapCard)
-                        ? "bg-green-600 text-white"
-                        : "bg-white border border-gray-200 text-gray-600 hover:border-green-300 hover:text-green-600"
-                    }`}
-                  >
-                    {selectedGaps.has(currentGapCard) ? (
-                      <span className="flex items-center gap-2">
-                        <i className="bi bi-check-circle-fill text-sm" />
-                        {t("build.gapSelected")}
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        <i className="bi bi-circle text-sm" />
-                        {t("build.gapSelected")}
-                      </span>
-                    )}
-                  </button>
-                </div>
-
-                <button
-                  onClick={goNextGap}
-                  disabled={isLastGap}
-                  className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
-                    isLastGap ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-green-50 hover:text-green-600"
-                  }`}
-                  aria-label="Next gap"
-                >
-                  <i className="bi bi-chevron-right text-lg" />
-                </button>
-              </div>
-            </div>
-
-            {/* Investigate button */}
-            <button
-              onClick={handleInvestigate}
-              disabled={selectedGaps.size === 0}
-              className="w-full mt-4 bg-green-600 hover:bg-green-500 text-white font-semibold text-sm py-3 px-6 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {t("build.investigateGaps", { count: selectedGaps.size })}
-            </button>
-          </div>
+        gaps.length > 0 ? (
+          <GapCarousel gaps={gaps} onInvestigate={handleInvestigate} />
         ) : (
-          /* Free-text direction when no gaps */
           <div className="bg-white border border-gray-200/80 border-l-4 border-l-gray-300 rounded-xl shadow-sm p-5">
             <h3 className="flex items-center gap-2.5 text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
               <i className="bi bi-lightning text-base" />
@@ -300,7 +201,7 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
         )
       )}
 
-      {/* Card 4: Insight (collapsible) */}
+      {/* Card 5: Insight (collapsible) */}
       <div className="bg-white border border-gray-200/80 border-l-4 border-l-indigo-400 rounded-xl shadow-sm">
         <button
           onClick={() => setShowInsight(!showInsight)}
@@ -369,7 +270,7 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
         )}
       </div>
 
-      {/* Card 5: Finalize */}
+      {/* Card 6: Finalize */}
       <button
         onClick={handleFinalize}
         className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm py-3 px-6 rounded-lg transition-all"
