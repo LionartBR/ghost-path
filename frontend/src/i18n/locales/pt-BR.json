@@ -18,9 +18,11 @@
   "status.crystallized": "cristalizado",
   "status.cancelled": "cancelado",
 
-  "examples.0": "Como podemos reduzir a integração de desenvolvedores de 2 semanas para 2 dias?",
-  "examples.1": "Como poderíamos tornar o armazenamento de energia renovável competitivo em custos com combustíveis fósseis?",
-  "examples.2": "Como equipes distribuídas podem manter a velocidade de inovação sem compartilhar a mesma localização?",
+  "examples.0": "Vamos construir um carrinho de brinquedo controlado por IA que batalha com outros e possui personalidade própria",
+  "examples.1": "Como diminuir drasticamente o consumo de tokens de um modelo de IA sem perder a qualidade da resposta?",
+  "examples.2": "Quero construir um robô doméstico que faz café, põe minha roupa na máquina e toca piano",
+  "examples.3": "Me ajude a desenvolver um app mobile que prevê o futuro",
+  "examples.4": "Que tal um dispositivo que projeta uma tela holográfica 3D no ar?",
 
   "problemInput.label": "Descreva seu problema",
   "problemInput.placeholder": "Qual problema complexo você está tentando resolver? Seja específico sobre contexto, restrições e o que você já tentou...",

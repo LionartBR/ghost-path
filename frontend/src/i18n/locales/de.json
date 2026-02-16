@@ -18,9 +18,11 @@
   "status.crystallized": "kristallisiert",
   "status.cancelled": "abgebrochen",
 
-  "examples.0": "Wie können wir das Onboarding von Entwicklern von 2 Wochen auf 2 Tage reduzieren?",
-  "examples.1": "Wie könnten wir die Speicherung erneuerbarer Energien kostenmäßig mit fossilen Brennstoffen wettbewerbsfähig machen?",
-  "examples.2": "Wie können verteilte Teams ihre Innovationsgeschwindigkeit ohne gemeinsamen Standort aufrechterhalten?",
+  "examples.0": "Lass uns ein KI-gesteuertes Spielzeugauto bauen, das gegen andere kämpft und eine eigene Persönlichkeit hat",
+  "examples.1": "Wie kann man den Token-Verbrauch eines KI-Modells drastisch reduzieren, ohne die Antwortqualität zu verlieren?",
+  "examples.2": "Ich möchte einen Haushaltsroboter bauen, der Kaffee macht, die Wäsche in die Maschine legt und Klavier spielt",
+  "examples.3": "Hilf mir, eine mobile App zu entwickeln, die die Zukunft vorhersagt",
+  "examples.4": "Wie wäre es mit einem Gerät, das einen holografischen 3D-Bildschirm in die Luft projiziert?",
 
   "problemInput.label": "Beschreiben Sie Ihr Problem",
   "problemInput.placeholder": "Welches komplexe Problem versuchen Sie zu lösen? Seien Sie spezifisch über Kontext, Einschränkungen und was Sie bereits versucht haben...",

@@ -48,7 +48,7 @@ export function HomePage() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setExampleIndex((i) => (i + 1) % 3);
+      setExampleIndex((i) => (i + 1) % 5);
     }, 4000);
     return () => clearInterval(timer);
   }, []);
