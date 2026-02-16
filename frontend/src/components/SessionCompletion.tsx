@@ -79,7 +79,7 @@ export default function SessionCompletion({ data }: SessionCompletionProps) {
             <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">
               {t("completion.hero.title")}
             </h1>
-            <p className="mt-2 text-gray-500 text-sm leading-relaxed line-clamp-2">
+            <p className="mt-2 text-gray-500 text-sm leading-relaxed">
               {heroText}
             </p>
           </div>

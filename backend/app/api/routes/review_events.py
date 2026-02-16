@@ -139,11 +139,12 @@ def _build_crystallize_event(state: ForgeState, session) -> dict | None:
 
 
 def _extract_problem_summary(markdown: str, fallback: str) -> str:
-    """Extract first ~200 chars from 'The Discovery' or 'Why This Matters' section.
+    """Extract first ~250 chars from 'The Discovery' or 'Why This Matters' section.
 
     ADR: _SECTION_ORDER in handle_crystallize.py maps problem_context → "2. Why This Matters"
     and core_insight → "1. The Discovery". We try The Discovery first (best summary),
     then Why This Matters, then fallback to raw problem text.
+    Strips markdown syntax so the result is clean plain text.
     """
     import re
     for heading in (r"The\s+Discovery", r"Why\s+This\s+Matters"):
@@ -153,6 +154,28 @@ def _extract_problem_summary(markdown: str, fallback: str) -> str:
         )
         if match:
             text = match.group(1).strip()
-            text = re.sub(r"\s+", " ", text)
-            return text[:200] if len(text) > 200 else text
-    return fallback[:200] if fallback else ""
+            text = _strip_markdown(text)
+            return _truncate_at_word(text, 250)
+    return _truncate_at_word(fallback, 250) if fallback else ""
+
+
+def _strip_markdown(text: str) -> str:
+    """Remove markdown syntax, returning clean plain text."""
+    import re
+    text = re.sub(r"#{1,6}\s+", "", text)           # headings
+    text = re.sub(r"\*{1,3}([^*]+)\*{1,3}", r"\1", text)  # bold/italic
+    text = re.sub(r"_{1,3}([^_]+)_{1,3}", r"\1", text)    # underscored bold/italic
+    text = re.sub(r"`([^`]+)`", r"\1", text)         # inline code
+    text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)  # links [text](url)
+    text = re.sub(r"^[-*+]\s+", "", text, flags=re.MULTILINE)  # list bullets
+    text = re.sub(r"^\d+\.\s+", "", text, flags=re.MULTILINE)  # numbered lists
+    text = re.sub(r"\s+", " ", text)                  # collapse whitespace
+    return text.strip()
+
+
+def _truncate_at_word(text: str, limit: int) -> str:
+    """Truncate at word boundary, appending ellipsis."""
+    if len(text) <= limit:
+        return text
+    truncated = text[:limit].rsplit(" ", 1)[0]
+    return truncated + "..."
