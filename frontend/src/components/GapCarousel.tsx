@@ -148,7 +148,7 @@ export default function GapCarousel({ gaps, onSelectionChange }: GapCarouselProp
           </span>
         )}
       </h3>
-      <p className="text-xs text-gray-500 leading-relaxed mb-3">
+      <p className="text-xs text-gray-500 leading-relaxed mb-5">
         {t("build.gapsHint")}
       </p>
 

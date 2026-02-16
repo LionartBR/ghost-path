@@ -66,7 +66,7 @@ export const PhaseTransitionCard: React.FC<PhaseTransitionCardProps> = ({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1.5">
+          <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-2.5">
             {phaseNum} &middot; {t(`phases.${to}`)}
           </div>
           <p className="text-gray-500 text-sm leading-relaxed">

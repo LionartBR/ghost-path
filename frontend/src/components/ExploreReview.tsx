@@ -200,7 +200,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
             </span>
           )}
         </h3>
-        <p className="text-xs text-gray-500 leading-relaxed mb-3">
+        <p className="text-xs text-gray-500 leading-relaxed mb-5">
           {t("explore.analogiesHint")}
         </p>
 
@@ -399,7 +399,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
           </button>
           <div className={`collapse-section ${morphBoxOpen ? 'open' : ''}`}>
             <div className="collapse-inner">
-              <p className="text-xs text-gray-500 leading-relaxed mt-3 mb-1 px-0">
+              <p className="text-xs text-gray-500 leading-relaxed mt-3 mb-4 px-0">
                 {t("explore.morphBoxHint")}
               </p>
               <div className="mt-2 overflow-x-auto">

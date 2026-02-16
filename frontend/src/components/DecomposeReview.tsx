@@ -311,7 +311,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
               </span>
             )}
           </h3>
-          <p className="text-xs text-gray-500 leading-relaxed mb-3">
+          <p className="text-xs text-gray-500 leading-relaxed mb-5">
             {t("decompose.assumptionsHint")}
           </p>
 
@@ -494,7 +494,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                   </span>
                 )}
               </h3>
-              <p className="text-xs text-gray-500 leading-relaxed mb-3">
+              <p className="text-xs text-gray-500 leading-relaxed mb-5">
                 {t("decompose.reframingsHint")}
               </p>
 
@@ -655,7 +655,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
                   </span>
                 )}
               </h3>
-              <p className="text-xs text-gray-500 leading-relaxed mb-3">
+              <p className="text-xs text-gray-500 leading-relaxed mb-5">
                 {t("decompose.reframingsHint")}
               </p>
               <div className="space-y-2">
@@ -689,12 +689,12 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
 
           {/* -- Suggested domains for Phase 2 -- */}
           <div className="bg-white border border-gray-200/80 border-l-4 border-l-blue-400 rounded-xl shadow-sm p-5 animate-fade-in">
-            <h3 className="flex items-center gap-2.5 text-sm font-semibold text-blue-600 uppercase tracking-wide mb-2">
+            <h3 className="flex items-center gap-2.5 text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">
               <i className="bi bi-globe2 text-base" />
               {t("decompose.suggestDomain")}
               <span className="text-[10px] font-normal normal-case tracking-normal text-gray-400">{t("decompose.optional")}</span>
             </h3>
-            <p className="text-xs text-gray-500 leading-relaxed mb-3">
+            <p className="text-xs text-gray-500 leading-relaxed mb-5">
               {t("decompose.suggestDomainHint")}
             </p>
             {suggestedDomains.map((text, i) => (
