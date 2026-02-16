@@ -25,9 +25,9 @@ export default function KnowledgeDocument({
   };
 
   return (
-    <div className="w-full bg-white border border-gray-200/80 rounded-xl shadow-md shadow-gray-200/40 hover:shadow-lg transition-shadow duration-300">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">{t("document.title")}</h2>
+    <div className="w-full rounded-xl overflow-hidden">
+      <div className="flex items-center justify-between px-6 py-4 bg-gray-800 border-b border-gray-700">
+        <h2 className="text-lg font-semibold text-gray-100">{t("document.title")}</h2>
         <button
           onClick={handleDownload}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-all duration-200 hover:scale-[1.03] hover:shadow-md active:scale-[0.97]"
@@ -35,7 +35,8 @@ export default function KnowledgeDocument({
           {t("document.download")}
         </button>
       </div>
-      <div className="px-14 md:px-32 lg:px-44 xl:px-56 py-10 prose prose-sm max-w-none font-sans tracking-wide">
+      <div className="bg-gray-700 p-4 md:p-6">
+        <div className="bg-white border border-gray-300 rounded-lg px-6 md:px-10 py-10 prose prose-sm max-w-none font-sans tracking-wide">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
@@ -111,6 +112,7 @@ export default function KnowledgeDocument({
         >
           {markdown}
         </ReactMarkdown>
+        </div>
       </div>
     </div>
   );
