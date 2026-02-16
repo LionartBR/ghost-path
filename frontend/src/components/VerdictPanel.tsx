@@ -122,7 +122,10 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
       }
       return updated;
     });
-    carouselRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    /* ADR: qualify/merge don't scroll — scroll deferred until input is confirmed */
+    if (verdict !== "qualify" && verdict !== "merge") {
+      carouselRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }, [totalClaims, goNext]);
 
   const toggleDetails = (index: number) => {
@@ -132,6 +135,17 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
       return next;
     });
   };
+
+  /* Confirm qualify/merge input → scroll to top, auto-advance or collapse */
+  const confirmAndAdvance = useCallback(() => {
+    if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+    carouselRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (isLastCard) {
+      autoAdvanceTimer.current = setTimeout(() => { setDone(true); setCollapsed(true); }, 400);
+    } else {
+      autoAdvanceTimer.current = setTimeout(() => goNext(), 300);
+    }
+  }, [isLastCard, goNext]);
 
   const handleSubmit = () => {
     const verdictList: ClaimVerdict[] = claims.map((_, i) =>
@@ -332,14 +346,29 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                 {currentVerdict === "qualify" && (
                   <div className="animate-fade-in text-left max-w-md mx-auto mt-3">
                     <label className="block text-xs text-gray-500 mb-1">{t("verdicts.qualification")}</label>
-                    <input
-                      type="text"
-                      autoFocus
-                      placeholder={t("verdicts.qualification")}
-                      value={verdicts.get(currentCard)?.qualification || ""}
-                      onChange={(e) => updateVerdict(currentCard, "qualification", e.target.value)}
-                      className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent placeholder-gray-400"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        autoFocus
+                        placeholder={t("verdicts.qualification")}
+                        value={verdicts.get(currentCard)?.qualification || ""}
+                        onChange={(e) => updateVerdict(currentCard, "qualification", e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter" && verdicts.get(currentCard)?.qualification) confirmAndAdvance(); }}
+                        className="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent placeholder-gray-400"
+                      />
+                      <button
+                        onClick={() => { if (verdicts.get(currentCard)?.qualification) confirmAndAdvance(); }}
+                        disabled={!verdicts.get(currentCard)?.qualification}
+                        className={`flex-shrink-0 w-9 h-9 rounded-md flex items-center justify-center transition-colors ${
+                          verdicts.get(currentCard)?.qualification
+                            ? "bg-amber-500 text-white hover:bg-amber-600"
+                            : "bg-gray-100 text-gray-300 cursor-not-allowed"
+                        }`}
+                        aria-label="Confirm qualification"
+                      >
+                        <i className="bi bi-plus-lg text-sm" />
+                      </button>
+                    </div>
                   </div>
                 )}
                 {currentVerdict === "merge" && (
@@ -348,7 +377,10 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                     <select
                       autoFocus
                       value={verdicts.get(currentCard)?.merge_with_claim_id || ""}
-                      onChange={(e) => updateVerdict(currentCard, "merge_with_claim_id", e.target.value)}
+                      onChange={(e) => {
+                        updateVerdict(currentCard, "merge_with_claim_id", e.target.value);
+                        if (e.target.value) setTimeout(() => confirmAndAdvance(), 300);
+                      }}
                       className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
                     >
                       <option value="">{t("verdicts.selectClaim")}</option>
