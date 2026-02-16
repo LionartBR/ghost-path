@@ -1,4 +1,4 @@
-"""Cross-Cutting Handlers — tools available across all phases (5 methods).
+"""Cross-Cutting Handlers — tools available across all phases (6 methods).
 
 Invariants:
     - get_session_status is always available, never gated
@@ -184,6 +184,44 @@ class CrossCuttingHandlers:
         "evidence_base", "technical_details", "cross_domain_patterns",
         "boundaries", "implementation_guide", "next_frontiers",
     })
+
+    async def read_working_document(
+        self, session: SessionLike, input_data: dict,
+    ) -> dict:
+        """Read working document TOC or a specific section. Pure read, no side effects."""
+        section = input_data.get("section")
+        if section is None:
+            # Return TOC: section names + word counts
+            toc = {
+                k: len(v.split()) for k, v in self.state.working_document.items()
+            }
+            return {
+                "status": "ok",
+                "mode": "toc",
+                "sections": toc,
+                "total_sections": 9,
+            }
+        if section not in self._VALID_SECTIONS:
+            return {
+                "status": "error",
+                "error_code": "INVALID_SECTION",
+                "message": f"Unknown section: '{section}'",
+            }
+        content = self.state.working_document.get(section)
+        if content is None:
+            return {
+                "status": "ok",
+                "section": section,
+                "content": None,
+                "message": "Section not yet written",
+            }
+        return {
+            "status": "ok",
+            "mode": "full",
+            "section": section,
+            "content": content,
+            "word_count": len(content.split()),
+        }
 
     async def update_working_document(
         self, session: SessionLike, input_data: dict,

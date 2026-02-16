@@ -139,17 +139,20 @@ def _build_crystallize_event(state: ForgeState, session) -> dict | None:
 
 
 def _extract_problem_summary(markdown: str, fallback: str) -> str:
-    """Extract first ~200 chars from the Problem Context section of the document.
+    """Extract first ~200 chars from 'The Discovery' or 'Why This Matters' section.
 
-    Falls back to the raw problem text if no section is found.
+    ADR: _SECTION_ORDER in handle_crystallize.py maps problem_context → "2. Why This Matters"
+    and core_insight → "1. The Discovery". We try The Discovery first (best summary),
+    then Why This Matters, then fallback to raw problem text.
     """
     import re
-    match = re.search(
-        r"##\s*\d*\.?\s*Problem\s+Context\s*\n+(.*?)(?=\n##|\Z)",
-        markdown, re.DOTALL | re.IGNORECASE,
-    )
-    if not match:
-        return fallback[:200] if fallback else ""
-    text = match.group(1).strip()
-    text = re.sub(r"\s+", " ", text)  # collapse whitespace
-    return text[:200] if len(text) > 200 else text
+    for heading in (r"The\s+Discovery", r"Why\s+This\s+Matters"):
+        match = re.search(
+            rf"##\s*\d*\.?\s*{heading}\s*\n+(.*?)(?=\n##|\Z)",
+            markdown, re.DOTALL | re.IGNORECASE,
+        )
+        if match:
+            text = match.group(1).strip()
+            text = re.sub(r"\s+", " ", text)
+            return text[:200] if len(text) > 200 else text
+    return fallback[:200] if fallback else ""

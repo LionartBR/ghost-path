@@ -82,10 +82,12 @@ When done: the system emits review_build and pauses."""
 
 PIPELINE_CRYSTALLIZE = """\
 ### Phase 6: CRYSTALLIZE
-Review and polish all working document sections. Write "implementation_guide" \
-(concrete real-world steps) and "next_frontiers" (open questions, future \
-directions). Then call generate_knowledge_document to assemble the final artifact.
-Tools: generate_knowledge_document, update_working_document"""
+First, call read_working_document() to see your table of contents — you've been \
+writing sections throughout the investigation. Read specific sections that need \
+polishing. Write "implementation_guide" and "next_frontiers" via \
+update_working_document. Polish existing sections only where needed. \
+Then call generate_knowledge_document.
+Tools: read_working_document, update_working_document, generate_knowledge_document"""
 
 # ---------------------------------------------------------------------------
 # Working Document — per-phase split (ADR: only current phase's mapping shown)

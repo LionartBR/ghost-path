@@ -155,6 +155,39 @@ This makes the investigation collaborative.""",
         },
     },
     {
+        "name": "read_working_document",
+        "description": (
+            "Read the working Knowledge Document you've been building.\n\n"
+            "Called with no arguments: returns a table of contents — section "
+            "names and word counts. This is cheap (~100 tokens) and shows "
+            "what you've already written.\n\n"
+            "Called with a section name: returns the full content of that "
+            "section.\n\n"
+            "Best practice: read the TOC first, then request specific "
+            "sections you need to review or polish. This avoids loading "
+            "all 30KB of document content at once."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "section": {
+                    "type": "string",
+                    "enum": [
+                        "core_insight", "problem_context", "reasoning_chain",
+                        "evidence_base", "technical_details",
+                        "cross_domain_patterns", "boundaries",
+                        "implementation_guide", "next_frontiers",
+                    ],
+                    "description": (
+                        "Which section to read in full. "
+                        "If omitted, returns TOC with word counts."
+                    ),
+                },
+            },
+            "required": [],
+        },
+    },
+    {
         "name": "update_working_document",
         "description": (
             "Write or update a section of the working Knowledge Document.\n\n"

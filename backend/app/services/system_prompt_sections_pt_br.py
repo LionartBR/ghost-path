@@ -82,11 +82,12 @@ Ao terminar: o sistema emite review_build e pausa."""
 
 PIPELINE_CRYSTALLIZE = """\
 ### Fase 6: CRYSTALLIZE
-Revise e refine todas as seções do documento de trabalho. Escreva \
-"implementation_guide" (passos concretos para o mundo real) e "next_frontiers" \
-(questões abertas, direções futuras). Depois chame generate_knowledge_document \
-para montar o artefato final.
-Ferramentas: generate_knowledge_document, update_working_document"""
+Primeiro, chame read_working_document() para ver seu sumário — você escreveu \
+seções ao longo da investigação. Leia seções específicas que precisam de \
+refinamento. Escreva "implementation_guide" e "next_frontiers" via \
+update_working_document. Refine seções existentes apenas onde necessário. \
+Depois chame generate_knowledge_document.
+Ferramentas: read_working_document, update_working_document, generate_knowledge_document"""
 
 # ---------------------------------------------------------------------------
 # Working Document — per-phase split (ADR: only current phase's mapping shown)
