@@ -5,20 +5,18 @@ import { ReportPage } from "./pages/ReportPage";
 
 function Footer() {
   return (
-    <footer className="w-full border-t border-gray-200/60 bg-white/60 backdrop-blur-sm py-4 px-6">
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-400">
-        <span>Built with Opus 4.6: a Claude Code hackathon</span>
-        <span>
-          Developer:{" "}
-          <a
-            href="https://x.com/lionartmartins"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-500 hover:text-blue-500 transition-colors"
-          >
-            Arthur A. Martins
-          </a>
-        </span>
+    <footer className="w-full border-t border-gray-200/60 bg-white/60 backdrop-blur-sm py-5 px-6">
+      <div className="max-w-7xl mx-auto flex flex-col items-center gap-1.5 text-xs text-gray-400">
+        <span>A Claude Code Hackathon Project</span>
+        <span>Developer: Arthur A. Martins</span>
+        <a
+          href="https://x.com/lionartmartins"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gray-500 hover:text-blue-500 transition-colors mt-1"
+        >
+          @lionartmartins
+        </a>
       </div>
     </footer>
   );
