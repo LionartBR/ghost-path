@@ -200,6 +200,9 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
             </span>
           )}
         </h3>
+        <p className="text-xs text-gray-500 leading-relaxed mb-3">
+          {t("explore.analogiesHint")}
+        </p>
 
         {hasResonanceData && totalAnalogies > 0 && analogy ? (
           /* -- Carousel mode (with resonance data) -- */
@@ -396,7 +399,10 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
           </button>
           <div className={`collapse-section ${morphBoxOpen ? 'open' : ''}`}>
             <div className="collapse-inner">
-              <div className="mt-4 overflow-x-auto">
+              <p className="text-xs text-gray-500 leading-relaxed mt-3 mb-1 px-0">
+                {t("explore.morphBoxHint")}
+              </p>
+              <div className="mt-2 overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
                     <tr>
@@ -451,7 +457,10 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
         </button>
         <div className={`collapse-section ${contradictionsOpen ? 'open' : ''}`}>
           <div className="collapse-inner">
-            <div className="mt-4 space-y-2">
+            <p className="text-xs text-gray-500 leading-relaxed mt-3 mb-1 px-0">
+              {t("explore.contradictionsHint")}
+            </p>
+            <div className="mt-2 space-y-2">
               {data.contradictions.map((contradiction, i) => (
                 <div key={i} className="p-3 bg-gray-50 rounded-md border border-gray-100">
                   <div className="flex items-center gap-2 mb-2">

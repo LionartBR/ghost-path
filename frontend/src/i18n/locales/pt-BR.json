@@ -42,6 +42,8 @@
   "decompose.optional": "(opcional)",
   "decompose.suggestDomainHint": "Na próxima fase (Explorar), o agente buscará analogias estruturais em campos distantes. Sugira domínios que gostaria que ele investigasse, ex: \"biologia\", \"teoria dos jogos\", \"urbanismo\".",
   "decompose.suggestDomainPlaceholder": "Sugerir um domínio para exploração...",
+  "decompose.assumptionsHint": "Pressupostos ocultos que o agente identificou no seu problema. Escolha a resposta que melhor reflete sua perspectiva, ou adicione seu próprio argumento.",
+  "decompose.reframingsHint": "Formas alternativas de enquadrar seu problema. Reformulações que ressoam com você guiarão a exploração na próxima fase.",
   "decompose.edit": "editar",
   "decompose.submitReview": "Enviar Revisão",
 
@@ -53,6 +55,9 @@
   "explore.resonate": "Ressoa",
   "explore.resonated": "Ressoou",
   "explore.suggestDomain": "Sugerir um novo domínio para analogia...",
+  "explore.analogiesHint": "Paralelos estruturais de campos distantes. Analogias que ressoam moldarão as afirmações de conhecimento na próxima fase.",
+  "explore.morphBoxHint": "O espaço de parâmetros da solução — dimensões e valores que definem o terreno de abordagens possíveis.",
+  "explore.contradictionsHint": "Requisitos concorrentes que não podem ser plenamente satisfeitos ao mesmo tempo. Dessas tensões emergem as soluções mais criativas.",
   "explore.submitReview": "Enviar Revisão ({{count}} ressoou)",
   "explore.submitReviewNone": "Enviar Revisão",
 
@@ -70,6 +75,7 @@
   "claims.evidenceValid": "A evidência é válida e apoia a afirmação",
   "claims.showDetails": "Mostrar Detalhes",
   "claims.hideDetails": "Ocultar Detalhes",
+  "claims.hint": "Cada afirmação foi forjada por síntese dialética (tese, antítese, síntese). Avalie se ela ressoa — muda como você enxerga o problema?",
   "claims.edit": "editar",
   "claims.submit": "Continuar para Validação",
 
@@ -84,6 +90,7 @@
   "verdicts.qualification": "Qualificação (verdadeiro apenas se...)",
   "verdicts.mergeWith": "Combinar com afirmação",
   "verdicts.selectClaim": "Selecione uma afirmação...",
+  "verdicts.hint": "Aceitar adiciona ao grafo de conhecimento. Rejeitar envia ao conhecimento negativo. Qualificar adiciona condições. Combinar une com outra afirmação.",
   "verdicts.submit": "Enviar Vereditos",
 
   "build.title": "Fase 5: Decisão de Construção (Rodada {{round}})",
@@ -110,6 +117,11 @@
   "build.startRound": "Iniciar Nova Rodada",
   "build.deepDiveTitle": "Aprofundar em uma Afirmação",
   "build.insightCard": "Compartilhar Sua Percepção",
+  "build.deepDiveHint": "Concentra toda a próxima rodada na exploração profunda de uma única afirmação com novas evidências e contra-evidências.",
+  "build.negativeKnowledgeHint": "Afirmações rejeitadas em rodadas anteriores. Evitam raciocínio circular e direcionam a exploração para longe de becos sem saída.",
+  "build.gapsHint": "Fragilidades no grafo de conhecimento atual. Selecione as que valem investigar — elas direcionarão o foco da próxima rodada.",
+  "build.insightHint": "Contribua com seu próprio conhecimento ou hipótese. Será adicionado ao grafo e testado junto com as afirmações do agente.",
+  "build.continueHint": "Continuar inicia uma nova rodada dialética. Concluir gera seu Documento de Conhecimento final.",
   "build.finalize": "Concluir",
 
   "graph.title": "Grafo de Conhecimento",

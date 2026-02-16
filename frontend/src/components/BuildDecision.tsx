@@ -130,6 +130,9 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
           </button>
           <div className={`collapse-section ${showNegKnowledge ? 'open' : ''}`}>
             <div className="collapse-inner">
+              <p className="text-xs text-gray-500 leading-relaxed px-5 mb-2">
+                {t("build.negativeKnowledgeHint")}
+              </p>
               <div className="px-5 pb-5 space-y-3" data-testid="neg-knowledge-list">
                 {data.negative_knowledge.map((nk, i) => (
                   <div key={i} className="bg-red-50/50 border border-red-100 rounded-lg p-3">
@@ -157,6 +160,9 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
             <i className="bi bi-search text-base" />
             {t("build.deepDiveTitle")}
           </h3>
+          <p className="text-xs text-gray-500 leading-relaxed mb-3">
+            {t("build.deepDiveHint")}
+          </p>
           <div className="flex gap-2">
             <select
               value={selectedClaimId}
@@ -215,6 +221,9 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
         <div className={`collapse-section ${showInsight ? 'open' : ''}`}>
           <div className="collapse-inner">
           <div className="px-5 pb-5 space-y-3">
+            <p className="text-xs text-gray-500 leading-relaxed">
+              {t("build.insightHint")}
+            </p>
             <div>
               <label className="block text-xs text-gray-500 mb-2">{t("insight.label")}</label>
               <textarea
@@ -274,6 +283,9 @@ export default function BuildDecision({ data, onSubmit }: BuildDecisionProps) {
       </div>
 
       {/* Card 6: Continue / Finalize */}
+      <p className="text-xs text-gray-500 leading-relaxed text-center">
+        {t("build.continueHint")}
+      </p>
       <div className="flex gap-3">
         {!data.max_rounds_reached && (
           <button

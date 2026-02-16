@@ -201,6 +201,9 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
               </span>
             )}
           </h3>
+          <p className="text-xs text-gray-500 leading-relaxed mb-3">
+            {t("verdicts.hint")}
+          </p>
 
           <div className="flex flex-col items-center">
             {/* Progress dots — verdict-semantic colors */}

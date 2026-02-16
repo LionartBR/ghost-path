@@ -148,6 +148,9 @@ export default function GapCarousel({ gaps, onSelectionChange }: GapCarouselProp
           </span>
         )}
       </h3>
+      <p className="text-xs text-gray-500 leading-relaxed mb-3">
+        {t("build.gapsHint")}
+      </p>
 
       <div className="flex flex-col items-center">
         {/* Semantic dots — green (investigate), red (reject), gray (unreviewed) */}

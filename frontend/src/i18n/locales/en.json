@@ -42,6 +42,8 @@
   "decompose.optional": "(optional)",
   "decompose.suggestDomainHint": "In the next phase (Explore), the agent will search for structural analogies from distant fields. Suggest domains you'd like it to investigate, e.g. \"biology\", \"game theory\", \"urban planning\".",
   "decompose.suggestDomainPlaceholder": "Suggest a domain for exploration...",
+  "decompose.assumptionsHint": "Hidden presuppositions the agent identified in your problem. Choose the response that best reflects your perspective, or add your own argument.",
+  "decompose.reframingsHint": "Alternative ways to frame your problem. Reframings that resonate with you will guide exploration in the next phase.",
   "decompose.edit": "edit",
   "decompose.submitReview": "Submit Review",
 
@@ -53,6 +55,9 @@
   "explore.resonate": "Resonates",
   "explore.resonated": "Resonated",
   "explore.suggestDomain": "Suggest a new domain for analogy...",
+  "explore.analogiesHint": "Structural parallels from distant fields. Analogies that resonate will shape the knowledge claims in the next phase.",
+  "explore.morphBoxHint": "The solution parameter space — dimensions and values that define the landscape of potential approaches.",
+  "explore.contradictionsHint": "Competing requirements that can't both be fully satisfied. These tensions are where creative solutions emerge.",
   "explore.submitReview": "Submit Review ({{count}} resonated)",
   "explore.submitReviewNone": "Submit Review",
 
@@ -70,6 +75,7 @@
   "claims.evidenceValid": "Evidence is valid and supports the claim",
   "claims.showDetails": "Show Details",
   "claims.hideDetails": "Hide Details",
+  "claims.hint": "Each claim was forged through dialectical synthesis (thesis, antithesis, synthesis). Assess whether it resonates — does it shift how you see the problem?",
   "claims.edit": "edit",
   "claims.submit": "Continue to Validation",
 
@@ -84,6 +90,7 @@
   "verdicts.qualification": "Qualification (true only if...)",
   "verdicts.mergeWith": "Merge with claim",
   "verdicts.selectClaim": "Select a claim...",
+  "verdicts.hint": "Accept adds the claim to the knowledge graph. Reject sends it to negative knowledge. Qualify adds conditions. Merge combines with another claim.",
   "verdicts.submit": "Submit Verdicts",
 
   "build.title": "Phase 5: Build Decision (Round {{round}})",
@@ -110,6 +117,11 @@
   "build.startRound": "Start New Round",
   "build.deepDiveTitle": "Deep Dive into a Claim",
   "build.insightCard": "Share Your Insight",
+  "build.deepDiveHint": "Focus the entire next round on deeply exploring a single claim with new evidence and counter-evidence.",
+  "build.negativeKnowledgeHint": "Claims rejected in previous rounds. They prevent circular reasoning and steer exploration away from dead ends.",
+  "build.gapsHint": "Weaknesses in the current knowledge graph. Select the ones worth investigating — they'll direct the next round's focus.",
+  "build.insightHint": "Contribute your own knowledge or hypothesis. It will be added to the graph and tested alongside agent-generated claims.",
+  "build.continueHint": "Continue starts a new dialectical round. Finalize generates your final Knowledge Document.",
   "build.finalize": "Finalize",
 
   "graph.title": "Knowledge Graph",
