@@ -239,7 +239,7 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
               <div key={currentCard} className={`flex-1 p-5 rounded-lg text-center ${animationClass}`}>
                 <p className="text-xs text-gray-400 font-medium mb-2">{currentCard + 1} / {totalClaims}</p>
 
-                {/* Badges — claim type + confidence */}
+                {/* Badges — claim type + confidence + composite score */}
                 <div className="flex items-center justify-center gap-2 mb-3">
                   {claim.claim_type && CLAIM_TYPE_KEY[claim.claim_type] && (
                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${CLAIM_TYPE_COLOR[claim.claim_type] || "bg-gray-50 text-gray-600 border border-gray-200"}`}>
@@ -251,6 +251,20 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                       {t(CONFIDENCE_KEY[claim.confidence])}
                     </span>
                   )}
+                  {(() => {
+                    if (!claim.scores) return null;
+                    const vals = Object.values(claim.scores).filter((v): v is number => v !== null && v !== undefined);
+                    if (vals.length === 0) return null;
+                    const avg = (vals.reduce((a, b) => a + b, 0) / vals.length) * 10;
+                    const color = avg >= 7 ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                      : avg >= 4 ? "bg-blue-50 text-blue-600 border border-blue-200"
+                      : "bg-red-50 text-red-500 border border-red-200";
+                    return (
+                      <span className={`px-2 py-0.5 rounded text-xs font-semibold tabular-nums ${color}`}>
+                        {t("score.overall")}: {avg.toFixed(1)}
+                      </span>
+                    );
+                  })()}
                 </div>
 
                 {/* Claim text — always visible, left-aligned */}

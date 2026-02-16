@@ -152,6 +152,7 @@
   "score.groundedness": "根拠性",
   "score.falsifiability": "反証可能性",
   "score.significance": "重要性",
+  "score.overall": "スコア",
 
   "common.addYourArgument": "あなたの意見を追加...",
   "common.show": "表示",

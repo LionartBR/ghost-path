@@ -152,6 +152,7 @@
   "score.groundedness": "Ancrage",
   "score.falsifiability": "Falsifiabilité",
   "score.significance": "Importance",
+  "score.overall": "Score",
 
   "common.addYourArgument": "Ajouter votre argument...",
   "common.show": "Afficher",

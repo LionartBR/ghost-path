@@ -168,6 +168,7 @@
   "score.groundedness": "Groundedness",
   "score.falsifiability": "Falsifiability",
   "score.significance": "Significance",
+  "score.overall": "Score",
 
   "common.addYourArgument": "Add your argument...",
   "common.show": "Show",

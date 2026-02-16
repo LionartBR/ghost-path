@@ -152,6 +152,7 @@
   "score.groundedness": "Обоснованность",
   "score.falsifiability": "Фальсифицируемость",
   "score.significance": "Значимость",
+  "score.overall": "Оценка",
 
   "common.addYourArgument": "Добавить свой аргумент...",
   "common.show": "Показать",

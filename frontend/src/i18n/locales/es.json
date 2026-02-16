@@ -153,6 +153,7 @@
   "score.groundedness": "Fundamentación",
   "score.falsifiability": "Falsabilidad",
   "score.significance": "Significancia",
+  "score.overall": "Score",
 
   "common.addYourArgument": "Agregar tu argumento...",
   "common.show": "Mostrar",

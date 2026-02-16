@@ -152,6 +152,7 @@
   "score.groundedness": "扎实度",
   "score.falsifiability": "可证伪性",
   "score.significance": "重要性",
+  "score.overall": "评分",
 
   "common.addYourArgument": "添加您的论点...",
   "common.show": "显示",
