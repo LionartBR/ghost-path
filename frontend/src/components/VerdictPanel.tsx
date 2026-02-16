@@ -122,8 +122,8 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
       }
       return updated;
     });
-    /* ADR: qualify/merge don't scroll — scroll deferred until input is confirmed */
-    if (verdict !== "qualify" && verdict !== "merge") {
+    /* ADR: verdicts needing input don't scroll — scroll deferred until input is confirmed */
+    if (!NEEDS_INPUT.has(verdict)) {
       carouselRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [totalClaims, goNext]);
@@ -333,14 +333,29 @@ export default function VerdictPanel({ claims, onSubmit }: VerdictPanelProps) {
                 {currentVerdict === "reject" && (
                   <div className="animate-fade-in text-left max-w-md mx-auto mt-3">
                     <label className="block text-xs text-gray-500 mb-1">{t("verdicts.rejectionReason")}</label>
-                    <input
-                      type="text"
-                      autoFocus
-                      placeholder={t("verdicts.rejectionReason")}
-                      value={verdicts.get(currentCard)?.rejection_reason || ""}
-                      onChange={(e) => updateVerdict(currentCard, "rejection_reason", e.target.value)}
-                      className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent placeholder-gray-400"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        autoFocus
+                        placeholder={t("verdicts.rejectionReason")}
+                        value={verdicts.get(currentCard)?.rejection_reason || ""}
+                        onChange={(e) => updateVerdict(currentCard, "rejection_reason", e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter" && verdicts.get(currentCard)?.rejection_reason) confirmAndAdvance(); }}
+                        className="flex-1 bg-white border border-gray-200 rounded-md px-3 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent placeholder-gray-400"
+                      />
+                      <button
+                        onClick={() => { if (verdicts.get(currentCard)?.rejection_reason) confirmAndAdvance(); }}
+                        disabled={!verdicts.get(currentCard)?.rejection_reason}
+                        className={`flex-shrink-0 w-9 h-9 rounded-md flex items-center justify-center transition-colors ${
+                          verdicts.get(currentCard)?.rejection_reason
+                            ? "bg-red-500 text-white hover:bg-red-600"
+                            : "bg-gray-100 text-gray-300 cursor-not-allowed"
+                        }`}
+                        aria-label="Confirm rejection"
+                      >
+                        <i className="bi bi-plus-lg text-sm" />
+                      </button>
+                    </div>
                   </div>
                 )}
                 {currentVerdict === "qualify" && (
