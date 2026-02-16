@@ -49,10 +49,10 @@
   "explore.morphBox": "形態学的マトリックス",
   "explore.analogies": "類推",
   "explore.contradictions": "矛盾",
-  "explore.star": "スター",
-  "explore.starred": "スター済み",
+  "explore.resonate": "共鳴する",
+  "explore.resonated": "共鳴した",
   "explore.suggestDomain": "類推のための新しいドメインを提案...",
-  "explore.submitReview": "レビューを送信 ({{count}}件スター済み)",
+  "explore.submitReview": "レビューを送信 ({{count}}件共鳴)",
   "explore.submitReviewNone": "レビューを送信",
 
   "synthesize.title": "フェーズ3：統合",

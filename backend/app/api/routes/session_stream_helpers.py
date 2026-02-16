@@ -4,7 +4,7 @@ Invariants:
     - apply_user_input mutates ForgeState + triggers phase transition (never commits)
     - sync_state_to_db mirrors ForgeState phase/round/status to Session for observability
     - update_claim_verdict persists user verdict to KnowledgeClaim (never crashes)
-    - _persist_reframing_selections / _persist_analogy_stars sync user picks to DB
+    - _persist_reframing_selections / _persist_analogy_resonance sync user picks to DB
 
 Design Decisions:
     - Extracted from session_agent_stream.py to respect ExMA import fan-out < 10
@@ -138,7 +138,7 @@ def format_user_input(body: UserInput, state: ForgeState, problem: str) -> str:
         reframing_responses=body.reframing_responses,
         selected_reframings=body.selected_reframings,
         analogy_responses=body.analogy_responses,
-        starred_analogies=body.starred_analogies,
+        resonant_analogies=body.starred_analogies,
         suggested_domains=body.suggested_domains,
         added_contradictions=body.added_contradictions,
         claim_responses=body.claim_responses,
@@ -182,7 +182,7 @@ async def apply_user_input(
             state.transition_to(Phase.EXPLORE)
         case "explore_review":
             _apply_explore(body, state)
-            await _persist_analogy_stars(db, session.id, state)
+            await _persist_analogy_resonance(db, session.id, state)
             state.transition_to(Phase.SYNTHESIZE)
         case "claims_review":
             _apply_claims(body, state)
@@ -232,19 +232,19 @@ def _apply_decompose(body: UserInput, state: ForgeState) -> None:
 
 
 def _apply_explore(body: UserInput, state: ForgeState) -> None:
-    """Apply explore review selections — analogy resonance or starred indices."""
+    """Apply explore review selections — analogy resonance or legacy indices."""
     if body.analogy_responses:
         for a_resp in body.analogy_responses:
             idx = a_resp.analogy_index
             if idx < len(state.cross_domain_analogies):
                 analogy = state.cross_domain_analogies[idx]
                 if a_resp.custom_argument:
-                    analogy["starred"] = True
+                    analogy["resonated"] = True
                     analogy["user_resonance"] = a_resp.custom_argument.strip()
                     analogy["selected_resonance_option"] = a_resp.selected_option
                     analogy["custom_argument"] = a_resp.custom_argument.strip()
                 elif a_resp.selected_option > 0:
-                    analogy["starred"] = True
+                    analogy["resonated"] = True
                     options = analogy.get("resonance_options", [])
                     opt_idx = a_resp.selected_option
                     if opt_idx < len(options):
@@ -253,7 +253,7 @@ def _apply_explore(body: UserInput, state: ForgeState) -> None:
     elif body.starred_analogies:
         for idx in body.starred_analogies:
             if idx < len(state.cross_domain_analogies):
-                state.cross_domain_analogies[idx]["starred"] = True
+                state.cross_domain_analogies[idx]["resonated"] = True
 
 
 def _apply_claims(body: UserInput, state: ForgeState) -> None:
@@ -349,10 +349,10 @@ async def _persist_reframing_selections(
         logger.warning("Failed to persist reframing selections: %s", e)
 
 
-async def _persist_analogy_stars(
+async def _persist_analogy_resonance(
     db: AsyncSession, session_id, state: ForgeState,
 ) -> None:
-    """Persist starred analogies from ForgeState to DB. Never crashes.
+    """Persist resonated analogies from ForgeState to DB. Never crashes.
 
     ADR: Match by created_at order — ForgeState list index == DB row order.
     Same pattern as update_claim_verdict: best-effort, log on failure.
@@ -366,10 +366,10 @@ async def _persist_analogy_stars(
         )
         db_rows = list(result.scalars().all())
         for idx, analogy in enumerate(state.cross_domain_analogies):
-            if analogy.get("starred") and idx < len(db_rows):
-                db_rows[idx].starred = True
+            if analogy.get("resonated") and idx < len(db_rows):
+                db_rows[idx].resonated = True
     except Exception as e:
-        logger.warning("Failed to persist analogy stars: %s", e)
+        logger.warning("Failed to persist analogy resonance: %s", e)
 
 
 async def update_claim_verdict(

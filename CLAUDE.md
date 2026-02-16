@@ -447,7 +447,7 @@ Pure validation logic lives in `core/enforce_phases.py` and `core/enforce_claims
 
 ### Phase Transition Rules
 1. **Decompose → Explore**: Requires fundamentals + state_of_art researched + >= 3 assumptions + >= 3 reframings + user selected >= 1 reframing. ERROR: `DECOMPOSE_INCOMPLETE`
-2. **Explore → Synthesize**: Requires morphological box + >= 2 cross-domain searches + >= 1 contradiction + user starred >= 1 analogy. ERROR: `EXPLORE_INCOMPLETE`
+2. **Explore → Synthesize**: Requires morphological box + >= 2 cross-domain searches + >= 1 contradiction + user resonated with >= 1 analogy. ERROR: `EXPLORE_INCOMPLETE`
 
 ### Synthesis Rules
 3. **Antithesis before synthesis**: Every `create_synthesis` requires `find_antithesis` first for that claim index. ERROR: `ANTITHESIS_MISSING`
@@ -513,7 +513,7 @@ class UserInput(BaseModel):
     added_reframings: list[str] | None
 
     # explore_review: star analogies, suggest domains
-    starred_analogies: list[int] | None          # >= 1 required
+    starred_analogies: list[int] | None          # legacy backward compat
     suggested_domains: list[str] | None
 
     # claims_review: per-claim feedback
@@ -588,7 +588,7 @@ _forge_states: dict[UUID, ForgeState] = {}
 - **Phase 6 (Crystallize)**: `knowledge_document_markdown`
 - **Deep-dive**: `deep_dive_active`, `deep_dive_target_claim_id`
 - **Pause**: `awaiting_user_input`, `awaiting_input_type`
-- **Computed**: `claims_remaining`, `all_claims_have_antithesis`, `all_claims_falsified`, `all_claims_novelty_checked`, `max_rounds_reached`, `starred_analogies`, `selected_reframings`, `confirmed_assumptions`
+- **Computed**: `claims_remaining`, `all_claims_have_antithesis`, `all_claims_falsified`, `all_claims_novelty_checked`, `max_rounds_reached`, `resonant_analogies`, `selected_reframings`, `confirmed_assumptions`
 
 ## Database Models (8 tables)
 
@@ -602,7 +602,7 @@ _forge_states: dict[UUID, ForgeState] = {}
 
 **ProblemReframing**: `id` (UUID PK), `session_id` (FK), `original_problem`, `reframing_text`, `reframing_type` (scope_change/entity_question/variable_change/domain_change), `selected` (bool)
 
-**CrossDomainAnalogy**: `id` (UUID PK), `session_id` (FK), `source_domain`, `target_application`, `analogy_description`, `semantic_distance` (near/medium/far), `starred` (bool)
+**CrossDomainAnalogy**: `id` (UUID PK), `session_id` (FK), `source_domain`, `target_application`, `analogy_description`, `semantic_distance` (near/medium/far), `resonated` (bool)
 
 **Contradiction**: `id` (UUID PK), `session_id` (FK), `property_a`, `property_b`, `description`, `resolution_direction`
 

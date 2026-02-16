@@ -4,7 +4,7 @@ Invariants:
     - At least 1 analogy must resonate (selected_option > 0) or have custom argument before submit
     - Carousel reuses DecomposeReview pattern: progress dots, prev/next, auto-advance
     - Morphological box and contradictions are collapsible (read-only context)
-    - Backward compat: falls back to simple star toggle when no resonance data
+    - Backward compat: falls back to simple toggle when no resonance data
     - "Suggest domain" moved to DecomposeReview (pre-Phase 2, more useful there)
 
 Design Decisions:
@@ -40,7 +40,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
   const [analogiesCollapsed, setAnalogiesCollapsed] = useState(false);
 
   // Backward compat: star toggle for analogies without resonance data
-  const [starredAnalogies, setStarredAnalogies] = useState<Set<number>>(new Set());
+  const [legacyResonated, setLegacyResonated] = useState<Set<number>>(new Set());
 
   // Custom argument state (per-analogy)
   const [customArgTexts, setCustomArgTexts] = useState<Map<number, string>>(new Map());
@@ -124,8 +124,8 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
     }
   }, [customArgInput, data.analogies, analogyResponses, customArgTexts, totalAnalogies, goNext]);
 
-  const toggleStar = (index: number) => {
-    setStarredAnalogies((prev) => {
+  const toggleResonated = (index: number) => {
+    setLegacyResonated((prev) => {
       const next = new Set(prev);
       if (next.has(index)) next.delete(index); else next.add(index);
       return next;
@@ -134,7 +134,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
   };
 
   const resonatedCount = Array.from(analogyResponses.values()).filter((opt) => opt > 0).length;
-  const canSubmit = hasResonanceData ? (resonatedCount > 0 || customArgTexts.size > 0) : starredAnalogies.size > 0;
+  const canSubmit = hasResonanceData ? (resonatedCount > 0 || customArgTexts.size > 0) : legacyResonated.size > 0;
 
   const handleSubmit = () => {
     if (hasResonanceData) {
@@ -155,7 +155,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
     } else {
       const input: UserInput = {
         type: "explore_review",
-        starred_analogies: Array.from(starredAnalogies),
+        starred_analogies: Array.from(legacyResonated),
       };
       onSubmit(input);
     }
@@ -352,7 +352,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
               <div
                 key={i}
                 className={`p-4 rounded-lg border transition-all ${
-                  starredAnalogies.has(i)
+                  legacyResonated.has(i)
                     ? "bg-green-50 border-green-300"
                     : "bg-gray-50 border-gray-200 hover:border-gray-300"
                 }`}
@@ -360,15 +360,15 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-semibold text-gray-900 text-sm">{a.domain}</h4>
                   <button
-                    onClick={() => toggleStar(i)}
+                    onClick={() => toggleResonated(i)}
                     className={`text-sm font-medium px-2 py-0.5 rounded transition-colors inline-flex items-center gap-1 ${
-                      starredAnalogies.has(i)
+                      legacyResonated.has(i)
                         ? "text-green-600 bg-green-100"
                         : "text-gray-400 hover:text-gray-600"
                     }`}
                   >
-                    <i className={`bi ${starredAnalogies.has(i) ? "bi-star-fill" : "bi-star"}`} />
-                    {starredAnalogies.has(i) ? t("explore.starred") : t("explore.star")}
+                    <i className={`bi ${legacyResonated.has(i) ? "bi-check-circle-fill" : "bi-circle"}`} />
+                    {legacyResonated.has(i) ? t("explore.resonated") : t("explore.resonate")}
                   </button>
                 </div>
                 <ClaimMarkdown className="text-gray-600 text-sm mb-2">{a.description}</ClaimMarkdown>
@@ -474,7 +474,7 @@ export const ExploreReview: React.FC<ExploreReviewProps> = ({ data, onSubmit }) 
         className="w-full py-3 bg-green-600 hover:bg-green-500 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg transition-all inline-flex items-center justify-center gap-2"
       >
         {canSubmit
-          ? t("explore.submitReview", { count: hasResonanceData ? resonatedCount + customArgTexts.size : starredAnalogies.size })
+          ? t("explore.submitReview", { count: hasResonanceData ? resonatedCount + customArgTexts.size : legacyResonated.size })
           : t("explore.submitReviewNone")}
       </button>
     </div>

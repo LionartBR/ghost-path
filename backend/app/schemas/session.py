@@ -117,7 +117,7 @@ class UserInput(BaseModel):
 
     # type == "explore_review"
     analogy_responses: list[AnalogyResponse] | None = None
-    starred_analogies: list[int] | None = None  # backward compat
+    starred_analogies: list[int] | None = None  # backward compat (legacy star-toggle UX)
     suggested_domains: list[str] | None = None
     added_contradictions: list[str] | None = None
     added_parameters: list[dict] | None = None
@@ -178,18 +178,22 @@ def _validate_decompose_review(user_input: "UserInput") -> None:
 
 def _validate_explore_review(user_input: "UserInput") -> None:
     """Validate explore_review fields."""
-    # ADR: analogy_responses (new) OR starred_analogies (backward compat)
+    # ADR: analogy_responses (new) OR starred_analogies (legacy backward compat)
     has_resonance = (
         user_input.analogy_responses
         and any(r.selected_option > 0 for r in user_input.analogy_responses)
     )
-    has_starred = (
+    has_custom_arg = (
+        user_input.analogy_responses
+        and any(r.custom_argument for r in user_input.analogy_responses)
+    )
+    has_legacy = (
         user_input.starred_analogies and len(user_input.starred_analogies) > 0
     )
-    if not (has_resonance or has_starred):
+    if not (has_resonance or has_custom_arg or has_legacy):
         raise ValueError(
             "explore_review requires >= 1 analogy with resonance "
-            "(selected_option > 0) or >= 1 starred analogy",
+            "(selected_option > 0), custom argument, or >= 1 legacy starred analogy",
         )
 
 

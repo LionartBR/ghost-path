@@ -49,10 +49,10 @@
   "explore.morphBox": "형태학적 박스",
   "explore.analogies": "유추",
   "explore.contradictions": "모순",
-  "explore.star": "별표",
-  "explore.starred": "별표 표시됨",
+  "explore.resonate": "공명함",
+  "explore.resonated": "공명됨",
   "explore.suggestDomain": "유추를 위한 새 도메인 제안...",
-  "explore.submitReview": "검토 제출 ({{count}}개 별표)",
+  "explore.submitReview": "검토 제출 ({{count}}개 공명됨)",
   "explore.submitReviewNone": "검토 제출",
 
   "synthesize.title": "3단계: 종합",

@@ -47,13 +47,13 @@ def test_counts_rejected_claims_from_negative_knowledge():
     assert stats["total_claims"] == 3  # 1 graph node + 2 rejected
 
 
-def test_counts_starred_analogies_only():
+def test_counts_resonated_analogies_only():
     state = ForgeState()
     state.cross_domain_analogies = [
-        {"domain": "biology", "starred": True},
-        {"domain": "physics", "starred": False},
-        {"domain": "music", "starred": True},
-        {"domain": "cooking"},  # no starred key
+        {"domain": "biology", "resonated": True},
+        {"domain": "physics", "resonated": False},
+        {"domain": "music", "resonated": True},
+        {"domain": "cooking"},  # no resonated key
     ]
     stats = compute_session_stats(state)
     assert stats["analogies_used"] == 2

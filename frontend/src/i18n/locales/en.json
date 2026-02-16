@@ -50,10 +50,10 @@
   "explore.morphBox": "Morphological Box",
   "explore.analogies": "Analogies",
   "explore.contradictions": "Contradictions",
-  "explore.star": "Star",
-  "explore.starred": "Starred",
+  "explore.resonate": "Resonates",
+  "explore.resonated": "Resonated",
   "explore.suggestDomain": "Suggest a new domain for analogy...",
-  "explore.submitReview": "Submit Review ({{count}} starred)",
+  "explore.submitReview": "Submit Review ({{count}} resonated)",
   "explore.submitReviewNone": "Submit Review",
 
   "synthesize.title": "Phase 3: Synthesize",

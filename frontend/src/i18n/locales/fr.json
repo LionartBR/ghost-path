@@ -49,10 +49,10 @@
   "explore.morphBox": "Boîte morphologique",
   "explore.analogies": "Analogies",
   "explore.contradictions": "Contradictions",
-  "explore.star": "Marquer",
-  "explore.starred": "Marqué",
+  "explore.resonate": "Résonne",
+  "explore.resonated": "Résonné",
   "explore.suggestDomain": "Suggérer un nouveau domaine d'analogie...",
-  "explore.submitReview": "Soumettre la revue ({{count}} marqués)",
+  "explore.submitReview": "Soumettre la revue ({{count}} résonné)",
   "explore.submitReviewNone": "Soumettre la revue",
 
   "synthesize.title": "Phase 3 : Synthétiser",

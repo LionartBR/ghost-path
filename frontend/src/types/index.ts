@@ -116,7 +116,7 @@ export interface Analogy {
   target_application?: string;
   description: string;
   semantic_distance?: string;
-  starred: boolean;
+  resonated: boolean;
   resonance_prompt?: string;
   resonance_options?: string[];
   user_resonance?: string | null;
@@ -289,7 +289,7 @@ export interface UserInput {
   selected_reframings?: number[];  // backward compat
   // explore_review
   analogy_responses?: AnalogyResponse[];
-  starred_analogies?: number[];
+  starred_analogies?: number[];  // legacy backward compat field name
   suggested_domains?: string[];
   added_contradictions?: string[];
   // claims_review

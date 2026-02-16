@@ -49,10 +49,10 @@
   "explore.morphBox": "Морфологическая матрица",
   "explore.analogies": "Аналогии",
   "explore.contradictions": "Противоречия",
-  "explore.star": "Отметить",
-  "explore.starred": "Отмечено",
+  "explore.resonate": "Резонирует",
+  "explore.resonated": "Резонировало",
   "explore.suggestDomain": "Предложить новую область для аналогии...",
-  "explore.submitReview": "Отправить отзыв ({{count}} отмечено)",
+  "explore.submitReview": "Отправить отзыв ({{count}} резонировало)",
   "explore.submitReviewNone": "Отправить отзыв",
 
   "synthesize.title": "Фаза 3: Синтез",

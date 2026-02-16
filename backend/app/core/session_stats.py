@@ -21,7 +21,7 @@ def compute_session_stats(state: ForgeState) -> dict:
     qualified = sum(1 for n in nodes if n.get("status") == "qualified")
     rejected = len(state.negative_knowledge)
     evidence = sum(n.get("evidence_count", 0) for n in nodes)
-    starred = sum(1 for a in state.cross_domain_analogies if a.get("starred"))
+    resonated = sum(1 for a in state.cross_domain_analogies if a.get("resonated"))
 
     return {
         "total_rounds": state.current_round + 1,
@@ -29,7 +29,7 @@ def compute_session_stats(state: ForgeState) -> dict:
         "claims_rejected": rejected,
         "claims_qualified": qualified,
         "total_claims": len(nodes) + rejected,
-        "analogies_used": starred,
+        "analogies_used": resonated,
         "contradictions_found": len(state.contradictions),
         "evidence_collected": evidence,
         "fundamentals_identified": len(state.fundamentals),

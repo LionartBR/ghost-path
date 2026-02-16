@@ -74,7 +74,7 @@ class ExploreHandlers:
             "target_application": target_application,
             "description": analogy_description,
             "semantic_distance": semantic_distance,
-            "starred": False,
+            "resonated": False,
             "resonance_prompt": input_data.get("resonance_prompt"),
             "resonance_options": input_data.get("resonance_options"),
             "user_resonance": None,

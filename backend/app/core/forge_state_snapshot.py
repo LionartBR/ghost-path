@@ -129,4 +129,10 @@ def forge_state_from_snapshot(data: dict) -> ForgeState:
     for key in _SET_FIELDS:
         setattr(state, key, set(data.get(key, [])))
 
+    # ADR: migrate old "starred" key → "resonated" in analogy dicts
+    # (backward compat for snapshots created before the rename)
+    for analogy in state.cross_domain_analogies:
+        if "starred" in analogy and "resonated" not in analogy:
+            analogy["resonated"] = analogy.pop("starred")
+
     return state

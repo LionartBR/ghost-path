@@ -22,7 +22,7 @@ LABELS_PT_BR: dict[str, str] = {
     "selected_reframings": "Reformulações selecionadas: índices",
     "reviewed_exploration": "O usuário revisou a exploração:",
     "analogy_responses": "Respostas às analogias:",
-    "starred_analogies": "Analogias marcadas: índices",
+    "resonant_analogies": "Analogias ressonantes: índices",
     "suggested_domains": "Domínios sugeridos para busca:",
     "added_contradictions": "Contradições adicionadas:",
     "reviewed_claims": "O usuário revisou as afirmações:",
@@ -68,7 +68,7 @@ DECOMPOSE_INSTRUCTION = (
 )
 
 EXPLORE_INSTRUCTION = (
-    "Prossiga para a Fase 3 (SYNTHESIZE). Use as analogias marcadas "
+    "Prossiga para a Fase 3 (SYNTHESIZE). Use as analogias ressonantes "
     "e contradições acima para derivar direções de síntese."
 )
 

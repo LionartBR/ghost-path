@@ -187,7 +187,7 @@ Reason: mapping state of art from training data alone reflects a stale snapshot.
 RULES_EXPLORE = """\
 ### Phase Transition Rules
 2. Cannot synthesize without: morphological box + >= 2 cross-domain searches + \
->= 1 contradiction + user starred >= 1 analogy. \
+>= 1 contradiction + user resonated with >= 1 analogy. \
 Reason: synthesis without broad exploration recombines familiar ideas.
 
 ### Research Gates

@@ -125,16 +125,16 @@ def test_max_rounds_reached_at_5():
     assert state.max_rounds_reached
 
 
-# --- Computed properties: starred/selected ------------------------------------
+# --- Computed properties: resonated/selected ----------------------------------
 
-def test_starred_analogies_filters_correctly():
+def test_resonant_analogies_filters_correctly():
     state = ForgeState()
     state.cross_domain_analogies = [
-        {"domain": "music", "starred": True},
-        {"domain": "biology", "starred": False},
-        {"domain": "cooking", "starred": True},
+        {"domain": "music", "resonated": True},
+        {"domain": "biology", "resonated": False},
+        {"domain": "cooking", "resonated": True},
     ]
-    assert len(state.starred_analogies) == 2
+    assert len(state.resonant_analogies) == 2
 
 
 def test_selected_reframings_filters_correctly():

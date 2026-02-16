@@ -49,10 +49,10 @@
   "explore.morphBox": "Morphologischer Kasten",
   "explore.analogies": "Analogien",
   "explore.contradictions": "Widersprüche",
-  "explore.star": "Markieren",
-  "explore.starred": "Markiert",
+  "explore.resonate": "Resoniert",
+  "explore.resonated": "Resoniert",
   "explore.suggestDomain": "Neue Domäne für Analogie vorschlagen...",
-  "explore.submitReview": "Überprüfung absenden ({{count}} markiert)",
+  "explore.submitReview": "Überprüfung absenden ({{count}} resoniert)",
   "explore.submitReviewNone": "Überprüfung absenden",
 
   "synthesize.title": "Phase 3: Synthetisieren",

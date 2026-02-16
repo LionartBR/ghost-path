@@ -3,7 +3,7 @@
 Invariants:
     - Always belongs to a Session (session_id FK)
     - semantic_distance is one of: near, medium, far
-    - starred defaults to False (set when user stars during explore review)
+    - resonated defaults to False (set when user resonates during explore review)
 
 Design Decisions:
     - Persisted (not just in ForgeState): needed for Knowledge Document generation (ADR: data completeness)
@@ -36,7 +36,7 @@ class CrossDomainAnalogy(Base):
     semantic_distance: Mapped[str] = mapped_column(
         String(10), nullable=False, default="medium",
     )
-    starred: Mapped[bool] = mapped_column(
+    resonated: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False,
     )
     created_at: Mapped[datetime] = mapped_column(

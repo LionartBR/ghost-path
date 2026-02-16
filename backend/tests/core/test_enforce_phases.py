@@ -48,7 +48,7 @@ def _explored_state() -> ForgeState:
     state.cross_domain_search_count = 2
     state.contradictions = [{"property_a": "fast", "property_b": "cheap", "description": "tradeoff"}]
     state.cross_domain_analogies = [
-        {"domain": "music", "description": "harmony patterns", "starred": True},
+        {"domain": "music", "description": "harmony patterns", "resonated": True},
     ]
     return state
 
@@ -138,17 +138,17 @@ def test_explore_fails_without_contradictions():
     assert "contradiction" in error["message"].lower()
 
 
-def test_explore_fails_without_starred_analogies():
+def test_explore_fails_without_resonant_analogies():
     state = ForgeState()
     state.morphological_box = {"parameters": []}
     state.cross_domain_search_count = 2
     state.contradictions = [{"property_a": "a", "property_b": "b", "description": "d"}]
     state.cross_domain_analogies = [
-        {"domain": "music", "description": "d", "starred": False},
+        {"domain": "music", "description": "d", "resonated": False},
     ]
     error = check_explore_complete(state)
     assert error is not None
-    assert "star" in error["message"].lower()
+    assert "resonate" in error["message"].lower()
 
 
 def test_explore_succeeds_with_complete_state():

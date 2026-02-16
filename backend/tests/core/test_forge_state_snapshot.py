@@ -54,7 +54,7 @@ def test_roundtrip_populated_state():
 
     # Phase 2
     state.morphological_box = {"parameters": [{"name": "p1", "values": ["v1"]}]}
-    state.cross_domain_analogies = [{"domain": "biology", "starred": True}]
+    state.cross_domain_analogies = [{"domain": "biology", "resonated": True}]
     state.cross_domain_search_count = 3
     state.contradictions = [{"property_a": "speed", "property_b": "safety"}]
     state.adjacent_possible = [{"current_capability": "c1"}]
@@ -106,7 +106,7 @@ def test_roundtrip_populated_state():
 
     # Phase 2
     assert restored.morphological_box == {"parameters": [{"name": "p1", "values": ["v1"]}]}
-    assert restored.cross_domain_analogies == [{"domain": "biology", "starred": True}]
+    assert restored.cross_domain_analogies == [{"domain": "biology", "resonated": True}]
     assert restored.cross_domain_search_count == 3
     assert restored.contradictions == [{"property_a": "speed", "property_b": "safety"}]
     assert restored.adjacent_possible == [{"current_capability": "c1"}]
@@ -232,6 +232,21 @@ def test_from_snapshot_restores_sets_from_lists():
     assert isinstance(restored.falsification_attempted, set)
     assert restored.novelty_checked == {1, 2}
     assert isinstance(restored.novelty_checked, set)
+
+
+def test_from_snapshot_migrates_old_starred_key_to_resonated():
+    """Old snapshots with 'starred' key in analogies migrate to 'resonated'."""
+    restored = forge_state_from_snapshot({
+        "cross_domain_analogies": [
+            {"domain": "biology", "starred": True},
+            {"domain": "physics", "starred": False},
+        ],
+    })
+    assert restored.cross_domain_analogies[0].get("resonated") is True
+    assert restored.cross_domain_analogies[1].get("resonated") is False
+    assert "starred" not in restored.cross_domain_analogies[0]
+    assert "starred" not in restored.cross_domain_analogies[1]
+    assert len(restored.resonant_analogies) == 1
 
 
 # -- Computed properties survive roundtrip ------------------------------------

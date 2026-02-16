@@ -49,10 +49,10 @@
   "explore.morphBox": "形态学盒子",
   "explore.analogies": "类比",
   "explore.contradictions": "矛盾",
-  "explore.star": "标星",
-  "explore.starred": "已标星",
+  "explore.resonate": "共鸣",
+  "explore.resonated": "已共鸣",
   "explore.suggestDomain": "建议新的类比领域...",
-  "explore.submitReview": "提交审查（{{count}} 个已标星）",
+  "explore.submitReview": "提交审查（{{count}} 个共鸣）",
   "explore.submitReviewNone": "提交审查",
 
   "synthesize.title": "阶段3：综合",

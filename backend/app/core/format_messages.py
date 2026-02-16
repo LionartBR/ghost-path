@@ -25,7 +25,7 @@ _LABELS_EN: dict[str, str] = {
     "selected_reframings": "Selected reframings: indices",
     "reviewed_exploration": "The user reviewed the exploration:",
     "analogy_responses": "Analogy responses:",
-    "starred_analogies": "Starred analogies: indices",
+    "resonant_analogies": "Resonant analogies: indices",
     "suggested_domains": "Suggested domains to search:",
     "added_contradictions": "Added contradictions:",
     "reviewed_claims": "The user reviewed the claims:",
@@ -58,7 +58,7 @@ def format_user_input(
     reframing_responses: list | None = None,
     selected_reframings: list[int] | None = None,
     analogy_responses: list | None = None,
-    starred_analogies: list[int] | None = None,
+    resonant_analogies: list[int] | None = None,
     suggested_domains: list[str] | None = None,
     added_contradictions: list[str] | None = None,
     claim_responses: list | None = None,
@@ -90,7 +90,7 @@ def format_user_input(
         case "explore_review":
             return _format_explore_review(
                 locale_prefix, pt, lbl, forge_state,
-                starred_analogies, suggested_domains,
+                resonant_analogies, suggested_domains,
                 added_contradictions, locale,
                 analogy_responses=analogy_responses,
             )
@@ -188,20 +188,20 @@ def _format_decompose_review(
 
 def _format_explore_review(
     prefix, pt, lbl, forge_state,
-    starred, suggested, added_contradictions, locale,
+    resonant, suggested, added_contradictions, locale,
     *, analogy_responses=None,
 ):
     """Format explore_review input."""
     parts = [prefix, f"\n{lbl['reviewed_exploration']}"]
     if forge_state:
         ctx = _digest.build_phase2_context(
-            forge_state, locale, starred,
+            forge_state, locale, resonant,
             analogy_responses=analogy_responses,
         )
         if ctx:
             parts.append(ctx)
-    elif starred:
-        parts.append(f"{lbl['starred_analogies']} {starred}")
+    elif resonant:
+        parts.append(f"{lbl['resonant_analogies']} {resonant}")
     if suggested:
         parts.append(f"{lbl['suggested_domains']} {suggested}")
     if added_contradictions:
@@ -209,7 +209,7 @@ def _format_explore_review(
             f"{lbl['added_contradictions']} {added_contradictions}",
         )
     instr = _pt_br.EXPLORE_INSTRUCTION if pt else (
-        "Proceed to Phase 3 (SYNTHESIZE). Use the starred analogies "
+        "Proceed to Phase 3 (SYNTHESIZE). Use the resonant analogies "
         "and contradictions above to derive synthesis directions."
     )
     parts.append(instr)

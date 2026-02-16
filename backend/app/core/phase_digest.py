@@ -67,16 +67,16 @@ def build_phase1_context(state: ForgeState, locale: Locale) -> str:
 
 def build_phase2_context(
     state: ForgeState, locale: Locale,
-    starred_analogies: list[int] | None = None,
+    resonant_analogies: list[int] | None = None,
     *, analogy_responses: list | None = None,
 ) -> str:
     """Phase 2 summary for Phase 3 context.
 
-    ADR: analogy_responses (new) preferred over starred_analogies (legacy).
+    ADR: analogy_responses (new) preferred over resonant_analogies (legacy).
     """
     pt = locale == Locale.PT_BR
     parts: list[str] = []
-    _append_analogy_digest(parts, state, pt, analogy_responses, starred_analogies)
+    _append_analogy_digest(parts, state, pt, analogy_responses, resonant_analogies)
     _append_contradictions_digest(parts, state, pt)
     _append_morphological_digest(parts, state, pt)
     if not parts:
@@ -90,9 +90,9 @@ def build_phase2_context(
 
 def _append_analogy_digest(
     parts: list, state: ForgeState, pt: bool,
-    responses: list | None, starred: list[int] | None,
+    responses: list | None, resonant: list[int] | None,
 ) -> None:
-    """Append analogy digest — new resonance path or legacy starred path."""
+    """Append analogy digest — new resonance path or legacy index path."""
     if responses and state.cross_domain_analogies:
         label = "Respostas às analogias:" if pt else "Analogy responses:"
         parts.append(label)
@@ -109,10 +109,10 @@ def _append_analogy_digest(
                 opt = options[opt_idx] if opt_idx < len(options) else f"option {opt_idx}"
                 parts.append(f"  - [{domain}] {desc}")
                 parts.append(f"    User resonance: '{opt}'")
-    elif starred and state.cross_domain_analogies:
-        label = "Analogias marcadas:" if pt else "Starred analogies:"
+    elif resonant and state.cross_domain_analogies:
+        label = "Analogias ressonantes:" if pt else "Resonant analogies:"
         parts.append(label)
-        for idx in starred:
+        for idx in resonant:
             if 0 <= idx < len(state.cross_domain_analogies):
                 a = state.cross_domain_analogies[idx]
                 domain = a.get("domain", "")

@@ -74,7 +74,7 @@ def test_explore_review_has_locale_prefix():
     prefix = get_phase_prefix(Locale.ES, "Problema de prueba")
     result = format_user_input(
         "explore_review", prefix, locale=Locale.ES,
-        starred_analogies=[0, 1],
+        resonant_analogies=[0, 1],
     )
     assert "espa" in result.lower()
 
@@ -83,7 +83,7 @@ def test_explore_review_pt_br_body_is_portuguese():
     prefix = get_phase_prefix(Locale.PT_BR, PT_PROBLEM)
     result = format_user_input(
         "explore_review", prefix, locale=Locale.PT_BR,
-        starred_analogies=[0],
+        resonant_analogies=[0],
     )
     assert "Proceed to Phase" not in result
     assert "Prossiga para a Fase 3" in result

@@ -104,9 +104,9 @@ class ForgeState:
         return len(self.web_searches_this_phase) > 0
 
     @property
-    def starred_analogies(self) -> list[dict]:
-        """Analogies the user starred during explore review."""
-        return [a for a in self.cross_domain_analogies if a.get("starred")]
+    def resonant_analogies(self) -> list[dict]:
+        """Analogies the user resonated with during explore review."""
+        return [a for a in self.cross_domain_analogies if a.get("resonated")]
 
     @property
     def selected_reframings(self) -> list[dict]:

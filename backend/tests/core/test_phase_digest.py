@@ -85,14 +85,14 @@ def test_phase1_pt_br_labels():
 # Phase 2 (EXPLORE -> SYNTHESIZE)
 # ---------------------------------------------------------------------------
 
-def test_phase2_includes_starred_analogies_by_index():
+def test_phase2_includes_resonant_analogies_by_index():
     state = ForgeState()
     state.cross_domain_analogies = [
-        {"domain": "Biology", "description": "Immune system analogy", "starred": False},
-        {"domain": "Music", "description": "Harmonic resonance", "starred": False},
-        {"domain": "Architecture", "description": "Load bearing", "starred": False},
+        {"domain": "Biology", "description": "Immune system analogy", "resonated": False},
+        {"domain": "Music", "description": "Harmonic resonance", "resonated": False},
+        {"domain": "Architecture", "description": "Load bearing", "resonated": False},
     ]
-    result = build_phase2_context(state, Locale.EN, starred_analogies=[0, 2])
+    result = build_phase2_context(state, Locale.EN, resonant_analogies=[0, 2])
     assert "Biology" in result
     assert "Immune system" in result
     assert "Architecture" in result
@@ -227,15 +227,15 @@ def test_phase2_resonance_excludes_option_zero():
     assert "Partial" in result
 
 
-def test_phase2_resonance_falls_back_to_starred():
-    """When analogy_responses is None, falls back to starred_analogies path."""
+def test_phase2_resonance_falls_back_to_legacy_indices():
+    """When analogy_responses is None, falls back to resonant_analogies index path."""
     state = ForgeState()
     state.cross_domain_analogies = [
-        {"domain": "Architecture", "description": "Load bearing", "starred": False},
-        {"domain": "Ecology", "description": "Ecosystem balance", "starred": False},
+        {"domain": "Architecture", "description": "Load bearing", "resonated": False},
+        {"domain": "Ecology", "description": "Ecosystem balance", "resonated": False},
     ]
     result = build_phase2_context(
-        state, Locale.EN, starred_analogies=[1],
+        state, Locale.EN, resonant_analogies=[1],
     )
     assert "Ecology" in result
     assert "Architecture" not in result

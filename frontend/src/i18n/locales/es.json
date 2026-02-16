@@ -50,10 +50,10 @@
   "explore.morphBox": "Caja Morfológica",
   "explore.analogies": "Analogías",
   "explore.contradictions": "Contradicciones",
-  "explore.star": "Destacar",
-  "explore.starred": "Destacado",
+  "explore.resonate": "Resuena",
+  "explore.resonated": "Resonó",
   "explore.suggestDomain": "Sugerir un nuevo dominio para analogía...",
-  "explore.submitReview": "Enviar Revisión ({{count}} destacadas)",
+  "explore.submitReview": "Enviar Revisión ({{count}} resonó)",
   "explore.submitReviewNone": "Enviar Revisión",
 
   "synthesize.title": "Fase 3: Sintetizar",

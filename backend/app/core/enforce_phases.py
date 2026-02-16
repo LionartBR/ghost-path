@@ -58,7 +58,7 @@ def check_explore_complete(state: ForgeState) -> dict | None:
     """Rule #2: Cannot synthesize without explore complete.
 
     Requires: morphological box + >=2 cross-domain searches + >=1 contradiction
-              + user starred >=1 analogy.
+              + user resonated with >=1 analogy.
     """
     if state.morphological_box is None:
         return _error("EXPLORE_INCOMPLETE", "Morphological box not built.")
@@ -72,10 +72,10 @@ def check_explore_complete(state: ForgeState) -> dict | None:
     if not state.contradictions:
         return _error("EXPLORE_INCOMPLETE", "No contradictions identified.")
 
-    if not state.starred_analogies:
+    if not state.resonant_analogies:
         return _error(
             "EXPLORE_INCOMPLETE",
-            "User must star >= 1 analogy.",
+            "User must resonate with >= 1 analogy.",
         )
 
     return None
