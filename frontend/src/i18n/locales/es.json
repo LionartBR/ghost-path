@@ -37,6 +37,7 @@
   "decompose.confirm": "Confirmar",
   "decompose.reject": "Rechazar",
   "decompose.suggestDomain": "Sugerir dominios para exploración",
+  "decompose.suggestDomainHint": "Opcional — En la siguiente fase (Explorar), el agente buscará analogías estructurales en campos distantes. Sugiera dominios que le gustaría investigar, ej: \"biología\", \"teoría de juegos\", \"urbanismo\".",
   "decompose.suggestDomainPlaceholder": "Sugerir un dominio para exploración...",
   "decompose.edit": "editar",
   "decompose.submitReview": "Enviar Revisión",
