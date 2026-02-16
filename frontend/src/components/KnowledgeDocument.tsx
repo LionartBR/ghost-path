@@ -35,8 +35,8 @@ export default function KnowledgeDocument({
           {t("document.download")}
         </button>
       </div>
-      <div className="bg-gray-700 p-1.5 md:p-2">
-        <div className="bg-white border border-gray-300 rounded-lg px-4 md:px-6 py-6 prose prose-sm max-w-none font-sans tracking-wide mx-auto">
+      <div className="bg-gray-700 p-8 md:p-12 lg:p-16">
+        <div className="bg-white px-8 py-8 prose prose-sm font-sans tracking-wide mx-auto max-w-[800px] shadow-lg">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
