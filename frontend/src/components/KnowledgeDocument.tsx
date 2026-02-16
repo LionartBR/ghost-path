@@ -35,46 +35,46 @@ export default function KnowledgeDocument({
           {t("document.download")}
         </button>
       </div>
-      <div className="px-12 md:px-20 lg:px-28 py-10 prose prose-sm max-w-none font-sans tracking-wide">
+      <div className="px-14 md:px-32 lg:px-44 xl:px-56 py-10 prose prose-sm max-w-none font-sans tracking-wide">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
             h1: ({ children }) => (
-              <h1 className="text-base font-semibold uppercase tracking-wide text-gray-900 mb-5 pb-2 border-b border-gray-200">
+              <h1 className="text-lg font-semibold uppercase tracking-wide text-gray-900 mb-5 pb-2 border-b border-gray-200">
                 {children}
               </h1>
             ),
             h2: ({ children }) => (
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-800 mb-3 mt-8">
+              <h2 className="text-base font-semibold uppercase tracking-wide text-gray-800 mb-3 mt-8">
                 {children}
               </h2>
             ),
             h3: ({ children }) => (
-              <h3 className="text-sm font-medium tracking-wide text-gray-700 mb-2 mt-5">
+              <h3 className="text-[0.9375rem] font-medium tracking-wide text-gray-700 mb-2 mt-5">
                 {children}
               </h3>
             ),
             p: ({ children }) => (
-              <p className="text-xs text-gray-600 mb-3.5 leading-relaxed tracking-normal">{children}</p>
+              <p className="text-sm text-gray-600 mb-3.5 leading-relaxed tracking-normal">{children}</p>
             ),
             ul: ({ children }) => (
-              <ul className="list-disc list-inside text-xs text-gray-600 mb-3.5 space-y-1.5 tracking-normal">
+              <ul className="list-disc list-inside text-sm text-gray-600 mb-3.5 space-y-1.5 tracking-normal">
                 {children}
               </ul>
             ),
             ol: ({ children }) => (
-              <ol className="list-decimal list-inside text-xs text-gray-600 mb-3.5 space-y-1.5 tracking-normal">
+              <ol className="list-decimal list-inside text-sm text-gray-600 mb-3.5 space-y-1.5 tracking-normal">
                 {children}
               </ol>
             ),
             li: ({ children }) => <li className="ml-4 leading-relaxed">{children}</li>,
             blockquote: ({ children }) => (
-              <blockquote className="border-l-3 border-gray-300 pl-4 italic text-xs text-gray-400 my-4 tracking-normal">
+              <blockquote className="border-l-3 border-gray-300 pl-4 italic text-sm text-gray-400 my-4 tracking-normal">
                 {children}
               </blockquote>
             ),
             code: ({ children }) => (
-              <code className="bg-gray-50 text-gray-700 px-1.5 py-0.5 rounded text-xs font-mono tracking-normal">
+              <code className="bg-gray-50 text-gray-700 px-1.5 py-0.5 rounded text-sm font-mono tracking-normal">
                 {children}
               </code>
             ),
@@ -95,17 +95,17 @@ export default function KnowledgeDocument({
             ),
             table: ({ children }) => (
               <div className="overflow-x-auto mb-4">
-                <table className="min-w-full text-xs border-collapse border border-gray-200">{children}</table>
+                <table className="min-w-full text-sm border-collapse border border-gray-200">{children}</table>
               </div>
             ),
             thead: ({ children }) => (
               <thead className="bg-gray-50">{children}</thead>
             ),
             th: ({ children }) => (
-              <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 border-b border-gray-200">{children}</th>
+              <th className="px-3 py-2 text-left text-sm font-semibold uppercase tracking-wide text-gray-500 border-b border-gray-200">{children}</th>
             ),
             td: ({ children }) => (
-              <td className="px-3 py-2 text-xs text-gray-600 border-b border-gray-100">{children}</td>
+              <td className="px-3 py-2 text-sm text-gray-600 border-b border-gray-100">{children}</td>
             ),
           }}
         >
