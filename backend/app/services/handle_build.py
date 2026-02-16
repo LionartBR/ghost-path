@@ -1,7 +1,7 @@
 """Build Handlers — Phase 5 tool implementations (3 methods).
 
 Invariants:
-    - add_to_knowledge_graph only accepts claims with verdict accept/qualify
+    - add_to_knowledge_graph only accepts claims with verdict accept/qualify/merge
     - get_negative_knowledge sets negative_knowledge_consulted flag (Rule #10)
     - Knowledge graph and negative knowledge persist across rounds
 
@@ -35,7 +35,11 @@ class BuildHandlers:
             "id": claim_data.get("claim_id", f"claim-{claim_index}-r{self.state.current_round}"),
             "claim_text": claim_data.get("claim_text", ""),
             "confidence": claim_data.get("confidence", "speculative"),
-            "status": "qualified" if verdict == "qualify" else "validated",
+            "status": (
+                "qualified" if verdict == "qualify"
+                else "superseded" if verdict == "merge"
+                else "validated"
+            ),
             "round_created": self.state.current_round,
             "qualification": claim_data.get("qualification") or input_data.get("qualification"),
         }
@@ -78,10 +82,16 @@ class BuildHandlers:
         claim_data = self.state.current_round_claims[claim_index]
         verdict = claim_data.get("verdict", "accept")
 
-        # Pure gate check: claim index valid + verdict is accept/qualify
+        # Pure gate check: claim index valid + verdict is accept/qualify/merge
         error = validate_graph_addition(self.state, claim_index, verdict)
         if error:
             return error
+
+        # Auto-inject merged_from edge for merge verdicts
+        if verdict == "merge":
+            merge_target = claim_data.get("merge_with_claim_id")
+            if merge_target:
+                edges.append({"target_claim_id": merge_target, "edge_type": "merged_from"})
 
         # Add node to graph
         node = self._build_graph_node(claim_data, claim_index, verdict, input_data)

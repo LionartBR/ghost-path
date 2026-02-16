@@ -107,10 +107,10 @@ def validate_graph_addition(state: ForgeState, claim_index: int, verdict: str) -
     if error:
         return error
 
-    if verdict not in ("accept", "qualify"):
+    if verdict not in ("accept", "qualify", "merge"):
         return _error(
             "INVALID_VERDICT",
-            f"Only accepted or qualified claims can be added to graph. Got: {verdict}.",
+            f"Only accepted, qualified, or merged claims can be added to graph. Got: {verdict}.",
         )
 
     return None

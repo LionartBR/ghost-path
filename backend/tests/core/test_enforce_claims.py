@@ -248,3 +248,10 @@ def test_graph_addition_passes_with_qualify():
     state.current_round_claims = [{"claim_text": "C1"}]
     error = validate_graph_addition(state, 0, "qualify")
     assert error is None
+
+
+def test_graph_addition_passes_with_merge():
+    state = ForgeState()
+    state.current_round_claims = [{"claim_text": "C1"}]
+    error = validate_graph_addition(state, 0, "merge")
+    assert error is None
