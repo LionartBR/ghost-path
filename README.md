@@ -53,11 +53,11 @@ The API is at **http://localhost:8000** (health check: `http://localhost:8000/ap
 
 ## Ports
 
-| Service  | Port | Description                  |
-|----------|------|------------------------------|
-| Frontend | 80   | React UI (nginx)             |
-| Backend  | 8000 | FastAPI API (uvicorn)        |
-| Postgres | 5432 | Database (internal)          |
+| Service  | Port | Description           |
+| -------- | ---- | --------------------- |
+| Frontend | 80   | React UI (nginx)      |
+| Backend  | 8000 | FastAPI API (uvicorn) |
+| Postgres | 5432 | Database (internal)   |
 
 > If port 80 is taken, change it in `docker-compose.yml`: `"3000:80"` and access at `http://localhost:3000`.
 
@@ -75,11 +75,11 @@ docker compose down -v
 
 All configured in `.env` at the project root:
 
-| Variable             | Required | Description                                            | Default |
-|----------------------|----------|--------------------------------------------------------|---------|
-| `ANTHROPIC_API_KEY`  | Yes      | Anthropic API key                                      | —       |
-| `LOG_LEVEL`          | No       | Log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`)        | `INFO`  |
-| `LOG_FORMAT`         | No       | Log format (`json` or `text`)                          | `json`  |
+| Variable            | Required | Description                                     | Default |
+| ------------------- | -------- | ----------------------------------------------- | ------- |
+| `ANTHROPIC_API_KEY` | Yes      | Anthropic API key                               | —       |
+| `LOG_LEVEL`         | No       | Log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) | `INFO`  |
+| `LOG_FORMAT`        | No       | Log format (`json` or `text`)                   | `json`  |
 
 > `DATABASE_URL` and `CORS_ORIGINS` are set automatically by Docker Compose — no need to change them.
 
