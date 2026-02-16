@@ -225,6 +225,60 @@ body {
   animation: badge-pop 0.35s ease-out forwards;
 }
 
+/* ── Hero completion card — running border outglow on hover ── */
+
+@property --glow-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes glow-rotate {
+  to { --glow-angle: 360deg; }
+}
+
+.hero-glow-card {
+  position: relative;
+  z-index: 0;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, #059669, #10b981);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.hero-glow-card::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: calc(1rem + 8px);
+  background: conic-gradient(
+    from var(--glow-angle),
+    transparent 0%,
+    transparent 30%,
+    rgba(110, 231, 183, 0.5) 40%,
+    rgba(167, 243, 208, 0.8) 47%,
+    rgba(255, 255, 255, 0.9) 52%,
+    rgba(167, 243, 208, 0.8) 57%,
+    rgba(110, 231, 183, 0.5) 64%,
+    transparent 75%,
+    transparent 100%
+  );
+  filter: blur(10px);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.hero-glow-card:hover::before {
+  opacity: 1;
+  animation: glow-rotate 3s linear infinite;
+}
+
+.hero-glow-card:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.35), 0 0 60px rgba(16, 185, 129, 0.15);
+}
+
 /* Agent markdown — scoped overrides so ReactMarkdown inherits panel context */
 .agent-markdown > *:first-child {
   margin-top: 0;

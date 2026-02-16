@@ -67,26 +67,22 @@ export default function SessionCompletion({ data }: SessionCompletionProps) {
 
   return (
     <div className="w-full space-y-6">
-      {/* Hero Section — scale+fade entrance */}
-      <div className="animate-hero-enter bg-gray-50 border border-gray-200 rounded-2xl p-8 text-gray-900 shadow-md">
+      {/* Hero Section — scale+fade entrance, running outglow on hover */}
+      <div className="animate-hero-enter hero-glow-card p-8 shadow-md">
         <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 w-12 h-12 bg-emerald-100 ring-1 ring-emerald-300/60 rounded-xl flex items-center justify-center animate-glow-pulse">
-            <svg className="w-7 h-7 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
+          <i className="bi bi-check-circle-fill text-white text-5xl flex-shrink-0 drop-shadow-[0_0_10px_rgba(255,255,255,0.4)]" />
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">
+            <h1 className="text-2xl font-extrabold tracking-tight text-white">
               {t("completion.hero.title")}
             </h1>
-            <p className="mt-2 text-gray-500 text-sm leading-relaxed">
+            <p className="mt-2 text-emerald-50 text-sm leading-relaxed">
               {heroText}
             </p>
           </div>
         </div>
         <div className="flex gap-3 mt-6">
           <span
-            className="animate-badge-pop inline-flex items-center gap-1.5 px-3 py-1 bg-gray-200/60 hover:bg-gray-200 text-gray-700 rounded-full text-xs font-medium transition-colors duration-200"
+            className="animate-badge-pop inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 text-white border border-white/30 rounded-full text-xs font-medium backdrop-blur-sm transition-colors duration-200"
             style={{ animationDelay: "300ms" }}
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -95,7 +91,7 @@ export default function SessionCompletion({ data }: SessionCompletionProps) {
             {t("completion.hero.duration")}: {formatDuration(stats.duration_seconds, t)}
           </span>
           <span
-            className="animate-badge-pop inline-flex items-center gap-1.5 px-3 py-1 bg-gray-200/60 hover:bg-gray-200 text-gray-700 rounded-full text-xs font-medium transition-colors duration-200"
+            className="animate-badge-pop inline-flex items-center gap-1.5 px-3 py-1 bg-white/20 text-white border border-white/30 rounded-full text-xs font-medium backdrop-blur-sm transition-colors duration-200"
             style={{ animationDelay: "420ms" }}
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -108,7 +104,7 @@ export default function SessionCompletion({ data }: SessionCompletionProps) {
 
       {/* Gold accent divider — reveals from center */}
       <div
-        className="h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent animate-divider-reveal"
+        className="h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent animate-divider-reveal"
         style={{ animationDelay: "400ms" }}
       />
 
