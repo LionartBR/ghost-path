@@ -24,9 +24,9 @@ def _tool_names(phase: Phase) -> set[str]:
 
 
 def test_decompose_has_correct_tools():
-    """4 decompose + 3 cross-cutting (no recall/search) + research = 8."""
+    """4 decompose + 4 cross-cutting (no recall/search) + research = 9."""
     tools = get_phase_tools(Phase.DECOMPOSE)
-    assert len(tools) == 8
+    assert len(tools) == 9
     names = _tool_names(Phase.DECOMPOSE)
     assert "decompose_to_fundamentals" in names
     assert "map_state_of_art" in names
@@ -34,9 +34,9 @@ def test_decompose_has_correct_tools():
 
 
 def test_explore_has_correct_tools():
-    """4 explore + 5 cross-cutting (incl recall + search_research) + research = 10."""
+    """4 explore + 6 cross-cutting (incl recall + search_research + read_wd) + research = 11."""
     tools = get_phase_tools(Phase.EXPLORE)
-    assert len(tools) == 10
+    assert len(tools) == 11
     names = _tool_names(Phase.EXPLORE)
     assert "build_morphological_box" in names
     assert "recall_phase_context" in names
@@ -44,24 +44,24 @@ def test_explore_has_correct_tools():
 
 
 def test_synthesize_has_correct_tools():
-    """3 synthesize + 5 cross-cutting (incl recall + search_research) + research = 9."""
+    """3 synthesize + 6 cross-cutting (incl recall + search_research + read_wd) + research = 10."""
     tools = get_phase_tools(Phase.SYNTHESIZE)
-    assert len(tools) == 9
+    assert len(tools) == 10
     names = _tool_names(Phase.SYNTHESIZE)
     assert "state_thesis" in names
     assert "recall_phase_context" in names
 
 
 def test_validate_has_correct_tools():
-    """3 validate + 5 cross-cutting + research = 9."""
+    """3 validate + 6 cross-cutting + research = 10."""
     tools = get_phase_tools(Phase.VALIDATE)
-    assert len(tools) == 9
+    assert len(tools) == 10
 
 
 def test_build_has_correct_tools():
-    """3 build + 5 cross-cutting + research = 9."""
+    """3 build + 6 cross-cutting + research = 10."""
     tools = get_phase_tools(Phase.BUILD)
-    assert len(tools) == 9
+    assert len(tools) == 10
     names = _tool_names(Phase.BUILD)
     assert "add_to_knowledge_graph" in names
     assert "recall_phase_context" in names
@@ -69,9 +69,9 @@ def test_build_has_correct_tools():
 
 
 def test_crystallize_has_correct_tools():
-    """1 crystallize + 5 cross-cutting (incl recall + search) - research = 6."""
+    """1 crystallize + 6 cross-cutting (incl recall + search + read_wd) - research = 7."""
     tools = get_phase_tools(Phase.CRYSTALLIZE)
-    assert len(tools) == 6
+    assert len(tools) == 7
     names = _tool_names(Phase.CRYSTALLIZE)
     assert "generate_knowledge_document" in names
     assert "recall_phase_context" in names
@@ -109,8 +109,8 @@ def test_research_excluded_from_crystallize():
 
 
 def test_all_tools_backward_compat():
-    """ALL_TOOLS has 24 entries (23 custom + 1 research)."""
-    assert len(ALL_TOOLS) == 24
+    """ALL_TOOLS has 25 entries (24 custom + 1 research)."""
+    assert len(ALL_TOOLS) == 25
     names = {t.get("name", "") for t in ALL_TOOLS}
     assert "recall_phase_context" in names
     assert "search_research_archive" in names
@@ -118,6 +118,7 @@ def test_all_tools_backward_compat():
     assert "decompose_to_fundamentals" in names
     assert "generate_knowledge_document" in names
     assert "update_working_document" in names
+    assert "read_working_document" in names
 
 
 def test_update_working_document_available_in_all_phases():
