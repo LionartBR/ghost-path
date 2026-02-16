@@ -92,64 +92,52 @@ Tools: generate_knowledge_document, update_working_document"""
 # Savings: ~580 chars/call (~145 tokens/call) vs monolithic version
 # ---------------------------------------------------------------------------
 
-_WORKING_DOC_HEADER = """\
+# ADR: WORKING_DOCUMENT_INTRO lives in the constant cache block (shared across phases).
+# Phase-specific constants are one-liners; the assembler wraps them with closing tag.
+# Savings: ~90 tokens of boilerplate removed per phase-scoped prompt.
+
+WORKING_DOCUMENT_INTRO = """\
 <working_document>
 ## Working Knowledge Document
 
 You maintain a living document throughout the investigation. The system \
 enforces this — you cannot complete a phase without calling \
-update_working_document at least once."""
+update_working_document at least once.
 
-_WORKING_DOC_TONE = """
 Document tone: this is a knowledge artifact, not a process journal. \
 Write "We discovered that X because Y" not "In Phase 2, we explored...". \
 Every section should answer: what is the new knowledge, why does it matter, \
-and what can the reader DO with it.
-</working_document>"""
+and what can the reader DO with it."""
 
-WORKING_DOCUMENT_DECOMPOSE = (
-    _WORKING_DOC_HEADER
-    + '\n\nIn this phase: write "problem_context".'
-    + _WORKING_DOC_TONE
-)
+WORKING_DOCUMENT_DECOMPOSE = 'In this phase: write "problem_context".'
 
 WORKING_DOCUMENT_EXPLORE = (
-    _WORKING_DOC_HEADER
-    + '\n\nIn this phase: write "cross_domain_patterns", start "technical_details".'
-    + _WORKING_DOC_TONE
+    'In this phase: write "cross_domain_patterns", start "technical_details".'
 )
 
 WORKING_DOCUMENT_SYNTHESIZE = (
-    _WORKING_DOC_HEADER
-    + '\n\nIn this phase: write "core_insight", "reasoning_chain", "evidence_base".'
-    + _WORKING_DOC_TONE
+    'In this phase: write "core_insight", "reasoning_chain", "evidence_base".'
 )
 
 WORKING_DOCUMENT_VALIDATE = (
-    _WORKING_DOC_HEADER
-    + '\n\nIn this phase: update "evidence_base", write "boundaries".'
-    + _WORKING_DOC_TONE
+    'In this phase: update "evidence_base", write "boundaries".'
 )
 
 WORKING_DOCUMENT_BUILD = (
-    _WORKING_DOC_HEADER
-    + '\n\nIn this phase: update "technical_details", update "boundaries".'
-    + _WORKING_DOC_TONE
+    'In this phase: update "technical_details", update "boundaries".'
 )
 
 WORKING_DOCUMENT_CRYSTALLIZE = (
-    _WORKING_DOC_HEADER
-    + '\n\nIn this phase: write "implementation_guide", "next_frontiers", '
-    + "polish all existing sections."
-    + '\n\nThe "implementation_guide" section is critical — give the reader concrete, '
-    + "actionable steps: what to do first, what tools/resources they need, what "
-    + "milestones to aim for, and what pitfalls to avoid."
-    + _WORKING_DOC_TONE
+    'In this phase: write "implementation_guide", "next_frontiers", '
+    "polish all existing sections.\n\n"
+    'The "implementation_guide" section is critical — give the reader concrete, '
+    "actionable steps: what to do first, what tools/resources they need, what "
+    "milestones to aim for, and what pitfalls to avoid."
 )
 
 # Backward compat — full mapping for _assemble_full (phase=None)
 WORKING_DOCUMENT = (
-    _WORKING_DOC_HEADER
+    WORKING_DOCUMENT_INTRO
     + "\n\nPhase-to-section mapping:"
     + '\n- DECOMPOSE: write "problem_context"'
     + '\n- EXPLORE: write "cross_domain_patterns", start "technical_details"'
@@ -157,7 +145,7 @@ WORKING_DOCUMENT = (
     + '\n- VALIDATE: update "evidence_base", write "boundaries"'
     + '\n- BUILD: update "technical_details", update "boundaries"'
     + '\n- CRYSTALLIZE: write "implementation_guide", "next_frontiers", polish all'
-    + _WORKING_DOC_TONE
+    + "\n</working_document>"
 )
 
 # ---------------------------------------------------------------------------
@@ -171,6 +159,18 @@ The system blocks actions that violate these rules. You receive an error \
 response with an error_code explaining the violation. Each rule exists for \
 a specific reason — understanding the why helps you work with the system \
 rather than against it."""
+
+# ADR: Round 2+ rules shared between SYNTHESIZE and BUILD phases.
+# Extracted to avoid content duplication (same text, different phase contexts).
+_RULES_ROUND2_PLUS = """
+
+### Round 2+ Rules
+9. Reference >= 1 previous claim via builds_on_claim_id. \
+Reason: isolated claims don't form a knowledge graph — they form a list.
+10. Call get_negative_knowledge before synthesis. \
+Reason: repeating rejected directions wastes rounds.
+11. Max 5 rounds per session. \
+Reason: forces convergence — open-ended exploration rarely crystallizes."""
 
 RULES_DECOMPOSE = """\
 ### Phase Transition Rules
@@ -203,15 +203,7 @@ Reason: forces depth over breadth — 3 well-developed claims beat 10 shallow on
 
 ### Research Gates
 14. find_antithesis requires research for counter-evidence first. \
-Reason: a self-generated antithesis is a straw man, not a genuine challenge.
-
-### Round 2+ Rules
-9. Reference >= 1 previous claim via builds_on_claim_id. \
-Reason: isolated claims don't form a knowledge graph — they form a list.
-10. Call get_negative_knowledge before synthesis. \
-Reason: repeating rejected directions wastes rounds.
-11. Max 5 rounds per session. \
-Reason: forces convergence — open-ended exploration rarely crystallizes."""
+Reason: a self-generated antithesis is a straw man, not a genuine challenge.""" + _RULES_ROUND2_PLUS
 
 RULES_VALIDATE = """\
 ### Validation Rules
@@ -226,14 +218,7 @@ Reason: claims derived purely from training data may reflect training bias, not 
 15. attempt_falsification requires research to disprove first. \
 Reason: falsification without external data is just internal consistency checking."""
 
-RULES_BUILD = """\
-### Round 2+ Rules
-9. Reference >= 1 previous claim via builds_on_claim_id. \
-Reason: isolated claims don't form a knowledge graph — they form a list.
-10. Call get_negative_knowledge before synthesis. \
-Reason: repeating rejected directions wastes rounds.
-11. Max 5 rounds per session. \
-Reason: forces convergence — open-ended exploration rarely crystallizes."""
+RULES_BUILD = _RULES_ROUND2_PLUS
 
 # ---------------------------------------------------------------------------
 # Standalone sections (each already has XML wrapper)

@@ -3,14 +3,16 @@
 Invariants:
     - build_system_prompt(locale, phase) returns only phase-relevant sections
     - build_system_prompt(locale) without phase returns all sections (backward compat)
-    - Phase-scoped prompts save ~2500 tokens/call vs monolithic prompt
+    - build_system_prompt_blocks(locale, phase) returns two Anthropic system blocks
+      with separate cache breakpoints for cross-phase caching
     - Language bookend pattern: language rule at TOP + BOTTOM of prompt
 
 Design Decisions:
     - Sections live in system_prompt_sections.py / _pt_br.py (ADR: ExMA 400-line limit)
     - Phase mapping defined here (shared between EN and PT_BR)
-    - Prompt caching: within a phase, system prompt is identical every iteration
-      — caching works normally. Between phases, prompt changes — cache invalidated.
+    - Two-block caching: constant block (IDENTITY + MISSION + always-on) cached across
+      phase changes; phase block (pipeline + rules) re-cached per phase. Saves ~1500
+      tokens of cache creation cost per phase transition.
     - XML tags preserved for reliable parsing by Opus 4.6
 """
 
@@ -85,42 +87,39 @@ _LANGUAGE_INSTRUCTIONS: dict[Locale, str] = {
 
 
 # ---------------------------------------------------------------------------
+# Constant sections — same in ALL phases, live in first cache block
+# ADR: cached across phase changes (prefix match), saves ~1500 tokens
+# of cache creation cost per phase transition
+# ---------------------------------------------------------------------------
+
+_CONSTANT_SECTIONS = (
+    "TOOL_EFFICIENCY", "CONTEXT_MANAGEMENT",
+    "THINKING_GUIDANCE", "OUTPUT_GUIDANCE",
+)
+
+# ---------------------------------------------------------------------------
 # Phase -> sections mapping (shared between EN and PT_BR)
-# ADR: sections listed here are non-pipeline, non-rules extras per phase
+# ADR: only phase-variable extras listed here (constant sections removed)
 # ---------------------------------------------------------------------------
 
 _PHASE_EXTRA: dict[Phase, tuple[str, ...]] = {
-    Phase.DECOMPOSE: (
-        "WORKING_DOCUMENT_DECOMPOSE", "ERROR_RECOVERY", "WEB_RESEARCH",
-        "TOOL_EFFICIENCY", "CONTEXT_MANAGEMENT", "THINKING_GUIDANCE",
-        "OUTPUT_GUIDANCE",
-    ),
+    Phase.DECOMPOSE: ("ERROR_RECOVERY", "WEB_RESEARCH"),
     Phase.EXPLORE: (
-        "WORKING_DOCUMENT_EXPLORE", "ERROR_RECOVERY", "WEB_RESEARCH",
-        "RESEARCH_ARCHIVE", "TOOL_EFFICIENCY", "CONTEXT_MANAGEMENT",
-        "THINKING_GUIDANCE", "OUTPUT_GUIDANCE",
+        "ERROR_RECOVERY", "WEB_RESEARCH", "RESEARCH_ARCHIVE",
     ),
     Phase.SYNTHESIZE: (
-        "WORKING_DOCUMENT_SYNTHESIZE", "ERROR_RECOVERY", "WEB_RESEARCH",
-        "RESEARCH_ARCHIVE", "DIALECTICAL_METHOD", "FALSIFIABILITY",
-        "TOOL_EFFICIENCY", "CONTEXT_MANAGEMENT", "THINKING_GUIDANCE",
-        "OUTPUT_GUIDANCE",
+        "ERROR_RECOVERY", "WEB_RESEARCH", "RESEARCH_ARCHIVE",
+        "DIALECTICAL_METHOD", "FALSIFIABILITY",
     ),
     Phase.VALIDATE: (
-        "WORKING_DOCUMENT_VALIDATE", "ERROR_RECOVERY", "WEB_RESEARCH",
-        "RESEARCH_ARCHIVE", "FALSIFIABILITY", "TOOL_EFFICIENCY",
-        "CONTEXT_MANAGEMENT", "THINKING_GUIDANCE", "OUTPUT_GUIDANCE",
+        "ERROR_RECOVERY", "WEB_RESEARCH", "RESEARCH_ARCHIVE",
+        "FALSIFIABILITY",
     ),
     Phase.BUILD: (
-        "WORKING_DOCUMENT_BUILD", "ERROR_RECOVERY", "WEB_RESEARCH",
-        "RESEARCH_ARCHIVE", "KNOWLEDGE_GRAPH", "TOOL_EFFICIENCY",
-        "CONTEXT_MANAGEMENT", "THINKING_GUIDANCE", "OUTPUT_GUIDANCE",
+        "ERROR_RECOVERY", "WEB_RESEARCH", "RESEARCH_ARCHIVE",
+        "KNOWLEDGE_GRAPH",
     ),
-    Phase.CRYSTALLIZE: (
-        "WORKING_DOCUMENT_CRYSTALLIZE", "RESEARCH_ARCHIVE",
-        "TOOL_EFFICIENCY", "CONTEXT_MANAGEMENT",
-        "THINKING_GUIDANCE", "OUTPUT_GUIDANCE",
-    ),
+    Phase.CRYSTALLIZE: ("RESEARCH_ARCHIVE",),
 }
 
 # Phase -> pipeline section constant name
@@ -144,24 +143,68 @@ _PHASE_RULES: dict[Phase, str | None] = {
 }
 
 # Order for full-prompt rules assembly (covers all 15 rules, no duplication)
-_FULL_RULES_ORDER = ("RULES_DECOMPOSE", "RULES_EXPLORE", "RULES_SYNTHESIZE", "RULES_VALIDATE")
+_FULL_RULES_ORDER = (
+    "RULES_DECOMPOSE", "RULES_EXPLORE", "RULES_SYNTHESIZE", "RULES_VALIDATE",
+)
 
 
-def _assemble_phase(mod, phase: Phase) -> str:
-    """Build phase-scoped prompt from section constants in the given module."""
-    parts = [mod.IDENTITY, mod.MISSION]
+# ---------------------------------------------------------------------------
+# Two-block assembly (ADR: constant prefix cached across phase changes)
+# ---------------------------------------------------------------------------
+
+def _build_constant_part(mod, locale: Locale) -> str:
+    """Build constant part — cached across phase changes (first cache block).
+
+    Contains: language rule opening + IDENTITY + MISSION + WORKING_DOCUMENT intro
+    + always-on behavioral sections (tool_efficiency, context_mgmt, thinking, output).
+    """
+    instruction = _LANGUAGE_INSTRUCTIONS[locale]
+    parts = [
+        f"<language_rule>\n{instruction}\n</language_rule>",
+        mod.IDENTITY, mod.MISSION,
+        mod.WORKING_DOCUMENT_INTRO,
+    ]
+    for attr in _CONSTANT_SECTIONS:
+        parts.append(getattr(mod, attr))
+    return "\n\n".join(parts)
+
+
+def _build_phase_part(mod, phase: Phase, locale: Locale) -> str:
+    """Build phase-specific part — re-cached on phase change (second cache block).
+
+    Contains: pipeline + working doc phase line + phase extras + rules + closing bookend.
+    """
+    parts = []
+    # Pipeline for this phase
     pipeline = getattr(mod, _PHASE_PIPELINE[phase])
-    parts.append(f"<pipeline>\n{mod.PIPELINE_INTRO}\n\n{pipeline}\n</pipeline>")
+    parts.append(
+        f"<pipeline>\n{mod.PIPELINE_INTRO}\n\n{pipeline}\n</pipeline>",
+    )
+    # Working document: phase-specific instruction + closing tag
+    wd_phase = getattr(mod, f"WORKING_DOCUMENT_{phase.name}")
+    parts.append(f"{wd_phase}\n</working_document>")
+    # Phase-variable extras
     for attr in _PHASE_EXTRA[phase]:
         parts.append(getattr(mod, attr))
+    # Phase rules
     rules_attr = _PHASE_RULES[phase]
     if rules_attr:
         rules = getattr(mod, rules_attr)
         parts.append(
-            f"<enforcement_rules>\n{mod.RULES_INTRO}\n\n{rules}\n</enforcement_rules>"
+            f"<enforcement_rules>\n{mod.RULES_INTRO}\n\n"
+            f"{rules}\n</enforcement_rules>",
         )
+    # Closing language bookend (recency bias)
+    closing = get_bookend_closing(locale)
+    parts.append(
+        f"<language_rule_reminder>\n{closing}\n</language_rule_reminder>",
+    )
     return "\n\n".join(parts)
 
+
+# ---------------------------------------------------------------------------
+# Full prompt assembly (backward compat, phase=None)
+# ---------------------------------------------------------------------------
 
 def _assemble_full(mod) -> str:
     """Build full prompt with all sections (backward compat, phase=None)."""
@@ -175,7 +218,8 @@ def _assemble_full(mod) -> str:
         mod.IDENTITY, mod.MISSION,
         f"<pipeline>\n{mod.PIPELINE_INTRO}\n\n{all_pipelines}\n</pipeline>",
         mod.WORKING_DOCUMENT,
-        f"<enforcement_rules>\n{mod.RULES_INTRO}\n\n{all_rules}\n</enforcement_rules>",
+        f"<enforcement_rules>\n{mod.RULES_INTRO}\n\n{all_rules}\n"
+        f"</enforcement_rules>",
         mod.ERROR_RECOVERY, mod.WEB_RESEARCH, mod.RESEARCH_ARCHIVE,
         mod.DIALECTICAL_METHOD, mod.FALSIFIABILITY, mod.KNOWLEDGE_GRAPH,
         mod.TOOL_EFFICIENCY, mod.CONTEXT_MANAGEMENT, mod.THINKING_GUIDANCE,
@@ -195,17 +239,56 @@ def _wrap_language(base: str, locale: Locale) -> str:
     )
 
 
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+_CACHE = {"type": "ephemeral"}
+
+
 def build_system_prompt(
     locale: Locale = Locale.EN, phase: Phase | None = None,
 ) -> str:
     """Build system prompt with optional phase scoping.
 
     phase=None: full prompt with all sections (backward compat).
-    phase=Phase.X: only sections relevant to that phase (~2500 tokens saved).
+    phase=Phase.X: only sections relevant to that phase.
+    Returns a single string (for tests and backward compat).
     """
     mod = _pt if locale == Locale.PT_BR else _en
-    base = _assemble_phase(mod, phase) if phase else _assemble_full(mod)
-    return _wrap_language(base, locale)
+    if phase:
+        constant = _build_constant_part(mod, locale)
+        phase_part = _build_phase_part(mod, phase, locale)
+        return f"{constant}\n\n{phase_part}"
+    return _wrap_language(_assemble_full(mod), locale)
+
+
+def build_system_prompt_blocks(
+    locale: Locale, phase: Phase,
+) -> list[dict]:
+    """Build system prompt as two Anthropic system blocks with cache breakpoints.
+
+    Block 1 (constant): IDENTITY + MISSION + always-on sections — cached
+    across phase changes (prefix match hits even when phase changes).
+    Block 2 (phase-specific): pipeline + rules + working doc phase line —
+    re-cached when phase changes.
+
+    ADR: saves ~1500 tokens of cache creation cost per phase transition
+    vs single-block approach where entire prompt is re-cached.
+    """
+    mod = _pt if locale == Locale.PT_BR else _en
+    return [
+        {
+            "type": "text",
+            "text": _build_constant_part(mod, locale),
+            "cache_control": _CACHE,
+        },
+        {
+            "type": "text",
+            "text": _build_phase_part(mod, phase, locale),
+            "cache_control": _CACHE,
+        },
+    ]
 
 
 # Backward compat — existing imports still work

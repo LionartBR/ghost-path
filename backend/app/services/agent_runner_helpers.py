@@ -169,7 +169,14 @@ def web_search_detail_from_research(
 _CACHE = {"type": "ephemeral"}
 
 
-def with_system_cache(system: str) -> list[dict]:
+def with_system_cache(system: str | list[dict]) -> list[dict]:
+    """Wrap system prompt for Anthropic API with cache breakpoints.
+
+    Accepts either a string (backward compat — single block) or
+    pre-formatted blocks from build_system_prompt_blocks (pass-through).
+    """
+    if isinstance(system, list):
+        return system
     return [{"type": "text", "text": system, "cache_control": _CACHE}]
 
 

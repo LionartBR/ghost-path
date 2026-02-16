@@ -59,33 +59,29 @@ def test_resume_decompose_includes_begin_phase_1():
 
 # --- Each phase produces correct instructions --------------------------------
 
-def test_resume_explore_references_morphological_box():
+def test_resume_explore_references_phase():
     msg = build_resume_message(_prefix(), Phase.EXPLORE, "test problem", Locale.EN)
-    assert "Phase 2" in msg or "EXPLORE" in msg
-    assert "morphological" in msg.lower() or "web_search" in msg.lower()
+    assert "Phase 2" in msg and "EXPLORE" in msg
 
 
-def test_resume_synthesize_references_thesis():
+def test_resume_synthesize_references_phase():
     msg = build_resume_message(_prefix(), Phase.SYNTHESIZE, "test problem", Locale.EN)
-    assert "Phase 3" in msg or "SYNTHESIZE" in msg
+    assert "Phase 3" in msg and "SYNTHESIZE" in msg
 
 
-def test_resume_validate_references_falsification():
+def test_resume_validate_references_phase():
     msg = build_resume_message(_prefix(), Phase.VALIDATE, "test problem", Locale.EN)
-    assert "Phase 4" in msg or "VALIDATE" in msg
-    assert "falsif" in msg.lower()
+    assert "Phase 4" in msg and "VALIDATE" in msg
 
 
-def test_resume_build_references_knowledge_graph():
+def test_resume_build_references_phase():
     msg = build_resume_message(_prefix(), Phase.BUILD, "test problem", Locale.EN)
-    assert "Phase 5" in msg or "BUILD" in msg
-    assert "graph" in msg.lower() or "knowledge" in msg.lower()
+    assert "Phase 5" in msg and "BUILD" in msg
 
 
-def test_resume_crystallize_references_document():
+def test_resume_crystallize_references_phase():
     msg = build_resume_message(_prefix(), Phase.CRYSTALLIZE, "test problem", Locale.EN)
-    assert "Phase 6" in msg or "CRYSTALLIZE" in msg
-    assert "document" in msg.lower()
+    assert "Phase 6" in msg and "CRYSTALLIZE" in msg
 
 
 # --- All phases covered (no unhandled branch) --------------------------------

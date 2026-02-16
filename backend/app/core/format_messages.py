@@ -179,11 +179,8 @@ def _format_decompose_review(
         if ctx:
             parts.append(ctx)
     instr = _pt_br.DECOMPOSE_INSTRUCTION if pt else (
-        "Proceed to Phase 2 (EXPLORE). Derive cross-domain analogy sources "
-        "from the fundamentals and reframings above. Build a morphological box, "
-        "search >= 2 distant domains for analogies (use research first), "
-        "identify contradictions, and map the adjacent possible. "
-        "Call recall_phase_context to recover any prior research."
+        "Proceed to Phase 2 (EXPLORE). Derive cross-domain analogy "
+        "sources from the fundamentals and reframings above."
     )
     parts.append(instr)
     return "\n".join(parts)
@@ -212,10 +209,8 @@ def _format_explore_review(
             f"{lbl['added_contradictions']} {added_contradictions}",
         )
     instr = _pt_br.EXPLORE_INSTRUCTION if pt else (
-        "Proceed to Phase 3 (SYNTHESIZE). For each promising direction, "
-        "state a thesis (with evidence), find antithesis (use research), "
-        "then create a synthesis claim. Generate up to 3 claims this round. "
-        "Call recall_phase_context to recover prior research before starting."
+        "Proceed to Phase 3 (SYNTHESIZE). Use the starred analogies "
+        "and contradictions above to derive synthesis directions."
     )
     parts.append(instr)
     return "\n".join(parts)
@@ -237,10 +232,7 @@ def _format_claims_review(
         for fb in feedback:
             _append_claim_feedback(parts, fb, lbl)
     instr = _pt_br.CLAIMS_INSTRUCTION if pt else (
-        "Proceed to Phase 4 (VALIDATE). For each claim, attempt "
-        "falsification (use research to disprove), check novelty "
-        "(use research), then score each claim. "
-        "Recall prior research before re-searching the same topics."
+        "Proceed to Phase 4 (VALIDATE)."
     )
     parts.append(instr)
     return "\n".join(parts)
@@ -313,15 +305,12 @@ def _format_verdicts(
         instr = _pt_br.VERDICTS_ALL_REJECTED if pt else (
             "All claims were rejected. Returning to Phase 3 (SYNTHESIZE) "
             "for a new dialectical round. Call get_negative_knowledge "
-            "first (Rule #10), review what failed and why, then reference "
-            "at least one previous claim (Rule #9). Generate up to 3 new "
-            "claims taking a fundamentally different approach. "
-            "Recall prior research before re-searching the same topics."
+            "first (Rule #10), then reference at least one previous "
+            "claim (Rule #9)."
         )
     else:
         instr = _pt_br.VERDICTS_INSTRUCTION if pt else (
-            "Proceed to Phase 5 (BUILD). Add accepted/qualified claims to "
-            "the knowledge graph, analyze gaps, and present the build review."
+            "Proceed to Phase 5 (BUILD)."
         )
     parts.append(instr)
     return "\n".join(parts)
@@ -385,10 +374,9 @@ def _build_continue(
 ):
     body = _pt_br.BUILD_CONTINUE if pt else (
         "The user wants to continue with another round. "
-        "Go back to Phase 3 (SYNTHESIZE). Remember: call "
+        "Go back to Phase 3 (SYNTHESIZE). Call "
         "get_negative_knowledge first (Rule #10), and reference "
-        "at least one previous claim (Rule #9). "
-        "Recall prior research before re-searching the same topics."
+        "at least one previous claim (Rule #9)."
     )
     ctx = _digest.build_continue_context(forge_state, locale) if forge_state else ""
     gap_section = ""
@@ -421,9 +409,7 @@ def _build_deep_dive(prefix, pt, claim_id):
 def _build_resolve(prefix, pt, forge_state, locale):
     body = _pt_br.BUILD_RESOLVE if pt else (
         "The user is satisfied with the knowledge graph. "
-        "Proceed to Phase 6 (CRYSTALLIZE). Recall all prior research "
-        "and phase context, then generate the final Knowledge Document "
-        "with all 10 sections using generate_knowledge_document."
+        "Proceed to Phase 6 (CRYSTALLIZE)."
     )
     ctx = _digest.build_crystallize_context(forge_state, locale) if forge_state else ""
     return f"{prefix}\n\n{ctx}{body}"

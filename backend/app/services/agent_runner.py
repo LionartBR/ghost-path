@@ -36,7 +36,7 @@ from app.services.agent_runner_helpers import (
     build_messages, save_state, save_state_best_effort,
 )
 from app.services.tools_registry import get_phase_tools
-from app.services.system_prompt import build_system_prompt
+from app.services.system_prompt import build_system_prompt_blocks
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ class AgentRunner:
         forge_state: ForgeState,
     ):
         """Async generator yielding SSE events."""
-        system = build_system_prompt(forge_state.locale, forge_state.current_phase)
+        system = build_system_prompt_blocks(forge_state.locale, forge_state.current_phase)
         messages = build_messages(session, user_message)
         ctx = ErrorContext(session_id=str(session.id))
         dispatch = ToolDispatch(

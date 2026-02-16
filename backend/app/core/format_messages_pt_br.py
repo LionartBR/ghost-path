@@ -63,47 +63,35 @@ INITIAL_BODY = (
 )
 
 DECOMPOSE_INSTRUCTION = (
-    "Prossiga para a Fase 2 (EXPLORE). Derive fontes de analogia cross-domain "
-    "a partir dos fundamentos e reformulações acima. Construa uma caixa morfológica, "
-    "busque >= 2 domínios distantes por analogias (use research primeiro), "
-    "identifique contradições e mapeie o possível adjacente. "
-    "Chame recall_phase_context para recuperar pesquisas anteriores."
+    "Prossiga para a Fase 2 (EXPLORE). Derive fontes de analogia "
+    "cross-domain a partir dos fundamentos e reformulações acima."
 )
 
 EXPLORE_INSTRUCTION = (
-    "Prossiga para a Fase 3 (SYNTHESIZE). Para cada direção promissora, "
-    "declare uma tese (com evidências), encontre antítese (use research), "
-    "depois crie uma síntese. Gere até 3 afirmações nesta rodada. "
-    "Chame recall_phase_context para recuperar pesquisas anteriores antes de começar."
+    "Prossiga para a Fase 3 (SYNTHESIZE). Use as analogias marcadas "
+    "e contradições acima para derivar direções de síntese."
 )
 
 CLAIMS_INSTRUCTION = (
-    "Prossiga para a Fase 4 (VALIDATE). Para cada afirmação, tente falsificá-la "
-    "(use research para refutar), verifique novidade (use research), "
-    "depois pontue cada afirmação. "
-    "Recupere pesquisas anteriores antes de re-pesquisar os mesmos tópicos."
+    "Prossiga para a Fase 4 (VALIDATE)."
 )
 
 VERDICTS_INSTRUCTION = (
-    "Prossiga para a Fase 5 (BUILD). Adicione afirmações aceitas/qualificadas "
-    "ao grafo de conhecimento, analise lacunas e apresente a revisão de construção."
+    "Prossiga para a Fase 5 (BUILD)."
 )
 
 VERDICTS_ALL_REJECTED = (
     "Todas as afirmações foram rejeitadas. Retornando à Fase 3 (SYNTHESIZE) "
     "para uma nova rodada dialética. Chame get_negative_knowledge "
-    "primeiro (Regra #10), revise o que falhou e por quê, depois referencie "
-    "pelo menos uma afirmação anterior (Regra #9). Gere até 3 novas "
-    "afirmações com uma abordagem fundamentalmente diferente. "
-    "Recupere pesquisas anteriores antes de re-pesquisar os mesmos tópicos."
+    "primeiro (Regra #10), depois referencie pelo menos uma "
+    "afirmação anterior (Regra #9)."
 )
 
 BUILD_CONTINUE = (
     "O usuário quer continuar com outra rodada. "
-    "Volte para a Fase 3 (SYNTHESIZE). Lembre-se: chame "
+    "Volte para a Fase 3 (SYNTHESIZE). Chame "
     "get_negative_knowledge primeiro (Regra #10) e referencie "
-    "pelo menos uma afirmação anterior (Regra #9). "
-    "Recupere pesquisas anteriores antes de re-pesquisar os mesmos tópicos."
+    "pelo menos uma afirmação anterior (Regra #9)."
 )
 
 BUILD_DEEP_DIVE = (
@@ -114,10 +102,7 @@ BUILD_DEEP_DIVE = (
 
 BUILD_RESOLVE = (
     "O usuário está satisfeito com o grafo de conhecimento. "
-    "Prossiga para a Fase 6 (CRYSTALLIZE). Recupere todas as "
-    "pesquisas e contextos de fases anteriores, depois gere o "
-    "Documento de Conhecimento final com todas as 10 seções "
-    "usando generate_knowledge_document."
+    "Prossiga para a Fase 6 (CRYSTALLIZE)."
 )
 
 BUILD_INSIGHT = (
@@ -136,32 +121,12 @@ UNKNOWN_INPUT = "Tipo de entrada desconhecido."
 
 # --- Instruções de retomada de sessão (resume) --------------------------------
 
-RESUME_EXPLORE = (
-    "Continue a Fase 2 (EXPLORE). Construa uma caixa morfológica, "
-    "busque >= 2 domínios distantes por analogias (use web_search primeiro), "
-    "identifique contradições e mapeie o possível adjacente."
-)
+RESUME_EXPLORE = "Continue a Fase 2 (EXPLORE)."
 
-RESUME_SYNTHESIZE = (
-    "Continue a Fase 3 (SYNTHESIZE). Para cada direção promissora, "
-    "declare uma tese (com evidências), encontre antítese (use web_search), "
-    "depois crie uma síntese. Gere até 3 afirmações nesta rodada."
-)
+RESUME_SYNTHESIZE = "Continue a Fase 3 (SYNTHESIZE)."
 
-RESUME_VALIDATE = (
-    "Continue a Fase 4 (VALIDATE). Para cada afirmação, tente falsificá-la "
-    "(use web_search para refutar), verifique novidade (use web_search), "
-    "depois pontue cada afirmação."
-)
+RESUME_VALIDATE = "Continue a Fase 4 (VALIDATE)."
 
-RESUME_BUILD = (
-    "Continue a Fase 5 (BUILD). Adicione afirmações aceitas/qualificadas "
-    "ao grafo de conhecimento, analise lacunas e apresente a revisão de construção."
-)
+RESUME_BUILD = "Continue a Fase 5 (BUILD)."
 
-RESUME_CRYSTALLIZE = (
-    "Continue a Fase 6 (CRYSTALLIZE). Revise as seções do documento "
-    "de trabalho que você construiu. Escreva implementation_guide e "
-    "next_frontiers. Refine todas as seções, depois chame "
-    "generate_knowledge_document."
-)
+RESUME_CRYSTALLIZE = "Continue a Fase 6 (CRYSTALLIZE)."

@@ -44,40 +44,29 @@ def build_resume_message(
             locale_prefix, problem, locale,
         )
 
+    # ADR: lean resume messages — pipeline description already in system prompt.
+    # Only the phase name + number is needed; the model sees PIPELINE_* and tools.
     pt = locale == Locale.PT_BR
     _RESUME = {
         Phase.EXPLORE: (
             _pt_br.RESUME_EXPLORE if pt else
-            "Continue Phase 2 (EXPLORE). Build a morphological box, "
-            "search >= 2 distant domains for analogies (use "
-            "web_search first), identify contradictions, and map "
-            "the adjacent possible."
+            "Continue Phase 2 (EXPLORE)."
         ),
         Phase.SYNTHESIZE: (
             _pt_br.RESUME_SYNTHESIZE if pt else
-            "Continue Phase 3 (SYNTHESIZE). For each promising "
-            "direction, state a thesis (with evidence), find "
-            "antithesis (use web_search), then create a synthesis "
-            "claim. Generate up to 3 claims this round."
+            "Continue Phase 3 (SYNTHESIZE)."
         ),
         Phase.VALIDATE: (
             _pt_br.RESUME_VALIDATE if pt else
-            "Continue Phase 4 (VALIDATE). For each claim, attempt "
-            "falsification (use web_search to disprove), check "
-            "novelty (use web_search), then score each claim."
+            "Continue Phase 4 (VALIDATE)."
         ),
         Phase.BUILD: (
             _pt_br.RESUME_BUILD if pt else
-            "Continue Phase 5 (BUILD). Add accepted/qualified "
-            "claims to the knowledge graph, analyze gaps, and "
-            "present the build review."
+            "Continue Phase 5 (BUILD)."
         ),
         Phase.CRYSTALLIZE: (
             _pt_br.RESUME_CRYSTALLIZE if pt else
-            "Continue Phase 6 (CRYSTALLIZE). Review the working document "
-            "sections you've built. Write implementation_guide and "
-            "next_frontiers. Polish all sections, then call "
-            "generate_knowledge_document."
+            "Continue Phase 6 (CRYSTALLIZE)."
         ),
     }
     body = _RESUME[phase]

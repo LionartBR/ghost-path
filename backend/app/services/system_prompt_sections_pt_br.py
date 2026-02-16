@@ -92,64 +92,48 @@ Ferramentas: generate_knowledge_document, update_working_document"""
 # Working Document — per-phase split (ADR: only current phase's mapping shown)
 # ---------------------------------------------------------------------------
 
-_WORKING_DOC_HEADER = """\
+WORKING_DOCUMENT_INTRO = """\
 <working_document>
 ## Documento de Conhecimento em Construção
 
 Você mantém um documento vivo ao longo da investigação. O sistema impõe \
 isso — você não pode completar uma fase sem chamar update_working_document \
-pelo menos uma vez."""
+pelo menos uma vez.
 
-_WORKING_DOC_TONE = """
 Tom do documento: este é um artefato de conhecimento, não um diário de processo. \
 Escreva "Descobrimos que X porque Y" não "Na Fase 2, exploramos...". \
 Cada seção deve responder: qual é o novo conhecimento, por que importa, \
-e o que o leitor pode FAZER com ele.
-</working_document>"""
+e o que o leitor pode FAZER com ele."""
 
-WORKING_DOCUMENT_DECOMPOSE = (
-    _WORKING_DOC_HEADER
-    + '\n\nNesta fase: escreva "problem_context".'
-    + _WORKING_DOC_TONE
-)
+WORKING_DOCUMENT_DECOMPOSE = 'Nesta fase: escreva "problem_context".'
 
 WORKING_DOCUMENT_EXPLORE = (
-    _WORKING_DOC_HEADER
-    + '\n\nNesta fase: escreva "cross_domain_patterns", inicie "technical_details".'
-    + _WORKING_DOC_TONE
+    'Nesta fase: escreva "cross_domain_patterns", inicie "technical_details".'
 )
 
 WORKING_DOCUMENT_SYNTHESIZE = (
-    _WORKING_DOC_HEADER
-    + '\n\nNesta fase: escreva "core_insight", "reasoning_chain", "evidence_base".'
-    + _WORKING_DOC_TONE
+    'Nesta fase: escreva "core_insight", "reasoning_chain", "evidence_base".'
 )
 
 WORKING_DOCUMENT_VALIDATE = (
-    _WORKING_DOC_HEADER
-    + '\n\nNesta fase: atualize "evidence_base", escreva "boundaries".'
-    + _WORKING_DOC_TONE
+    'Nesta fase: atualize "evidence_base", escreva "boundaries".'
 )
 
 WORKING_DOCUMENT_BUILD = (
-    _WORKING_DOC_HEADER
-    + '\n\nNesta fase: atualize "technical_details", atualize "boundaries".'
-    + _WORKING_DOC_TONE
+    'Nesta fase: atualize "technical_details", atualize "boundaries".'
 )
 
 WORKING_DOCUMENT_CRYSTALLIZE = (
-    _WORKING_DOC_HEADER
-    + '\n\nNesta fase: escreva "implementation_guide", "next_frontiers", '
-    + "refine todas as seções existentes."
-    + '\n\nA seção "implementation_guide" é crítica — dê ao leitor passos concretos '
-    + "e acionáveis: o que fazer primeiro, quais ferramentas/recursos precisa, "
-    + "quais marcos mirar, e quais armadilhas evitar."
-    + _WORKING_DOC_TONE
+    'Nesta fase: escreva "implementation_guide", "next_frontiers", '
+    "refine todas as seções existentes.\n\n"
+    'A seção "implementation_guide" é crítica — dê ao leitor passos concretos '
+    "e acionáveis: o que fazer primeiro, quais ferramentas/recursos precisa, "
+    "quais marcos mirar, e quais armadilhas evitar."
 )
 
 # Backward compat — full mapping for _assemble_full (phase=None)
 WORKING_DOCUMENT = (
-    _WORKING_DOC_HEADER
+    WORKING_DOCUMENT_INTRO
     + "\n\nMapeamento fase-seção:"
     + '\n- DECOMPOSE: escreva "problem_context"'
     + '\n- EXPLORE: escreva "cross_domain_patterns", inicie "technical_details"'
@@ -157,7 +141,7 @@ WORKING_DOCUMENT = (
     + '\n- VALIDATE: atualize "evidence_base", escreva "boundaries"'
     + '\n- BUILD: atualize "technical_details", atualize "boundaries"'
     + '\n- CRYSTALLIZE: escreva "implementation_guide", "next_frontiers", refine tudo'
-    + _WORKING_DOC_TONE
+    + "\n</working_document>"
 )
 
 # ---------------------------------------------------------------------------
@@ -171,6 +155,16 @@ O sistema bloqueia ações que violem estas regras. Você recebe uma resposta \
 de erro com um error_code explicando a violação. Cada regra existe por uma \
 razão específica — entender o porquê ajuda você a trabalhar com o sistema, \
 não contra ele."""
+
+_RULES_ROUND2_PLUS = """
+
+### Regras de Rodada 2+
+9. Referencie >= 1 afirmação anterior via builds_on_claim_id. \
+Razão: afirmações isoladas não formam um grafo de conhecimento — formam uma lista.
+10. Chame get_negative_knowledge antes da síntese. \
+Razão: repetir direções rejeitadas desperdiça rodadas.
+11. Máximo 5 rodadas por sessão. \
+Razão: força convergência — exploração sem fim raramente cristaliza."""
 
 RULES_DECOMPOSE = """\
 ### Regras de Transição de Fase
@@ -203,15 +197,7 @@ Razão: força profundidade sobre amplitude — 3 afirmações bem desenvolvidas
 
 ### Gates de Pesquisa
 14. find_antithesis requer research para contra-evidências primeiro. \
-Razão: uma antítese autogerada é um espantalho, não um desafio genuíno.
-
-### Regras de Rodada 2+
-9. Referencie >= 1 afirmação anterior via builds_on_claim_id. \
-Razão: afirmações isoladas não formam um grafo de conhecimento — formam uma lista.
-10. Chame get_negative_knowledge antes da síntese. \
-Razão: repetir direções rejeitadas desperdiça rodadas.
-11. Máximo 5 rodadas por sessão. \
-Razão: força convergência — exploração sem fim raramente cristaliza."""
+Razão: uma antítese autogerada é um espantalho, não um desafio genuíno.""" + _RULES_ROUND2_PLUS
 
 RULES_VALIDATE = """\
 ### Regras de Validação
@@ -226,14 +212,7 @@ Razão: afirmações derivadas puramente de dados de treinamento podem refletir 
 15. attempt_falsification requer research para refutar primeiro. \
 Razão: falsificação sem dados externos é apenas verificação de consistência interna."""
 
-RULES_BUILD = """\
-### Regras de Rodada 2+
-9. Referencie >= 1 afirmação anterior via builds_on_claim_id. \
-Razão: afirmações isoladas não formam um grafo de conhecimento — formam uma lista.
-10. Chame get_negative_knowledge antes da síntese. \
-Razão: repetir direções rejeitadas desperdiça rodadas.
-11. Máximo 5 rodadas por sessão. \
-Razão: força convergência — exploração sem fim raramente cristaliza."""
+RULES_BUILD = _RULES_ROUND2_PLUS
 
 # ---------------------------------------------------------------------------
 # Standalone sections
