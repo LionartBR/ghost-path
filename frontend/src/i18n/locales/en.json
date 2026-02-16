@@ -177,6 +177,7 @@
   "errors.loadSession": "Failed to load session",
 
   "session.cancel": "Stop",
+  "session.retry": "Retry",
   "session.cancelled_message": "Session stopped by user.",
 
   "transition.toExplore": "We've dismantled assumptions. Now we search distant domains for structural patterns nobody has connected to your problem yet.",

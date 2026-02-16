@@ -76,8 +76,17 @@ export function SessionPage() {
         <div className="space-y-5">
             {/* Error */}
             {stream.error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
-                {stream.error}
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700 flex items-center justify-between gap-3">
+                <span>{stream.error}</span>
+                <button
+                  onClick={() => stream.startStream()}
+                  title={t("session.retry")}
+                  className="flex-shrink-0 p-1.5 rounded-md text-red-500 hover:bg-red-100 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                    <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H4.598a.75.75 0 00-.75.75v3.634a.75.75 0 001.5 0v-2.134l.218.216a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39c-.015.056-.032.111-.05.166l-.467-.259zM4.688 8.576a5.5 5.5 0 019.201-2.466l.312.311H11.77a.75.75 0 000 1.5h3.634a.75.75 0 00.75-.75V3.537a.75.75 0 00-1.5 0v2.134l-.218-.216A7 7 0 002.724 8.593a.75.75 0 001.449.39c.015-.056.032-.111.05-.166l.465.259z" clipRule="evenodd" />
+                  </svg>
+                </button>
               </div>
             )}
 
