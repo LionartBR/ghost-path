@@ -37,6 +37,7 @@
   "decompose.confirm": "Подтвердить",
   "decompose.reject": "Отклонить",
   "decompose.suggestDomain": "Предложить домены для исследования",
+  "decompose.optional": "(необязательно)",
   "decompose.suggestDomainPlaceholder": "Предложить домен для исследования...",
   "decompose.edit": "изменить",
   "decompose.submitReview": "Отправить отзыв",

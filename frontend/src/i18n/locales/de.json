@@ -37,6 +37,7 @@
   "decompose.confirm": "Bestätigen",
   "decompose.reject": "Ablehnen",
   "decompose.suggestDomain": "Domänen zur Erkundung vorschlagen",
+  "decompose.optional": "(optional)",
   "decompose.suggestDomainPlaceholder": "Eine Domäne zur Erkundung vorschlagen...",
   "decompose.edit": "bearbeiten",
   "decompose.submitReview": "Überprüfung absenden",

@@ -679,6 +679,7 @@ export const DecomposeReview: React.FC<DecomposeReviewProps> = ({ data, onSubmit
             <h3 className="flex items-center gap-2.5 text-sm font-semibold text-blue-600 uppercase tracking-wide mb-2">
               <i className="bi bi-globe2 text-base" />
               {t("decompose.suggestDomain")}
+              <span className="text-[10px] font-normal normal-case tracking-normal text-gray-400">{t("decompose.optional")}</span>
             </h3>
             <p className="text-xs text-gray-500 leading-relaxed mb-3">
               {t("decompose.suggestDomainHint")}

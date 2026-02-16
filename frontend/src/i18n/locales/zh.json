@@ -37,6 +37,7 @@
   "decompose.confirm": "确认",
   "decompose.reject": "拒绝",
   "decompose.suggestDomain": "建议探索领域",
+  "decompose.optional": "(可选)",
   "decompose.suggestDomainPlaceholder": "建议一个探索领域...",
   "decompose.edit": "编辑",
   "decompose.submitReview": "提交审查",

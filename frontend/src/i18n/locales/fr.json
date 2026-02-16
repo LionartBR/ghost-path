@@ -37,6 +37,7 @@
   "decompose.confirm": "Confirmer",
   "decompose.reject": "Rejeter",
   "decompose.suggestDomain": "Suggérer des domaines d'exploration",
+  "decompose.optional": "(facultatif)",
   "decompose.suggestDomainPlaceholder": "Suggérer un domaine d'exploration...",
   "decompose.edit": "modifier",
   "decompose.submitReview": "Soumettre la revue",

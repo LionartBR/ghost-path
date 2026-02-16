@@ -37,6 +37,7 @@
   "decompose.confirm": "확인",
   "decompose.reject": "거부",
   "decompose.suggestDomain": "탐색할 도메인 제안",
+  "decompose.optional": "(선택사항)",
   "decompose.suggestDomainPlaceholder": "탐색할 도메인을 제안하세요...",
   "decompose.edit": "편집",
   "decompose.submitReview": "검토 제출",

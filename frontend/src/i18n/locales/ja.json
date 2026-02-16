@@ -37,6 +37,7 @@
   "decompose.confirm": "確認",
   "decompose.reject": "却下",
   "decompose.suggestDomain": "探索するドメインを提案",
+  "decompose.optional": "(任意)",
   "decompose.suggestDomainPlaceholder": "探索するドメインを提案してください...",
   "decompose.edit": "編集",
   "decompose.submitReview": "レビューを送信",
