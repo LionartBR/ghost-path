@@ -12,7 +12,7 @@ Knowledge creation engine powered by Claude Opus 4.6. It decomposes problems, ex
 ### 1. Clone the repository
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/LionartBR/ghost-path.git
 cd ghost-path
 ```
 
